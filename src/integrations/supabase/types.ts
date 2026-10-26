@@ -775,6 +775,7 @@ export type Database = {
         Args: { _auction_id: string; _reason: string }
         Returns: undefined
       }
+      close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
       has_active_seller_sub: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
