@@ -10,15 +10,37 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AyudaRouteImport } from './routes/ayuda'
 import { Route as CondicionesRouteImport } from './routes/condiciones'
 import { Route as InstalarRouteImport } from './routes/instalar'
 import { Route as NormasRouteImport } from './routes/normas'
+import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedNotificacionesRouteImport } from './routes/_authenticated/notificaciones'
+import { Route as AuthenticatedOperacionesRouteImport } from './routes/_authenticated/operaciones'
+import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
+import { Route as SubastasIndexRouteImport } from './routes/subastas.index'
+import { Route as SubastasIdRouteImport } from './routes/subastas.$id'
+import { Route as UsuariosIdRouteImport } from './routes/usuarios.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AyudaRoute = AyudaRouteImport.update({
@@ -41,60 +63,209 @@ const NormasRoute = NormasRouteImport.update({
   path: '/normas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlanesRoute = PlanesRouteImport.update({
+  id: '/planes',
+  path: '/planes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacidadRoute = PrivacidadRouteImport.update({
   id: '/privacidad',
   path: '/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificacionesRoute =
+  AuthenticatedNotificacionesRouteImport.update({
+    id: '/notificaciones',
+    path: '/notificaciones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOperacionesRoute =
+  AuthenticatedOperacionesRouteImport.update({
+    id: '/operaciones',
+    path: '/operaciones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPanelRoute = AuthenticatedPanelRouteImport.update({
+  id: '/panel',
+  path: '/panel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendedorRoute = AuthenticatedVendedorRouteImport.update({
+  id: '/vendedor',
+  path: '/vendedor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const SubastasIndexRoute = SubastasIndexRouteImport.update({
+  id: '/subastas/',
+  path: '/subastas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubastasIdRoute = SubastasIdRouteImport.update({
+  id: '/subastas/$id',
+  path: '/subastas/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsuariosIdRoute = UsuariosIdRouteImport.update({
+  id: '/usuarios/$id',
+  path: '/usuarios/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/ayuda': typeof AyudaRoute
   '/condiciones': typeof CondicionesRoute
   '/instalar': typeof InstalarRoute
   '/normas': typeof NormasRoute
+  '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/notificaciones': typeof AuthenticatedNotificacionesRoute
+  '/operaciones': typeof AuthenticatedOperacionesRoute
+  '/panel': typeof AuthenticatedPanelRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/vendedor': typeof AuthenticatedVendedorRoute
+  '/subastas/$id': typeof SubastasIdRoute
+  '/usuarios/$id': typeof UsuariosIdRoute
+  '/subastas/': typeof SubastasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/ayuda': typeof AyudaRoute
   '/condiciones': typeof CondicionesRoute
   '/instalar': typeof InstalarRoute
   '/normas': typeof NormasRoute
+  '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/notificaciones': typeof AuthenticatedNotificacionesRoute
+  '/operaciones': typeof AuthenticatedOperacionesRoute
+  '/panel': typeof AuthenticatedPanelRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/vendedor': typeof AuthenticatedVendedorRoute
+  '/subastas/$id': typeof SubastasIdRoute
+  '/usuarios/$id': typeof UsuariosIdRoute
+  '/subastas': typeof SubastasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/ayuda': typeof AyudaRoute
   '/condiciones': typeof CondicionesRoute
   '/instalar': typeof InstalarRoute
   '/normas': typeof NormasRoute
+  '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/notificaciones': typeof AuthenticatedNotificacionesRoute
+  '/_authenticated/operaciones': typeof AuthenticatedOperacionesRoute
+  '/_authenticated/panel': typeof AuthenticatedPanelRoute
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
+  '/subastas/$id': typeof SubastasIdRoute
+  '/usuarios/$id': typeof UsuariosIdRoute
+  '/subastas/': typeof SubastasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/ayuda' | '/condiciones' | '/instalar' | '/normas' | '/privacidad'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ayuda' | '/condiciones' | '/instalar' | '/normas' | '/privacidad'
-  id:
-    | '__root__'
     | '/'
+    | '/auth'
     | '/ayuda'
     | '/condiciones'
     | '/instalar'
     | '/normas'
+    | '/planes'
     | '/privacidad'
+    | '/reset-password'
+    | '/admin'
+    | '/notificaciones'
+    | '/operaciones'
+    | '/panel'
+    | '/perfil'
+    | '/vendedor'
+    | '/subastas/$id'
+    | '/usuarios/$id'
+    | '/subastas/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/auth'
+    | '/ayuda'
+    | '/condiciones'
+    | '/instalar'
+    | '/normas'
+    | '/planes'
+    | '/privacidad'
+    | '/reset-password'
+    | '/admin'
+    | '/notificaciones'
+    | '/operaciones'
+    | '/panel'
+    | '/perfil'
+    | '/vendedor'
+    | '/subastas/$id'
+    | '/usuarios/$id'
+    | '/subastas'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/ayuda'
+    | '/condiciones'
+    | '/instalar'
+    | '/normas'
+    | '/planes'
+    | '/privacidad'
+    | '/reset-password'
+    | '/_authenticated/admin'
+    | '/_authenticated/notificaciones'
+    | '/_authenticated/operaciones'
+    | '/_authenticated/panel'
+    | '/_authenticated/perfil'
+    | '/_authenticated/vendedor'
+    | '/subastas/$id'
+    | '/usuarios/$id'
+    | '/subastas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   AyudaRoute: typeof AyudaRoute
   CondicionesRoute: typeof CondicionesRoute
   InstalarRoute: typeof InstalarRoute
   NormasRoute: typeof NormasRoute
+  PlanesRoute: typeof PlanesRoute
   PrivacidadRoute: typeof PrivacidadRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SubastasIdRoute: typeof SubastasIdRoute
+  UsuariosIdRoute: typeof UsuariosIdRoute
+  SubastasIndexRoute: typeof SubastasIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -104,6 +275,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ayuda': {
@@ -134,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NormasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/planes': {
+      id: '/planes'
+      path: '/planes'
+      fullPath: '/planes'
+      preLoaderRoute: typeof PlanesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacidad': {
       id: '/privacidad'
       path: '/privacidad'
@@ -141,16 +333,114 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notificaciones': {
+      id: '/_authenticated/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof AuthenticatedNotificacionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/operaciones': {
+      id: '/_authenticated/operaciones'
+      path: '/operaciones'
+      fullPath: '/operaciones'
+      preLoaderRoute: typeof AuthenticatedOperacionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/panel': {
+      id: '/_authenticated/panel'
+      path: '/panel'
+      fullPath: '/panel'
+      preLoaderRoute: typeof AuthenticatedPanelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendedor': {
+      id: '/_authenticated/vendedor'
+      path: '/vendedor'
+      fullPath: '/vendedor'
+      preLoaderRoute: typeof AuthenticatedVendedorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/subastas/': {
+      id: '/subastas/'
+      path: '/subastas'
+      fullPath: '/subastas/'
+      preLoaderRoute: typeof SubastasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subastas/$id': {
+      id: '/subastas/$id'
+      path: '/subastas/$id'
+      fullPath: '/subastas/$id'
+      preLoaderRoute: typeof SubastasIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/usuarios/$id': {
+      id: '/usuarios/$id'
+      path: '/usuarios/$id'
+      fullPath: '/usuarios/$id'
+      preLoaderRoute: typeof UsuariosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedNotificacionesRoute: typeof AuthenticatedNotificacionesRoute
+  AuthenticatedOperacionesRoute: typeof AuthenticatedOperacionesRoute
+  AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedNotificacionesRoute: AuthenticatedNotificacionesRoute,
+  AuthenticatedOperacionesRoute: AuthenticatedOperacionesRoute,
+  AuthenticatedPanelRoute: AuthenticatedPanelRoute,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   AyudaRoute: AyudaRoute,
   CondicionesRoute: CondicionesRoute,
   InstalarRoute: InstalarRoute,
   NormasRoute: NormasRoute,
+  PlanesRoute: PlanesRoute,
   PrivacidadRoute: PrivacidadRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SubastasIdRoute: SubastasIdRoute,
+  UsuariosIdRoute: UsuariosIdRoute,
+  SubastasIndexRoute: SubastasIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
