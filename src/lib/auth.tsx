@@ -19,6 +19,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setState({ session, user: session?.user ?? null, ready: true });
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_IN") {
+        const r = sessionStorage.getItem("nexo_redirect");
+        if (r && r.startsWith("/") && !r.startsWith("//")) {
+          sessionStorage.removeItem("nexo_redirect");
+          router.history.push(r);
+        }
+      }
       router.invalidate();
       if (event !== "SIGNED_OUT") qc.invalidateQueries();
     });
