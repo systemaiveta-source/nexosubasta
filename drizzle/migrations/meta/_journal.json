@@ -15,6 +15,13 @@
       "when": 1792984067620,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793060174405,
+      "tag": "0002_membresias_referidos_pagos_servicios",
+      "breakpoints": true
     }
   ]
 }

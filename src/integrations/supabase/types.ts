@@ -184,6 +184,7 @@ export type Database = {
       }
       auctions: {
         Row: {
+          auction_type: string
           bid_count: number
           category_id: string | null
           city: string | null
@@ -194,6 +195,7 @@ export type Database = {
           delivery_terms: string
           description: string
           duration_hours: number
+          duration_minutes: number | null
           ends_at: string | null
           extensions_count: number
           flagged: boolean
@@ -206,6 +208,8 @@ export type Database = {
           reserve_met: boolean
           scope: string
           seller_id: string
+          service_from: string | null
+          service_to: string | null
           starting_price: number
           starts_at: string | null
           status: string
@@ -214,6 +218,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          auction_type?: string
           bid_count?: number
           category_id?: string | null
           city?: string | null
@@ -224,6 +229,7 @@ export type Database = {
           delivery_terms?: string
           description?: string
           duration_hours?: number
+          duration_minutes?: number | null
           ends_at?: string | null
           extensions_count?: number
           flagged?: boolean
@@ -236,6 +242,8 @@ export type Database = {
           reserve_met?: boolean
           scope?: string
           seller_id: string
+          service_from?: string | null
+          service_to?: string | null
           starting_price?: number
           starts_at?: string | null
           status?: string
@@ -244,6 +252,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          auction_type?: string
           bid_count?: number
           category_id?: string | null
           city?: string | null
@@ -254,6 +263,7 @@ export type Database = {
           delivery_terms?: string
           description?: string
           duration_hours?: number
+          duration_minutes?: number | null
           ends_at?: string | null
           extensions_count?: number
           flagged?: boolean
@@ -266,6 +276,8 @@ export type Database = {
           reserve_met?: boolean
           scope?: string
           seller_id?: string
+          service_from?: string | null
+          service_to?: string | null
           starting_price?: number
           starts_at?: string | null
           status?: string
@@ -452,6 +464,39 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          active: boolean
+          created_at: string
+          details: Json
+          id: string
+          instructions: string
+          kind: string
+          name: string
+          sort: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          details?: Json
+          id?: string
+          instructions?: string
+          kind?: string
+          name: string
+          sort?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          details?: Json
+          id?: string
+          instructions?: string
+          kind?: string
+          name?: string
+          sort?: number
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           active: boolean
@@ -461,9 +506,11 @@ export type Database = {
           currency: string
           id: string
           max_active_auctions: number | null
+          months: number
           name: string
           period: string
           price: number | null
+          referral_pct: number
         }
         Insert: {
           active?: boolean
@@ -473,9 +520,11 @@ export type Database = {
           currency?: string
           id?: string
           max_active_auctions?: number | null
+          months?: number
           name: string
           period?: string
           price?: number | null
+          referral_pct?: number
         }
         Update: {
           active?: boolean
@@ -485,9 +534,11 @@ export type Database = {
           currency?: string
           id?: string
           max_active_auctions?: number | null
+          months?: number
           name?: string
           period?: string
           price?: number | null
+          referral_pct?: number
         }
         Relationships: []
       }
@@ -528,9 +579,12 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          currency: string
           display_name: string
           id: string
           phone: string | null
+          referral_code: string | null
+          referred_by: string | null
         }
         Insert: {
           account_status?: string
@@ -538,9 +592,12 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          currency?: string
           display_name?: string
           id: string
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
         }
         Update: {
           account_status?: string
@@ -548,11 +605,22 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          currency?: string
           display_name?: string
           id?: string
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -588,6 +656,64 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_requests: {
+        Row: {
+          created_at: string
+          id: string
+          payment_method_id: string | null
+          plan_id: string
+          reference: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_method_id?: string | null
+          plan_id: string
+          reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_method_id?: string | null
+          plan_id?: string
+          reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_requests_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -721,6 +847,47 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          kind: string
+          note: string
+          ref_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind: string
+          note?: string
+          ref_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          note?: string
+          ref_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       user_reputation: {
@@ -754,6 +921,10 @@ export type Database = {
         Args: { _flag: string; _status: string }
         Returns: undefined
       }
+      admin_review_subscription: {
+        Args: { _approve: boolean; _request: string }
+        Returns: undefined
+      }
       admin_set_role: {
         Args: {
           _grant: boolean
@@ -768,6 +939,10 @@ export type Database = {
       }
       admin_update_settings: {
         Args: { _max_days: number; _min_hours: number; _min_increment: number }
+        Returns: undefined
+      }
+      apply_referral_commission: {
+        Args: { _buyer: string; _plan: string }
         Returns: undefined
       }
       become_seller: { Args: never; Returns: undefined }
@@ -799,9 +974,12 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          currency: string
           display_name: string
           id: string
           phone: string | null
+          referral_code: string | null
+          referred_by: string | null
         }
         SetofOptions: {
           from: "*"
@@ -818,6 +996,10 @@ export type Database = {
         Args: { _reason: string; _tx: string }
         Returns: undefined
       }
+      pay_membership_with_wallet: {
+        Args: { _for_user?: string; _plan: string }
+        Returns: string
+      }
       place_bid: {
         Args: { _amount: number; _auction_id: string; _idempotency_key: string }
         Returns: Json
@@ -826,6 +1008,7 @@ export type Database = {
       publish_auction: {
         Args: { _auction_id: string }
         Returns: {
+          auction_type: string
           bid_count: number
           category_id: string | null
           city: string | null
@@ -836,6 +1019,7 @@ export type Database = {
           delivery_terms: string
           description: string
           duration_hours: number
+          duration_minutes: number | null
           ends_at: string | null
           extensions_count: number
           flagged: boolean
@@ -848,6 +1032,8 @@ export type Database = {
           reserve_met: boolean
           scope: string
           seller_id: string
+          service_from: string | null
+          service_to: string | null
           starting_price: number
           starts_at: string | null
           status: string
@@ -875,6 +1061,10 @@ export type Database = {
         Args: { _auction_id: string; _starts_at: string }
         Returns: undefined
       }
+      transfer_credit: {
+        Args: { _amount: number; _to_code: string }
+        Returns: undefined
+      }
       tx_contact: {
         Args: { _tx: string }
         Returns: {
@@ -883,6 +1073,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      wallet_balance: { Args: { _user: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "seller" | "buyer"
