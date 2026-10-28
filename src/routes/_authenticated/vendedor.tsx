@@ -1,20 +1,195 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ImagePlus, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Empty } from "@/components/SiteLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth, useRoles } from "@/lib/auth";
+import { money, errMsg, statusLabel } from "@/lib/format";
+import { uploadAuctionImage, useImageUrls } from "@/lib/images";
+import { CURRENCIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   head: () => ({
     meta: [
-      { title: "Panel del vendedor — NEXO" },
-      { name: "description", content: "Panel del vendedor en NEXO." },
-      { property: "og:title", content: "Panel del vendedor — NEXO" },
-      { property: "og:description", content: "Panel del vendedor en NEXO." },
+      { title: "Vender en NEXO — Publica tu subasta" },
+      { name: "description", content: "Publica artículos o solicita servicios en subasta desde tu dispositivo." },
+      { property: "og:title", content: "Vender en NEXO" },
+      { property: "og:description", content: "Crea y gestiona tus subastas en NEXO." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
-    <PageShell title="Panel del vendedor">
-      <Empty>Sección en construcción: disponible en la próxima fase.</Empty>
-    </PageShell>
-  ),
+  component: Seller,
 });
+
+const SERVICE_MINUTES = [
+  [1, "1 minuto"], [10, "10 minutos"], [20, "20 minutos"], [60, "1 hora"], [120, "2 horas"], [180, "3 horas"],
+  [720, "12 horas"], [1440, "24 horas"], [10080, "1 semana"],
+] as const;
+
+function Seller() {
+  const { user } = useAuth();
+  const { isSeller } = useRoles();
+  const qc = useQueryClient();
+  const [type, setType] = useState<"item" | "service">("item");
+  const [f, setF] = useState({ title: "", description: "", category_id: "", country: "", city: "", scope: "national", delivery_terms: "", starting_price: "", min_increment: "1", currency: "USD", duration_hours: "24", duration_minutes: "60", service_from: "", service_to: "", reserve: "", expected: "" });
+  const [images, setImages] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
+
+  const cats = useQuery({ queryKey: ["categories"], queryFn: async () => (await supabase.from("categories").select("id,name,slug").order("sort")).data ?? [] });
+  const profile = useQuery({ queryKey: ["myprofile"], queryFn: async () => (await supabase.rpc("my_profile")).data });
+  const sub = useQuery({ queryKey: ["sub", user?.id], queryFn: async () => (await supabase.rpc("has_active_seller_sub", { _user_id: user!.id })).data ?? false });
+  const mine = useQuery({
+    queryKey: ["mine", user?.id],
+    queryFn: async () => (await supabase.from("auctions").select("id,title,status,current_price,currency,bid_count,ends_at,auction_type").eq("seller_id", user!.id).order("created_at", { ascending: false })).data ?? [],
+  });
+  const previews = useImageUrls(images);
+
+  if (!isSeller)
+    return (
+      <PageShell title="Quiero vender">
+        <div className="max-w-lg space-y-4">
+          <p className="text-muted-foreground">Activa tu cuenta de vendedor para publicar subastas de artículos o pedir servicios.</p>
+          <Button onClick={async () => { const { error } = await supabase.rpc("become_seller"); if (error) toast.error(errMsg(error)); else { toast.success("¡Ya puedes vender!"); qc.invalidateQueries(); } }}>Activar cuenta de vendedor</Button>
+        </div>
+      </PageShell>
+    );
+
+  async function addFiles(files: FileList | null) {
+    if (!files || !user) return;
+    setBusy(true);
+    try {
+      for (const file of Array.from(files).slice(0, 10 - images.length)) {
+        const p = await uploadAuctionImage(user.id, file);
+        setImages((x) => [...x, p]);
+      }
+    } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+  }
+
+  async function create(publish: boolean) {
+    if (!user) return;
+    setBusy(true);
+    try {
+      const cur = f.currency || profile.data?.currency || "USD";
+      const { data: a, error } = await supabase.from("auctions").insert({
+        seller_id: user.id, title: f.title.trim(), description: f.description.trim(),
+        category_id: f.category_id || null, country: f.country || null, city: f.city || null, scope: f.scope,
+        delivery_terms: f.delivery_terms || (type === "service" ? "Servicio acordado por chat" : "A convenir"),
+        images, starting_price: Number(f.starting_price), min_increment: Number(f.min_increment), currency: cur,
+        status: "draft", auction_type: type,
+        duration_hours: type === "item" ? Number(f.duration_hours) : Math.max(1, Math.ceil(Number(f.duration_minutes) / 60)),
+        duration_minutes: type === "service" ? Number(f.duration_minutes) : null,
+        service_from: type === "service" ? f.service_from || null : null, service_to: type === "service" ? f.service_to || null : null,
+      }).select("id").single();
+      if (error) throw error;
+      if (type === "item" && (f.reserve || f.expected)) {
+        const { error: e2 } = await supabase.from("auction_private").insert({ auction_id: a.id, reserve_price: f.reserve ? Number(f.reserve) : null, expected_price: f.expected ? Number(f.expected) : null });
+        if (e2) throw e2;
+      }
+      if (publish) {
+        const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: a.id });
+        if (e3) { toast.error(errMsg(e3) + " (guardada como borrador)"); }
+        else toast.success("¡Subasta publicada!");
+      } else toast.success("Borrador guardado");
+      setImages([]); setF((p) => ({ ...p, title: "", description: "", reserve: "", expected: "", starting_price: "" }));
+      qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+  }
+
+  async function publish(id: string) {
+    const { error } = await supabase.rpc("publish_auction", { _auction_id: id });
+    if (error) toast.error(errMsg(error)); else { toast.success("Publicada"); qc.invalidateQueries({ queryKey: ["mine"] }); }
+  }
+
+  const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
+
+  return (
+    <PageShell title="Panel del vendedor">
+      {sub.data === false && (
+        <div className="mb-6 rounded-xl border border-nexo-yellow bg-accent p-4 text-sm">Necesitas una membresía activa para publicar. <Link to="/planes" className="font-semibold underline">Ver membresías</Link></div>
+      )}
+      <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
+          <div className="flex gap-2">
+            <Button variant={type === "item" ? "default" : "outline"} onClick={() => setType("item")}>Vender artículo</Button>
+            <Button variant={type === "service" ? "default" : "outline"} onClick={() => setType("service")}>Pedir un servicio</Button>
+          </div>
+          {type === "service" && <p className="text-sm text-muted-foreground">Describe lo que necesitas; los proveedores ofertan cuánto cobran y gana la oferta más baja. Ambos necesitan membresía activa.</p>}
+          <div className="space-y-1.5"><Label>Título</Label><Input value={f.title} onChange={set("title")} maxLength={120} /></div>
+          <div className="space-y-1.5"><Label>Descripción</Label><Textarea value={f.description} onChange={set("description")} rows={4} maxLength={4000} /></div>
+          {type === "service" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>Dirección de origen</Label><Input value={f.service_from} onChange={set("service_from")} /></div>
+              <div className="space-y-1.5"><Label>Dirección de destino</Label><Input value={f.service_to} onChange={set("service_to")} /></div>
+            </div>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5"><Label>Categoría</Label>
+              <select className={sel} value={f.category_id} onChange={set("category_id")}><option value="">Elegir…</option>{cats.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div className="space-y-1.5"><Label>Alcance</Label>
+              <select className={sel} value={f.scope} onChange={set("scope")}><option value="local">Local</option><option value="national">Nacional</option><option value="international">Internacional</option></select></div>
+            <div className="space-y-1.5"><Label>País</Label><Input value={f.country} onChange={set("country")} /></div>
+            <div className="space-y-1.5"><Label>Ciudad</Label><Input value={f.city} onChange={set("city")} /></div>
+            <div className="space-y-1.5"><Label>Moneda</Label>
+              <select className={sel} value={f.currency} onChange={set("currency")}>{CURRENCIES.map(([c, n]) => <option key={c} value={c}>{c} — {n}</option>)}</select></div>
+            <div className="space-y-1.5"><Label>{type === "service" ? "Precio máximo que pagarías" : "Precio de salida"}</Label><Input type="number" min="0" step="0.01" value={f.starting_price} onChange={set("starting_price")} /></div>
+            <div className="space-y-1.5"><Label>Incremento mínimo de puja</Label><Input type="number" min="0.01" step="0.01" value={f.min_increment} onChange={set("min_increment")} /></div>
+            <div className="space-y-1.5"><Label>Duración</Label>
+              {type === "item" ? (
+                <select className={sel} value={f.duration_hours} onChange={set("duration_hours")}><option value="24">24 horas</option><option value="48">48 horas</option><option value="72">72 horas</option></select>
+              ) : (
+                <select className={sel} value={f.duration_minutes} onChange={set("duration_minutes")}>{SERVICE_MINUTES.map(([m, l]) => <option key={m} value={m}>{l}</option>)}</select>
+              )}</div>
+            {type === "item" && <>
+              <div className="space-y-1.5"><Label>Precio esperado (privado)</Label><Input type="number" min="0" value={f.expected} onChange={set("expected")} /></div>
+              <div className="space-y-1.5"><Label>Precio de reserva (privado)</Label><Input type="number" min="0" value={f.reserve} onChange={set("reserve")} /></div>
+            </>}
+          </div>
+          <div className="space-y-1.5"><Label>Condiciones de entrega</Label><Input value={f.delivery_terms} onChange={set("delivery_terms")} /></div>
+          <div>
+            <Label>Fotos desde tu dispositivo</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {images.map((p) => (
+                <div key={p} className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted">
+                  {previews.data?.[p] && <img src={previews.data[p]} alt="" className="h-full w-full object-cover" />}
+                  <button type="button" aria-label="Quitar" className="absolute right-0.5 top-0.5 rounded-full bg-background p-0.5" onClick={() => setImages((x) => x.filter((y) => y !== p))}><X className="h-3 w-3" /></button>
+                </div>
+              ))}
+              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground">
+                <ImagePlus className="h-6 w-6" />
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button disabled={busy} onClick={() => create(true)}>Publicar ahora</Button>
+            <Button variant="outline" disabled={busy} onClick={() => create(false)}>Guardar borrador</Button>
+          </div>
+        </section>
+        <section>
+          <h2 className="mb-3 font-display text-lg font-bold">Mis publicaciones</h2>
+          {mine.data?.length ? (
+            <ul className="space-y-2">
+              {mine.data.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                  <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
+                    <b className="block truncate">{a.title}</b>
+                    <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio · " : ""}{statusLabel[a.status]} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
+                  </Link>
+                  {a.status === "draft" && <Button size="sm" onClick={() => publish(a.id)}>Publicar</Button>}
+                </li>
+              ))}
+            </ul>
+          ) : <Empty>Aún no has publicado nada.</Empty>}
+        </section>
+      </div>
+    </PageShell>
+  );
+}
