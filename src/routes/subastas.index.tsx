@@ -64,7 +64,7 @@ function Catalog() {
       return data as unknown as AuctionListItem[];
     },
   });
-  const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter(Boolean));
+  const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter((x): x is string => !!x));
 
   const sel = "h-10 rounded-md border border-input bg-background px-3 text-sm";
 
@@ -112,7 +112,7 @@ function Catalog() {
         <Empty>No se pudo cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.</Empty>
       ) : list.data?.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {list.data.map((a) => <AuctionCard key={a.id} a={a} img={imgs.data?.[a.images[0]]} now={now} />)}
+          {list.data.map((a) => <AuctionCard key={a.id} a={a} img={a.images[0] ? imgs.data?.[a.images[0]] : undefined} now={now} />)}
         </div>
       ) : (
         <Empty>No hay subastas que coincidan con tu búsqueda.</Empty>
