@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import "@lovable.dev/cloud-auth-js/styles.css";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -76,7 +75,7 @@ function AuthPage() {
     }
   }
 
-  async function social(provider: "google" | "lovable") {
+  async function social(provider: "google") {
     if (redirect) sessionStorage.setItem("nexo_redirect", safePath(redirect));
     const r = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (r.error) toast.error(errMsg(r.error));
@@ -96,9 +95,6 @@ function AuthPage() {
               {mode !== "forgot" && (
                 <div className="mt-6 space-y-3">
                   <Button variant="outline" className="w-full" onClick={() => social("google")}>Continuar con Google</Button>
-                  <button type="button" className="lovable-auth-button w-full" onClick={() => social("lovable")}>
-                    Continue with Lovable
-                  </button>
                   <div className="flex items-center gap-3 py-2 text-xs text-muted-foreground">
                     <span className="h-px flex-1 bg-border" /> o con correo <span className="h-px flex-1 bg-border" />
                   </div>

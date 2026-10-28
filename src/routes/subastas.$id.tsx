@@ -147,7 +147,7 @@ function AuctionPage() {
     const reason = isStaff && !isSeller ? prompt("Motivo de la cancelación") : "Cancelada por el vendedor";
     if (reason === null) return;
     const { error } = await supabase.rpc("cancel_auction", { _auction_id: id, _reason: reason });
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success("Subasta cancelada");
     qc.invalidateQueries({ queryKey: ["auction", id] });
   }
@@ -166,7 +166,7 @@ function AuctionPage() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-            {imgs.data?.[a.images[imgIdx]] && <img src={imgs.data[a.images[imgIdx]]} alt={a.title} className="h-full w-full object-contain" />}
+            {(() => { const k = a.images[imgIdx]; const u = k ? imgs.data?.[k] : undefined; return u ? <img src={u} alt={a.title} className="h-full w-full object-contain" /> : null; })()}
           </div>
           {a.images.length > 1 && (
             <div className="mt-3 flex gap-2 overflow-x-auto">

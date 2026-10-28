@@ -29,11 +29,11 @@ function Reset() {
   const navigate = useNavigate();
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (pw.length < 8) return toast.error("Mínimo 8 caracteres");
+    if (pw.length < 8) { toast.error("Mínimo 8 caracteres"); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success("Contraseña actualizada");
     navigate({ to: "/subastas" });
   }
