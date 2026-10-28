@@ -41,7 +41,7 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls[status] ?? "bg-muted"}`}>{statusLabel[status] ?? status}</span>;
 }
 
-export function AuctionCard({ a, img, now }: { a: AuctionListItem; img?: string; now: number }) {
+export function AuctionCard({ a, img, now }: { a: AuctionListItem; img?: string | undefined; now: number }) {
   return (
     <Link
       to="/subastas/$id"
