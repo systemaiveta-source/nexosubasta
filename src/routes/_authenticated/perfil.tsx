@@ -1,20 +1,116 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageShell, Empty } from "@/components/SiteLayout";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { PageShell } from "@/components/SiteLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth";
+import { money, errMsg } from "@/lib/format";
+import { CURRENCIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
     meta: [
-      { title: "Mi perfil — NEXO" },
-      { name: "description", content: "Mi perfil en NEXO." },
+      { title: "Mi perfil, saldo y referidos — NEXO" },
+      { name: "description", content: "Gestiona tus datos, tu membresía, tu saldo y tu enlace de referidos en NEXO." },
       { property: "og:title", content: "Mi perfil — NEXO" },
-      { property: "og:description", content: "Mi perfil en NEXO." },
+      { property: "og:description", content: "Perfil, saldo y referidos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
-    <PageShell title="Mi perfil">
-      <Empty>Sección en construcción: disponible en la próxima fase.</Empty>
-    </PageShell>
-  ),
+  component: Profile,
 });
+
+function Profile() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const profile = useQuery({ queryKey: ["myprofile"], queryFn: async () => (await supabase.rpc("my_profile")).data });
+  const balance = useQuery({ queryKey: ["wallet", user?.id], queryFn: async () => Number((await supabase.rpc("wallet_balance", { _user: user!.id })).data ?? 0) });
+  const ledger = useQuery({ queryKey: ["ledger", user?.id], queryFn: async () => (await supabase.from("wallet_transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(30)).data ?? [] });
+  const subs = useQuery({ queryKey: ["mysubs", user?.id], queryFn: async () => (await supabase.from("subscriptions").select("id,status,ends_at,plans(name)").eq("user_id", user!.id).order("ends_at", { ascending: false })).data ?? [] });
+  const referrals = useQuery({ queryKey: ["refs", user?.id], queryFn: async () => (await supabase.from("profiles").select("id,display_name,created_at").eq("referred_by", user!.id)).data ?? [] });
+  const plans = useQuery({ queryKey: ["plans"], queryFn: async () => (await supabase.from("plans").select("*").eq("active", true).order("months")).data ?? [] });
+
+  const [form, setForm] = useState({ display_name: "", country: "", city: "", phone: "", bio: "", currency: "USD" });
+  useEffect(() => {
+    const p = profile.data;
+    if (p) setForm({ display_name: p.display_name, country: p.country ?? "", city: p.city ?? "", phone: p.phone ?? "", bio: p.bio ?? "", currency: p.currency });
+  }, [profile.data]);
+  const [to, setTo] = useState({ code: "", amount: "" });
+  const [gift, setGift] = useState({ code: "", plan: "" });
+
+  const link = profile.data?.referral_code ? `${typeof window !== "undefined" ? window.location.origin : ""}/auth?ref=${profile.data.referral_code}` : "";
+
+  async function save() {
+    const { error } = await supabase.from("profiles").update(form).eq("id", user!.id);
+    if (error) toast.error(errMsg(error)); else { toast.success("Perfil guardado"); qc.invalidateQueries({ queryKey: ["myprofile"] }); }
+  }
+  async function transfer() {
+    const { error } = await supabase.rpc("transfer_credit", { _to_code: to.code.trim(), _amount: Number(to.amount) });
+    if (error) toast.error(errMsg(error)); else { toast.success("Saldo transferido"); setTo({ code: "", amount: "" }); qc.invalidateQueries(); }
+  }
+  async function payForOther() {
+    const { data: target } = await supabase.from("profiles").select("id").eq("referral_code", gift.code.trim()).maybeSingle();
+    if (!target) return void toast.error("Código de usuario no encontrado");
+    const { error } = await supabase.rpc("pay_membership_with_wallet", { _plan: gift.plan, _for_user: target.id });
+    if (error) toast.error(errMsg(error)); else { toast.success("Membresía pagada"); qc.invalidateQueries(); }
+  }
+
+  const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
+  const box = "space-y-3 rounded-2xl border border-border bg-card p-6";
+
+  return (
+    <PageShell title="Mi perfil">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className={box}>
+          <h2 className="font-display text-lg font-bold">Datos</h2>
+          <div className="space-y-1.5"><Label>Nombre visible</Label><Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} /></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5"><Label>País</Label><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Ciudad</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Teléfono</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Moneda preferida</Label>
+              <select className={sel} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>{CURRENCIES.map(([c, n]) => <option key={c} value={c}>{c} — {n}</option>)}</select></div>
+          </div>
+          <Button onClick={save}>Guardar</Button>
+        </section>
+
+        <section className={box}>
+          <h2 className="font-display text-lg font-bold">Membresía</h2>
+          {subs.data?.length ? subs.data.map((s) => (
+            <p key={s.id} className="text-sm">{(s.plans as { name: string } | null)?.name} — {s.status === "active" && new Date(s.ends_at) > new Date() ? "activa" : "vencida"} hasta {new Date(s.ends_at).toLocaleDateString("es")}</p>
+          )) : <p className="text-sm text-muted-foreground">Sin membresía activa.</p>}
+          <h2 className="pt-3 font-display text-lg font-bold">Referidos</h2>
+          <p className="text-sm text-muted-foreground">Comparte tu enlace. Ganas 5%, 10%, 15% o 20% de cada membresía que activen tus referidos, según tu propio plan (debe estar activo). Las ganancias no se retiran en efectivo: úsalas para membresías o transfiérelas.</p>
+          <div className="flex gap-2"><Input readOnly value={link} /><Button variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Enlace copiado"); }}>Copiar</Button></div>
+          <p className="text-sm">Tu código: <b>{profile.data?.referral_code}</b> · Referidos: <b>{referrals.data?.length ?? 0}</b></p>
+        </section>
+
+        <section className={box}>
+          <h2 className="font-display text-lg font-bold">Saldo: {money(balance.data ?? 0)}</h2>
+          <Label>Transferir saldo a otro usuario</Label>
+          <div className="flex gap-2"><Input placeholder="Código del usuario" value={to.code} onChange={(e) => setTo({ ...to, code: e.target.value })} /><Input type="number" placeholder="Monto" value={to.amount} onChange={(e) => setTo({ ...to, amount: e.target.value })} className="w-28" /><Button onClick={transfer}>Enviar</Button></div>
+          <Label>Pagar la membresía de otra persona</Label>
+          <div className="flex gap-2">
+            <Input placeholder="Código del usuario" value={gift.code} onChange={(e) => setGift({ ...gift, code: e.target.value })} />
+            <select className={sel} value={gift.plan} onChange={(e) => setGift({ ...gift, plan: e.target.value })}><option value="">Plan…</option>{plans.data?.map((p) => <option key={p.id} value={p.id}>{p.name} {money(p.price)}</option>)}</select>
+            <Button onClick={payForOther} disabled={!gift.plan}>Pagar</Button>
+          </div>
+        </section>
+
+        <section className={box}>
+          <h2 className="font-display text-lg font-bold">Movimientos</h2>
+          {ledger.data?.length ? (
+            <ul className="space-y-1 text-sm">{ledger.data.map((t) => (
+              <li key={t.id} className="flex justify-between gap-2"><span className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString("es")} · {t.note}</span><b className={Number(t.amount) < 0 ? "text-destructive" : ""}>{money(t.amount, t.currency)}</b></li>
+            ))}</ul>
+          ) : <p className="text-sm text-muted-foreground">Sin movimientos todavía.</p>}
+        </section>
+      </div>
+    </PageShell>
+  );
+}
