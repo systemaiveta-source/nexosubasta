@@ -1,4 +1,6 @@
 # NEXO roadmap
+- [ ] Prioridad crítica: reproducir/corregir ambigüedad f en métodos de pago y verificar edición, persistencia, permisos e historial.
+- [ ] Auditoría integral solicitada: cuentas/membresías, productos, servicios con elección del cliente, operaciones/chat, catálogos, notificaciones, pantallas, PWA y pruebas; no publicar ni activar servicios externos.
 - [ ] Pagos manuales: métodos estructurados, comprobantes privados, historial, revisión y aprobación única; sin publicación ni proveedores externos.
 - [x] Fase 1: marca, sistema de diseño, inicio, páginas legales, instalación PWA (manifiesto + iconos)
 - [x] Fase 2: cuentas (correo, Google), roles, perfiles en base de datos
