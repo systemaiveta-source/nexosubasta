@@ -68,7 +68,7 @@ function Operation() {
   async function action(action: "complete" | "dispute" | "stage", value?: string) {
     setBusy(true);
     try {
-      await change({ data: { id, action, value, method } });
+      await change({ data: { id, action, ...(value ? { value } : {}), method } });
       refresh();
       toast.success("Operación actualizada");
     } catch (e) {
@@ -232,7 +232,7 @@ function Operation() {
                 e.preventDefault();
                 setBusy(true);
                 try {
-                  await send({ data: { id, body, key: key.current, path } });
+                  await send({ data: { id, body, key: key.current, ...(path ? { path } : {}) } });
                   key.current = crypto.randomUUID();
                   setBody("");
                   setPath(undefined);

@@ -55,7 +55,19 @@ function AuctionPage() {
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data?.id || !data.seller_id || !data.title || !data.status || !data.currency)
+        return null;
+      return {
+        ...data,
+        id: data.id,
+        seller_id: data.seller_id,
+        title: data.title,
+        status: data.status,
+        currency: data.currency,
+        images: data.images ?? [],
+        scope: data.scope ?? "national",
+        extensions_count: data.extensions_count ?? 0,
+      };
     },
   });
   const a = auction.data;
@@ -179,7 +191,7 @@ function AuctionPage() {
         a.current_price !== null &&
         value > Number(a.current_price) - Number(a.min_increment))
     ) {
-      toast.error(`La oferta mínima es ${money(minBid, a?.currency)}`);
+      toast.error(`La oferta mínima es ${money(minBid, a?.currency ?? "USD")}`);
       return;
     }
     setBusy(true);

@@ -436,7 +436,9 @@ function Subastas() {
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data;
+      return data
+        .filter((a) => a.id && a.status)
+        .map((a) => ({ ...a, id: a.id ?? "", status: a.status ?? "" }));
     },
   });
   const cancel = useMutation({

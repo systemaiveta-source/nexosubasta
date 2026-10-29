@@ -88,7 +88,7 @@ export const changeOperation = createServerFn({ method: "POST" })
           : await context.supabase.rpc("advance_operation", {
               _tx: data.id,
               _stage: data.value ?? "",
-              _method: data.method,
+              ...(data.method ? { _method: data.method } : {}),
             });
     if (result.error) throw new Error(result.error.message);
     return { ok: true };
@@ -110,7 +110,7 @@ export const sendOperationMessage = createServerFn({ method: "POST" })
       _tx: data.id,
       _body: data.body,
       _key: data.key,
-      _attachment: data.path,
+      ...(data.path ? { _attachment: data.path } : {}),
     });
     if (result.error) throw new Error(result.error.message);
     return { id: result.data };
