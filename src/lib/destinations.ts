@@ -3,7 +3,7 @@ export function safeDestination(value: string | null | undefined): string | null
   if (
     !value ||
     value !== value.trim() ||
-    /[\\\u0000-\u0020\u007f]/.test(value) ||
+    Array.from(value).some(character => character === "\\" || character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127) ||
     /%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value)
   )
     return null;
