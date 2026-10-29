@@ -57,6 +57,13 @@
       "when": 1793311470042,
       "tag": "0007_auction_payment_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793311551804,
+      "tag": "0008_transactional_draft_limits",
+      "breakpoints": true
     }
   ]
 }

@@ -1333,6 +1333,7 @@ export type Database = {
         Args: { _comment: string; _rating: number; _tx: string }
         Returns: undefined
       }
+      my_auction_draft: { Args: { _id: string }; Returns: Json }
       my_profile: {
         Args: never
         Returns: {
@@ -1428,6 +1429,10 @@ export type Database = {
       }
       review_manual_membership: {
         Args: { _decision: string; _reason?: string; _request: string }
+        Returns: string
+      }
+      save_auction_draft: {
+        Args: { _data: Json; _id: string; _private: Json }
         Returns: string
       }
       send_operation_message: {
