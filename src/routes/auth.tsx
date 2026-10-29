@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { errMsg } from "@/lib/format";
+import { authDestination } from "@/lib/destinations";
 
 const search = z.object({ redirect: z.string().optional() });
 
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar o crear cuenta — NEXO" },
-      { name: "description", content: "Accede a NEXO para ofertar, vender y gestionar tus operaciones." },
+      { name: "description", content: "Accede a NEXO para ofertar, subastar y gestionar tus operaciones." },
       { property: "og:title", content: "Entrar — NEXO" },
       { property: "og:description", content: "Accede o crea tu cuenta en NEXO." },
       { property: "og:type", content: "website" },
@@ -27,10 +28,6 @@ export const Route = createFileRoute("/auth")({
   }),
   component: AuthPage,
 });
-
-function safePath(p?: string) {
-  return p && p.startsWith("/") && !p.startsWith("//") ? p : "/subastas";
-}
 
 function AuthPage() {
   const { redirect } = Route.useSearch();
@@ -44,11 +41,16 @@ function AuthPage() {
   const [sent, setSent] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) navigate({ to: safePath(redirect), replace: true });
+    if (user) {
+      const stored = sessionStorage.getItem("nexo_redirect");
+      sessionStorage.removeItem("nexo_redirect");
+      navigate({ to: authDestination(redirect ?? stored), replace: true });
+    }
   }, [user, redirect, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     try {
       if (mode === "in") {
@@ -59,7 +61,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + safePath(redirect), data: { display_name: name } },
+          options: { emailRedirectTo: `${window.location.origin}/auth?redirect=${encodeURIComponent(authDestination(redirect))}`, data: { display_name: name.trim() } },
         });
         if (error) throw error;
         setSent("Te enviamos un correo para confirmar tu cuenta. Ábrelo para terminar el registro.");
@@ -76,9 +78,14 @@ function AuthPage() {
   }
 
   async function social(provider: "google") {
-    if (redirect) sessionStorage.setItem("nexo_redirect", safePath(redirect));
+    if (busy) return;
+    sessionStorage.setItem("nexo_redirect", authDestination(redirect));
+    setBusy(true);
+    try {
     const r = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (r.error) toast.error(errMsg(r.error));
+    } catch (error) { toast.error(errMsg(error)); }
+    finally { setBusy(false); }
   }
 
   return (
@@ -94,7 +101,7 @@ function AuthPage() {
             <>
               {mode !== "forgot" && (
                 <div className="mt-6 space-y-3">
-                  <Button variant="outline" className="w-full" onClick={() => social("google")}>Continuar con Google</Button>
+                  <Button variant="outline" className="w-full" disabled={busy} onClick={() => social("google")}>Continuar con Google</Button>
                   <div className="flex items-center gap-3 py-2 text-xs text-muted-foreground">
                     <span className="h-px flex-1 bg-border" /> o con correo <span className="h-px flex-1 bg-border" />
                   </div>
@@ -114,7 +121,7 @@ function AuthPage() {
                 {mode !== "forgot" && (
                   <div className="space-y-1.5">
                     <Label htmlFor="pw">Contraseña</Label>
-                    <Input id="pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <Input id="pw" type="password" required minLength={mode === "up" ? 8 : undefined} autoComplete={mode === "up" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
                   </div>
                 )}
                 <Button type="submit" className="w-full" disabled={busy}>

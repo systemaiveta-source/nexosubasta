@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { safeDestination } from "./destinations";
 
 type AuthCtx = { session: Session | null; user: User | null; ready: boolean };
 const Ctx = createContext<AuthCtx>({ session: null, user: null, ready: false });
@@ -21,10 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       if (event === "SIGNED_IN") {
         const r = sessionStorage.getItem("nexo_redirect");
-        if (r && r.startsWith("/") && !r.startsWith("//")) {
-          sessionStorage.removeItem("nexo_redirect");
-          router.history.push(r);
-        }
+        sessionStorage.removeItem("nexo_redirect");
+        const destination = safeDestination(r);
+        if (destination) router.history.push(destination);
       }
       router.invalidate();
       if (event !== "SIGNED_OUT") qc.invalidateQueries();
@@ -45,7 +45,8 @@ export function useRoles() {
     queryKey: ["roles", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user!.id);
+      if (!user) return [];
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
       if (error) throw error;
       return data.map((r) => r.role as Role);
     },

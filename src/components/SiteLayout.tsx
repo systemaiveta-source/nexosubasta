@@ -5,18 +5,22 @@ import { Bell, Menu, X } from "lucide-react";
 import logo from "@/assets/nexo-logo.png.asset.json";
 import { useAuth, useRoles, signOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 function useUnread(userId: string | undefined) {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["unread", userId],
     enabled: !!userId,
+    refetchInterval: 30000,
     queryFn: async () => {
-      const { count } = await supabase
+      if (!userId) return 0;
+      const { count, error } = await supabase
         .from("notifications")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", userId!)
+        .eq("user_id", userId)
         .eq("read", false);
+      if (error) throw error;
       return count ?? 0;
     },
   });
@@ -39,7 +43,7 @@ const linkCls = "rounded-md px-3 py-2 text-muted-foreground hover:bg-secondary h
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth();
-  const { isStaff, isSeller } = useRoles();
+  const { isStaff } = useRoles();
   const unread = useUnread(user?.id);
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
@@ -49,7 +53,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     <>
       <Link to="/subastas" className={linkCls} activeProps={{ className: "text-foreground" }}>Subastas</Link>
       {user && <Link to="/panel" className={linkCls} activeProps={{ className: "text-foreground" }}>Mis ofertas</Link>}
-      {user && <Link to="/vendedor" className={linkCls} activeProps={{ className: "text-foreground" }}>{isSeller ? "Vender" : "Quiero vender"}</Link>}
+      {user && <Link to="/vendedor" className={linkCls} activeProps={{ className: "text-foreground" }}>Subastar</Link>}
       {user && <Link to="/operaciones" className={linkCls} activeProps={{ className: "text-foreground" }}>Operaciones</Link>}
       {isStaff && <Link to="/admin" className={linkCls} activeProps={{ className: "text-foreground" }}>Administración</Link>}
       {user && <Link to="/perfil" className={linkCls} activeProps={{ className: "text-foreground" }}>Perfil</Link>}
@@ -87,13 +91,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             {user && (
-              <button onClick={() => signOut(qc, navigate)} className="hidden rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary lg:block">
+              <Button variant="ghost" onClick={() => signOut(qc, navigate)} className="hidden lg:block">
                 Salir
-              </button>
+              </Button>
             )}
-            <button className="rounded-md p-2 hover:bg-secondary lg:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menú">
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menú" aria-expanded={open}>
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            </Button>
           </div>
         </div>
         {open && (
@@ -102,7 +106,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <Link to="/instalar" className={linkCls}>Instalar app</Link>
             <Link to="/ayuda" className={linkCls}>Ayuda</Link>
             {user && (
-              <button onClick={() => signOut(qc, navigate)} className={`${linkCls} text-left`}>Cerrar sesión</button>
+              <Button variant="ghost" onClick={() => signOut(qc, navigate)} className="justify-start">Cerrar sesión</Button>
             )}
           </nav>
         )}
