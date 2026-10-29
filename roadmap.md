@@ -5,6 +5,7 @@
 - [ ] Fase 4: catálogo y página de subasta hechos; faltan paneles comprador/vendedor y editor de publicación
 - [ ] Fase 5: suscripciones (pagos solo con autorización)
 - [ ] Fase 6: operaciones privadas, reputación
-- [ ] Fase 7: administración, notificaciones, IA supervisora
+- [x] Panel de administración (pagos, membresías, métodos de pago, usuarios, subastas, ajustes, registro)
+- [ ] Fase 7: notificaciones, IA supervisora y recomendaciones
 - [ ] Fase 8: pruebas + modo sin conexión
 - [ ] Fase 9: documentación y lanzamiento
