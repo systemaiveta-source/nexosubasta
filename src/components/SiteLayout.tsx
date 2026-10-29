@@ -28,8 +28,10 @@ function useUnread(userId: string | undefined) {
     if (!userId) return;
     const ch = supabase
       .channel(`notif-${userId}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, () =>
-        qc.invalidateQueries({ queryKey: ["unread", userId] }),
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+        () => qc.invalidateQueries({ queryKey: ["unread", userId] }),
       )
       .subscribe();
     return () => {
@@ -39,7 +41,8 @@ function useUnread(userId: string | undefined) {
   return q.data ?? 0;
 }
 
-const linkCls = "rounded-md px-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground";
+const linkCls =
+  "rounded-md px-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground";
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth();
@@ -51,12 +54,34 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
   const links = (
     <>
-      <Link to="/subastas" className={linkCls} activeProps={{ className: "text-foreground" }}>Subastas</Link>
-      {user && <Link to="/panel" className={linkCls} activeProps={{ className: "text-foreground" }}>Mis ofertas</Link>}
-      {user && <Link to="/vendedor" className={linkCls} activeProps={{ className: "text-foreground" }}>Subastar</Link>}
-      {user && <Link to="/operaciones" className={linkCls} activeProps={{ className: "text-foreground" }}>Operaciones</Link>}
-      {isStaff && <Link to="/admin" className={linkCls} activeProps={{ className: "text-foreground" }}>Administración</Link>}
-      {user && <Link to="/perfil" className={linkCls} activeProps={{ className: "text-foreground" }}>Perfil</Link>}
+      <Link to="/subastas" className={linkCls} activeProps={{ className: "text-foreground" }}>
+        Subastas
+      </Link>
+      {user && (
+        <Link to="/panel" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Mis ofertas
+        </Link>
+      )}
+      {user && (
+        <Link to="/vendedor" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Subastar
+        </Link>
+      )}
+      {user && (
+        <Link to="/operaciones" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Operaciones
+        </Link>
+      )}
+      {isStaff && (
+        <Link to="/admin" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Administración
+        </Link>
+      )}
+      {user && (
+        <Link to="/perfil" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Perfil
+        </Link>
+      )}
     </>
   );
 
@@ -76,7 +101,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <nav className="hidden items-center gap-1 text-sm font-medium lg:flex">{links}</nav>
           <div className="flex items-center gap-1">
             {user && (
-              <Link to="/notificaciones" className="relative rounded-md p-2 hover:bg-secondary" aria-label="Notificaciones">
+              <Link
+                to="/notificaciones"
+                className="relative rounded-md p-2 hover:bg-secondary"
+                aria-label="Notificaciones"
+              >
                 <Bell className="h-5 w-5" />
                 {unread > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-nexo-red px-1 text-[10px] font-bold text-primary-foreground">
@@ -86,27 +115,54 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             {ready && !user && (
-              <Link to="/auth" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+              <Link
+                to="/auth"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
                 Entrar
               </Link>
             )}
             {user && (
-              <Button variant="ghost" onClick={() => signOut(qc, navigate)} className="hidden lg:block">
+              <Button
+                variant="ghost"
+                onClick={() => signOut(qc, navigate)}
+                className="hidden lg:block"
+              >
                 Salir
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menú" aria-expanded={open}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setOpen((o) => !o)}
+              aria-label="Menú"
+              aria-expanded={open}
+            >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
         {open && (
-          <nav className="flex flex-col gap-1 border-t border-border px-4 py-3 text-sm font-medium lg:hidden" onClick={() => setOpen(false)}>
+          <nav
+            className="flex flex-col gap-1 border-t border-border px-4 py-3 text-sm font-medium lg:hidden"
+            onClick={() => setOpen(false)}
+          >
             {links}
-            <Link to="/instalar" className={linkCls}>Instalar app</Link>
-            <Link to="/ayuda" className={linkCls}>Ayuda</Link>
+            <Link to="/instalar" className={linkCls}>
+              Instalar app
+            </Link>
+            <Link to="/ayuda" className={linkCls}>
+              Ayuda
+            </Link>
             {user && (
-              <Button variant="ghost" onClick={() => signOut(qc, navigate)} className="justify-start">Cerrar sesión</Button>
+              <Button
+                variant="ghost"
+                onClick={() => signOut(qc, navigate)}
+                className="justify-start"
+              >
+                Cerrar sesión
+              </Button>
             )}
           </nav>
         )}
@@ -116,12 +172,24 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} NEXO</p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/planes" className="hover:text-foreground">Planes</Link>
-            <Link to="/instalar" className="hover:text-foreground">Instalar app</Link>
-            <Link to="/normas" className="hover:text-foreground">Normas</Link>
-            <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>
-            <Link to="/condiciones" className="hover:text-foreground">Condiciones</Link>
-            <Link to="/ayuda" className="hover:text-foreground">Ayuda</Link>
+            <Link to="/planes" className="hover:text-foreground">
+              Planes
+            </Link>
+            <Link to="/instalar" className="hover:text-foreground">
+              Instalar app
+            </Link>
+            <Link to="/normas" className="hover:text-foreground">
+              Normas
+            </Link>
+            <Link to="/privacidad" className="hover:text-foreground">
+              Privacidad
+            </Link>
+            <Link to="/condiciones" className="hover:text-foreground">
+              Condiciones
+            </Link>
+            <Link to="/ayuda" className="hover:text-foreground">
+              Ayuda
+            </Link>
           </div>
         </div>
       </footer>
@@ -129,7 +197,15 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function PageShell({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
+export function PageShell({
+  title,
+  actions,
+  children,
+}: {
+  title: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -148,7 +224,9 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
     <SiteLayout>
       <article className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="font-display text-3xl font-bold sm:text-4xl">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Borrador preliminar — pendiente de revisión legal antes del lanzamiento.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Borrador preliminar — pendiente de revisión legal antes del lanzamiento.
+        </p>
         <div className="mt-8 space-y-6 leading-relaxed [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
           {children}
         </div>
@@ -158,5 +236,9 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">{children}</div>;
+  return (
+    <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
+      {children}
+    </div>
+  );
 }

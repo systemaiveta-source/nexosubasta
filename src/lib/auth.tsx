@@ -14,13 +14,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) =>
-      setState({ session: data.session, user: data.session?.user ?? null, ready: true }),
-    );
+    supabase.auth
+      .getSession()
+      .then(({ data }) =>
+        setState({ session: data.session, user: data.session?.user ?? null, ready: true }),
+      );
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setState({ session, user: session?.user ?? null, ready: true });
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (event === "SIGNED_IN") {
+      if (event === "SIGNED_IN" && router.state.location.pathname !== "/auth") {
         const r = sessionStorage.getItem("nexo_redirect");
         sessionStorage.removeItem("nexo_redirect");
         const destination = safeDestination(r);
@@ -46,7 +48,10 @@ export function useRoles() {
     enabled: !!user,
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
       if (error) throw error;
       return data.map((r) => r.role as Role);
     },
@@ -61,7 +66,10 @@ export function useRoles() {
   };
 }
 
-export async function signOut(qc: ReturnType<typeof useQueryClient>, navigate: (o: { to: "/auth"; replace: boolean }) => void) {
+export async function signOut(
+  qc: ReturnType<typeof useQueryClient>,
+  navigate: (o: { to: "/auth"; replace: boolean }) => void,
+) {
   await qc.cancelQueries();
   qc.clear();
   await supabase.auth.signOut();
