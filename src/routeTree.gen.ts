@@ -21,13 +21,13 @@ import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedNotificacionesRouteImport } from './routes/_authenticated/notificaciones'
-import { Route as AuthenticatedOperacionesRouteImport } from './routes/_authenticated/operaciones'
 import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticated/vendedor'
 import { Route as SubastasIndexRouteImport } from './routes/subastas.index'
 import { Route as SubastasIdRouteImport } from './routes/subastas.$id'
 import { Route as UsuariosIdRouteImport } from './routes/usuarios.$id'
+import { Route as AuthenticatedOperacionesIndexRouteImport } from './routes/_authenticated/operaciones.index'
 import { Route as AuthenticatedOperacionesIdRouteImport } from './routes/_authenticated/operaciones.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -90,12 +90,6 @@ const AuthenticatedNotificacionesRoute =
     path: '/notificaciones',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedOperacionesRoute =
-  AuthenticatedOperacionesRouteImport.update({
-    id: '/operaciones',
-    path: '/operaciones',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedPanelRoute = AuthenticatedPanelRouteImport.update({
   id: '/panel',
   path: '/panel',
@@ -126,11 +120,17 @@ const UsuariosIdRoute = UsuariosIdRouteImport.update({
   path: '/usuarios/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOperacionesIndexRoute =
+  AuthenticatedOperacionesIndexRouteImport.update({
+    id: '/operaciones/',
+    path: '/operaciones/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOperacionesIdRoute =
   AuthenticatedOperacionesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedOperacionesRoute,
+    id: '/operaciones/$id',
+    path: '/operaciones/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -145,7 +145,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/panel': typeof AuthenticatedPanelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
@@ -153,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas/': typeof SubastasIndexRoute
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
+  '/operaciones/': typeof AuthenticatedOperacionesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,7 +166,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/panel': typeof AuthenticatedPanelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
@@ -174,6 +173,7 @@ export interface FileRoutesByTo {
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas': typeof SubastasIndexRoute
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
+  '/operaciones': typeof AuthenticatedOperacionesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -189,7 +189,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/_authenticated/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/_authenticated/panel': typeof AuthenticatedPanelRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
@@ -197,6 +196,7 @@ export interface FileRoutesById {
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas/': typeof SubastasIndexRoute
   '/_authenticated/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
+  '/_authenticated/operaciones/': typeof AuthenticatedOperacionesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -212,7 +212,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/notificaciones'
-    | '/operaciones'
     | '/panel'
     | '/perfil'
     | '/vendedor'
@@ -220,6 +219,7 @@ export interface FileRouteTypes {
     | '/usuarios/$id'
     | '/subastas/'
     | '/operaciones/$id'
+    | '/operaciones/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -233,7 +233,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/notificaciones'
-    | '/operaciones'
     | '/panel'
     | '/perfil'
     | '/vendedor'
@@ -241,6 +240,7 @@ export interface FileRouteTypes {
     | '/usuarios/$id'
     | '/subastas'
     | '/operaciones/$id'
+    | '/operaciones'
   id:
     | '__root__'
     | '/'
@@ -255,7 +255,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/notificaciones'
-    | '/_authenticated/operaciones'
     | '/_authenticated/panel'
     | '/_authenticated/perfil'
     | '/_authenticated/vendedor'
@@ -263,6 +262,7 @@ export interface FileRouteTypes {
     | '/usuarios/$id'
     | '/subastas/'
     | '/_authenticated/operaciones/$id'
+    | '/_authenticated/operaciones/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -367,13 +367,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificacionesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/operaciones': {
-      id: '/_authenticated/operaciones'
-      path: '/operaciones'
-      fullPath: '/operaciones'
-      preLoaderRoute: typeof AuthenticatedOperacionesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/panel': {
       id: '/_authenticated/panel'
       path: '/panel'
@@ -416,46 +409,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsuariosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/operaciones/': {
+      id: '/_authenticated/operaciones/'
+      path: '/operaciones'
+      fullPath: '/operaciones/'
+      preLoaderRoute: typeof AuthenticatedOperacionesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/operaciones/$id': {
       id: '/_authenticated/operaciones/$id'
-      path: '/$id'
+      path: '/operaciones/$id'
       fullPath: '/operaciones/$id'
       preLoaderRoute: typeof AuthenticatedOperacionesIdRouteImport
-      parentRoute: typeof AuthenticatedOperacionesRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedOperacionesRouteChildren {
-  AuthenticatedOperacionesIdRoute: typeof AuthenticatedOperacionesIdRoute
-}
-
-const AuthenticatedOperacionesRouteChildren: AuthenticatedOperacionesRouteChildren =
-  {
-    AuthenticatedOperacionesIdRoute: AuthenticatedOperacionesIdRoute,
-  }
-
-const AuthenticatedOperacionesRouteWithChildren =
-  AuthenticatedOperacionesRoute._addFileChildren(
-    AuthenticatedOperacionesRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedNotificacionesRoute: typeof AuthenticatedNotificacionesRoute
-  AuthenticatedOperacionesRoute: typeof AuthenticatedOperacionesRouteWithChildren
   AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
+  AuthenticatedOperacionesIdRoute: typeof AuthenticatedOperacionesIdRoute
+  AuthenticatedOperacionesIndexRoute: typeof AuthenticatedOperacionesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedNotificacionesRoute: AuthenticatedNotificacionesRoute,
-  AuthenticatedOperacionesRoute: AuthenticatedOperacionesRouteWithChildren,
   AuthenticatedPanelRoute: AuthenticatedPanelRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,
+  AuthenticatedOperacionesIdRoute: AuthenticatedOperacionesIdRoute,
+  AuthenticatedOperacionesIndexRoute: AuthenticatedOperacionesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
