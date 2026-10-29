@@ -1,4 +1,5 @@
 # NEXO roadmap
+- [ ] Pagos manuales: métodos estructurados, comprobantes privados, historial, revisión y aprobación única; sin publicación ni proveedores externos.
 - [x] Fase 1: marca, sistema de diseño, inicio, páginas legales, instalación PWA (manifiesto + iconos)
 - [x] Fase 2: cuentas (correo, Google), roles, perfiles en base de datos
 - [x] Fase 3: motor de subastas probado (reserva, 60 s, cierre automático cada minuto)
