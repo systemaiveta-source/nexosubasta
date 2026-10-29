@@ -402,6 +402,44 @@ export type Database = {
           },
         ]
       }
+      membership_review_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          decision: string
+          id: string
+          proof_values: Json | null
+          reason: string | null
+          request_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          proof_values?: Json | null
+          reason?: string | null
+          request_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          proof_values?: Json | null
+          reason?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_review_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
@@ -664,34 +702,55 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          method_snapshot: Json
           payment_method_id: string | null
           plan_id: string
+          plan_snapshot: Json
+          proof_values: Json
           reference: string
+          review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          revision: number
           status: string
+          submission_key: string | null
+          subscription_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          method_snapshot?: Json
           payment_method_id?: string | null
           plan_id: string
+          plan_snapshot?: Json
+          proof_values?: Json
           reference?: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
           status?: string
+          submission_key?: string | null
+          subscription_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          method_snapshot?: Json
           payment_method_id?: string | null
           plan_id?: string
+          plan_snapshot?: Json
+          proof_values?: Json
           reference?: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
           status?: string
+          submission_key?: string | null
+          subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1057,9 +1116,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      review_manual_membership: {
+        Args: { _decision: string; _reason?: string; _request: string }
+        Returns: string
+      }
       set_auction_start: {
         Args: { _auction_id: string; _starts_at: string }
         Returns: undefined
+      }
+      submit_manual_membership: {
+        Args: {
+          _key: string
+          _method: string
+          _plan: string
+          _request?: string
+          _values: Json
+        }
+        Returns: string
       }
       transfer_credit: {
         Args: { _amount: number; _to_code: string }

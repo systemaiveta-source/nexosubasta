@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useRoles } from "@/lib/auth";
+import { PaymentMethodsAdmin } from "@/components/PaymentMethodsAdmin";
+import { MembershipRequests } from "@/components/MembershipRequests";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -57,9 +59,9 @@ function AdminPage() {
       {!isAdmin && tab !== "resumen" && tab !== "subastas" ? <Empty>Solo los administradores pueden usar esta sección.</Empty> : (
         <>
           {tab === "resumen" && <Resumen go={setTab} />}
-          {tab === "pagos" && <Pagos />}
+          {tab === "pagos" && <MembershipRequests admin />}
           {tab === "planes" && <Planes />}
-          {tab === "metodos" && <Metodos />}
+          {tab === "metodos" && <PaymentMethodsAdmin />}
           {tab === "usuarios" && <Usuarios />}
           {tab === "subastas" && <Subastas />}
           {tab === "ajustes" && <Ajustes />}
@@ -104,50 +106,6 @@ function Resumen({ go }: { go: (t: Tab) => void }) {
       <Stat label="Pagos por aprobar" value={d?.pending ?? "…"} onClick={() => go("pagos")} />
       <Stat label="Membresías activas" value={d?.subs ?? "…"} onClick={() => go("usuarios")} />
       <Stat label="Disputas abiertas" value={d?.disputes ?? "…"} />
-    </div>
-  );
-}
-
-function Pagos() {
-  const qc = useQueryClient();
-  const q = useQuery({
-    queryKey: ["admin-requests"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("subscription_requests")
-        .select("id,reference,status,created_at,user_id,profiles(display_name),plans(name,price,currency),payment_methods(name)")
-        .order("created_at", { ascending: false }).limit(100);
-      if (error) throw error;
-      return data;
-    },
-  });
-  const m = useMutation({
-    mutationFn: async ({ id, ok }: { id: string; ok: boolean }) => {
-      const { error } = await supabase.rpc("admin_review_subscription", { _request: id, _approve: ok });
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Solicitud revisada"); qc.invalidateQueries({ queryKey: ["admin-requests"] }); },
-    onError: (e) => toast.error(errMsg(e)),
-  });
-  if (!q.data?.length) return <Empty>{q.isLoading ? "Cargando…" : "No hay solicitudes de pago."}</Empty>;
-  return (
-    <div className="space-y-3">
-      {q.data.map((r) => (
-        <div key={r.id} className={card}>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p className="font-semibold">{r.profiles?.display_name} · {r.plans?.name} ({r.plans?.currency} {r.plans?.price})</p>
-              <p className="text-sm text-muted-foreground">Método: {r.payment_methods?.name ?? "—"} · {fmtDate(r.created_at)}</p>
-              <p className="mt-1 break-all text-sm">Comprobante: <b>{r.reference}</b></p>
-            </div>
-            {r.status === "pending" ? (
-              <div className="flex gap-2">
-                <button className={btn} disabled={m.isPending} onClick={() => m.mutate({ id: r.id, ok: true })}>Aprobar</button>
-                <button className={btn2} disabled={m.isPending} onClick={() => m.mutate({ id: r.id, ok: false })}>Rechazar</button>
-              </div>
-            ) : <span className="rounded-full bg-secondary px-3 py-1 text-xs">{r.status === "approved" ? "Aprobada" : "Rechazada"}</span>}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -201,76 +159,6 @@ function PlanForm({ p, onSaved }: { p: PlanRow; onSaved: () => void }) {
       <label className="block text-sm">Beneficios (uno por línea)<textarea rows={4} className={input} value={f.benefits} onChange={(e) => setF({ ...f, benefits: e.target.value })} /></label>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Visible para los usuarios</label>
       <button className={btn} disabled={m.isPending} onClick={() => m.mutate()}>Guardar</button>
-    </div>
-  );
-}
-
-function Metodos() {
-  const qc = useQueryClient();
-  const q = useQuery({
-    queryKey: ["admin-pm"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("payment_methods").select("*").order("sort");
-      if (error) throw error;
-      return data;
-    },
-  });
-  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-pm"] });
-  const [n, setN] = useState({ name: "", kind: "manual", instructions: "" });
-  const add = useMutation({
-    mutationFn: async () => {
-      if (n.name.trim().length < 2 || n.instructions.trim().length < 5) throw new Error("Escribe nombre e instrucciones");
-      const { error } = await supabase.from("payment_methods").insert({ name: n.name.trim(), kind: n.kind, instructions: n.instructions.trim(), details: {}, active: true, sort: (q.data?.length ?? 0) + 1 });
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Método agregado"); setN({ name: "", kind: "manual", instructions: "" }); refresh(); },
-    onError: (e) => toast.error(errMsg(e)),
-  });
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Los usuarios pagan por estos medios y envían su comprobante; tú lo apruebas en "Pagos por aprobar". No se cobra nada automáticamente.</p>
-      {q.data?.map((pm) => <MetodoForm key={pm.id} pm={pm} onSaved={refresh} />)}
-      <div className={`${card} space-y-2`}>
-        <p className="font-semibold">Agregar método de pago</p>
-        <input className={input} placeholder="Nombre (ej. Binance Pay)" value={n.name} onChange={(e) => setN({ ...n, name: e.target.value })} />
-        <select className={input} value={n.kind} onChange={(e) => setN({ ...n, kind: e.target.value })}>
-          <option value="manual">Manual</option><option value="bank">Transferencia bancaria</option>
-          <option value="wallet">Billetera digital</option><option value="crypto">Criptomoneda</option><option value="card">Tarjeta</option>
-        </select>
-        <textarea rows={3} className={input} placeholder="Instrucciones: número de cuenta, dirección de billetera, a nombre de…" value={n.instructions} onChange={(e) => setN({ ...n, instructions: e.target.value })} />
-        <button className={btn} disabled={add.isPending} onClick={() => add.mutate()}>Agregar</button>
-      </div>
-    </div>
-  );
-}
-
-function MetodoForm({ pm, onSaved }: { pm: { id: string; name: string; instructions: string; active: boolean }; onSaved: () => void }) {
-  const [f, setF] = useState({ name: pm.name, instructions: pm.instructions, active: pm.active });
-  const save = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("payment_methods").update(f).eq("id", pm.id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Guardado"); onSaved(); },
-    onError: (e) => toast.error(errMsg(e)),
-  });
-  const del = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("payment_methods").delete().eq("id", pm.id);
-      if (error) throw error;
-    },
-    onSuccess: onSaved,
-    onError: () => toast.error("No se puede eliminar porque tiene pagos asociados. Desactívalo."),
-  });
-  return (
-    <div className={`${card} space-y-2`}>
-      <input className={input} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-      <textarea rows={2} className={input} value={f.instructions} onChange={(e) => setF({ ...f, instructions: e.target.value })} />
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Activo</label>
-        <button className={btn} disabled={save.isPending} onClick={() => save.mutate()}>Guardar</button>
-        <button className={btn2} disabled={del.isPending} onClick={() => confirm("¿Eliminar este método?") && del.mutate()}>Eliminar</button>
-      </div>
     </div>
   );
 }
