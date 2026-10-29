@@ -55,7 +55,7 @@ function NotificationsPage() {
     if (busy || user?.id !== userId) return;
     setBusy(true);
     try {
-      await markRead({ data: { id } });
+      await markRead({ data: id ? { id } : {} });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["notifications", userId] }),
         qc.invalidateQueries({ queryKey: ["unread", userId] }),
