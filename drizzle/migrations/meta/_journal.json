@@ -36,6 +36,13 @@
       "when": 1793309189178,
       "tag": "0004_fix_manual_method_guard_ambiguous_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793311150410,
+      "tag": "0005_secure_services_operations",
+      "breakpoints": true
     }
   ]
 }
