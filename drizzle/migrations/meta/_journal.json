@@ -43,6 +43,13 @@
       "when": 1793311150410,
       "tag": "0005_secure_services_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793311184196,
+      "tag": "0006_atomic_bids_client_service_close",
+      "breakpoints": true
     }
   ]
 }

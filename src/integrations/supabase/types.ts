@@ -1360,6 +1360,15 @@ export type Database = {
         Args: { _attachment?: string; _body: string; _key: string; _tx: string }
         Returns: string
       }
+      service_bid_conditions: {
+        Args: {
+          _amount: number
+          _auction: string
+          _conditions: string
+          _key: string
+        }
+        Returns: Json
+      }
       set_auction_start: {
         Args: { _auction_id: string; _starts_at: string }
         Returns: undefined
