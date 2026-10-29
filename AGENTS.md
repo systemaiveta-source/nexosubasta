@@ -13,3 +13,4 @@
 - Membership documents use a private bucket and authenticated, signature-checked server uploads; temporary signed links are generated only under storage RLS.
 - Payment method configuration and proof requirements share a client-safe schema; each request freezes method and plan snapshots to preserve payment instructions and purchased duration.
 - PL/pgSQL validation routines must use distinct variable names and explicitly qualified set-returning-function column aliases to prevent variable/column ambiguity without weakening validation.
+- Authentication returns and notification links share a known-route destination validator; notification reads and read-state writes use authenticated server functions scoped to the caller, with polling as a reliable update fallback.

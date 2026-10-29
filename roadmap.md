@@ -1,4 +1,6 @@
 # NEXO roadmap
+- [x] Centro interno de notificaciones: lectura por usuario, filtro, paginación, actualización y marcado; destinos conocidos compartidos con retorno tras iniciar sesión. 24 pruebas aprobadas; navegación con cuenta real, filtro vacío, móvil y cierre de sesión comprobados.
+- [ ] Notificaciones con registros reales: la cuenta de prueba no tiene avisos; quedan marcado/lectura con avisos, eventos, aislamiento entre dos cuentas y push sin proveedor configurado verificado.
 - [x] Ambigüedad f: reproducida en manual_method_guard, corregida con alias explícitos y verificada mediante alta/edición/lectura/eliminación de método temporal inactivo y rechazo de requisitos inválidos.
 - [x] Errores actuales de tipos en pagos corregidos; 18 pruebas y lint de los cinco módulos de pagos aprobados; vista previa sin errores de compilación.
 - [ ] Guardado desde administración de extremo a extremo, activación/desactivación, conservación de historial y aprobación única: bloqueados para verificación por falta de sesión administradora autorizada; la cuenta solicitante es participante y la herramienta no permite solicitar autorización para otra cuenta en este contexto.
