@@ -1356,6 +1356,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      new_auction_draft: {
+        Args: { _data: Json; _private: Json }
+        Returns: string
+      }
       notify: {
         Args: { _body: string; _link: string; _title: string; _user: string }
         Returns: undefined

@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION public.new_auction_draft(_data jsonb,_private jsonb) RETURNS uuid LANGUAGE sql SECURITY INVOKER SET search_path=public AS $$ SELECT public.save_auction_draft(NULL,_data,_private) $$;
+REVOKE ALL ON FUNCTION public.new_auction_draft(jsonb,jsonb) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.new_auction_draft(jsonb,jsonb) TO authenticated;
