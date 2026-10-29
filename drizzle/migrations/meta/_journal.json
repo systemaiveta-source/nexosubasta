@@ -71,6 +71,13 @@
       "when": 1793311587208,
       "tag": "0009_new_draft_wrapper",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793311754851,
+      "tag": "0010_completion_stage_guard",
+      "breakpoints": true
     }
   ]
 }
