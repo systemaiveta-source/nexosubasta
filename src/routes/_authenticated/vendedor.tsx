@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useRoles } from "@/lib/auth";
 import { money, errMsg, statusLabel } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
+import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
+import type { AuctionMethod } from "@/lib/auction-payments";
 import { CURRENCIES, COUNTRIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
@@ -66,6 +68,7 @@ function Seller() {
     reserve: "",
     expected: "",
   });
+  const [methods, setMethods] = useState<AuctionMethod[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
@@ -159,6 +162,7 @@ function Seller() {
           scope: f.scope,
           delivery_terms:
             f.delivery_terms || (type === "service" ? "Servicio acordado por chat" : "A convenir"),
+          accepted_payment_methods: methods,
           images,
           starting_price: type === "service" ? 1 : Number(f.starting_price),
           min_increment: Number(f.min_increment),
@@ -421,6 +425,7 @@ function Seller() {
               </label>
             </div>
           </div>
+          <AuctionPaymentMethods value={methods} onChange={setMethods} />
           <div className="flex gap-2">
             <Button disabled={busy} onClick={() => create(true)}>
               Publicar ahora

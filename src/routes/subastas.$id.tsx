@@ -10,6 +10,7 @@ import { useImageUrls } from "@/lib/images";
 import { useAuth, useRoles } from "@/lib/auth";
 import { errMsg, minNextBid, money, newIdempotencyKey, scopeLabel, timeLeft } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { parseAuctionMethods } from "@/lib/auction-payments";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/subastas/$id")({
 });
 
 const AUCTION_COLUMNS =
-  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending";
+  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods";
 
 function AuctionPage() {
   const { id } = Route.useParams();
@@ -42,6 +43,7 @@ function AuctionPage() {
   const [imgIdx, setImgIdx] = useState(0);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [conditions, setConditions] = useState("");
   const keyRef = useRef<string>(newIdempotencyKey());
   const closingRef = useRef(false);
@@ -175,7 +177,14 @@ function AuctionPage() {
   const isLeader = user?.id === a.leader_id;
   const ended = a.status !== "active" && a.status !== "scheduled";
   const msLeft = a.ends_at ? new Date(a.ends_at).getTime() - now : 0;
-  const canBid = a.status === "active" && msLeft > 0 && !!user && !isSeller && !isLeader;
+  const methods = parseAuctionMethods(a.accepted_payment_methods);
+  const canBid =
+    a.status === "active" &&
+    msLeft > 0 &&
+    !!user &&
+    !isSeller &&
+    !isLeader &&
+    (methods.length === 0 || accepted);
 
   async function placeBid(e: React.FormEvent) {
     e.preventDefault();
@@ -196,19 +205,14 @@ function AuctionPage() {
     }
     setBusy(true);
     try {
-      const { data, error } =
-        a?.auction_type === "service"
-          ? await supabase.rpc("service_bid_conditions", {
-              _auction: id,
-              _amount: value,
-              _key: keyRef.current,
-              _conditions: conditions,
-            })
-          : await supabase.rpc("place_bid", {
-              _auction_id: id,
-              _amount: value,
-              _idempotency_key: keyRef.current,
-            });
+      const { data, error } = await supabase.rpc("bid_with_payment_acceptance", {
+        _auction: id,
+        _amount: value,
+        _key: keyRef.current,
+        _accept: accepted,
+        _terms: a?.accepted_payment_methods ?? [],
+        _conditions: conditions,
+      });
       if (error) throw error;
       const r = data as { extended?: boolean; duplicate?: boolean };
       keyRef.current = newIdempotencyKey();
@@ -401,6 +405,26 @@ function AuctionPage() {
                         minLength={5}
                         maxLength={2000}
                       />
+                    )}
+                    {methods.length > 0 && (
+                      <div className="space-y-2 border-y border-border py-3">
+                        <p className="text-sm font-semibold">Métodos aceptados</p>
+                        <ul className="text-sm">
+                          {methods.map((m, i) => (
+                            <li key={i}>
+                              {m.name} {m.asset} {m.network}
+                            </li>
+                          ))}
+                        </ul>
+                        <label className="flex items-start gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={accepted}
+                            onChange={(e) => setAccepted(e.target.checked)}
+                          />
+                          Acepto pagar por estos métodos. NEXO no procesa ni verifica el pago.
+                        </label>
+                      </div>
                     )}
                     <div className="flex gap-2">
                       <Input
