@@ -153,8 +153,7 @@ function Seller() {
     setBusy(true);
     try {
       const cur = f.currency || profile.data?.currency || "USD";
-      const { data: draftId, error } = await supabase.rpc("save_auction_draft", {
-        _id: editingId ?? "00000000-0000-0000-0000-000000000000",
+      const draftArgs = {
         _data: {
           title: f.title.trim(),
           description: f.description.trim(),
@@ -183,7 +182,10 @@ function Seller() {
           expected_price: type === "item" && f.expected ? Number(f.expected) : null,
           service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
         },
-      });
+      };
+      const { data: draftId, error } = editingId
+        ? await supabase.rpc("save_auction_draft", { ...draftArgs, _id: editingId })
+        : await supabase.rpc("new_auction_draft", draftArgs);
       if (error) throw error;
       if (!draftId) throw new Error("No se pudo guardar el borrador");
       if (publish) {
@@ -225,32 +227,36 @@ function Seller() {
       const p = parsed.private;
       if (!a) throw new Error("Borrador no disponible");
       setEditingId(id);
-      setType(a.auction_type === "service" ? "service" : "item");
+      setType(a["auction_type"] === "service" ? "service" : "item");
       setF({
-        title: String(a.title ?? ""),
-        description: String(a.description ?? ""),
-        category_id: String(a.category_id ?? ""),
-        country: String(a.country ?? ""),
-        city: String(a.city ?? ""),
-        scope: String(a.scope ?? "national"),
-        delivery_terms: String(a.delivery_terms ?? ""),
+        title: String(a["title"] ?? ""),
+        description: String(a["description"] ?? ""),
+        category_id: String(a["category_id"] ?? ""),
+        country: String(a["country"] ?? ""),
+        city: String(a["city"] ?? ""),
+        scope: String(a["scope"] ?? "national"),
+        delivery_terms: String(a["delivery_terms"] ?? ""),
         starting_price: String(
-          a.auction_type === "service" ? (p?.service_budget ?? "") : (a.starting_price ?? ""),
+          a["auction_type"] === "service"
+            ? (p?.["service_budget"] ?? "")
+            : (a["starting_price"] ?? ""),
         ),
-        min_increment: String(a.min_increment ?? 1),
-        currency: String(a.currency ?? "USD"),
-        duration_hours: String(a.duration_hours ?? 24),
-        duration_minutes: String(a.duration_minutes ?? 60),
-        service_from: String(a.service_from ?? ""),
-        service_to: String(a.service_to ?? ""),
-        reserve: String(p?.reserve_price ?? ""),
-        expected: String(p?.expected_price ?? ""),
+        min_increment: String(a["min_increment"] ?? 1),
+        currency: String(a["currency"] ?? "USD"),
+        duration_hours: String(a["duration_hours"] ?? 24),
+        duration_minutes: String(a["duration_minutes"] ?? 60),
+        service_from: String(a["service_from"] ?? ""),
+        service_to: String(a["service_to"] ?? ""),
+        reserve: String(p?.["reserve_price"] ?? ""),
+        expected: String(p?.["expected_price"] ?? ""),
       });
       setImages(
-        Array.isArray(a.images) ? a.images.filter((v): v is string => typeof v === "string") : [],
+        Array.isArray(a["images"])
+          ? a["images"].filter((v): v is string => typeof v === "string")
+          : [],
       );
-      setMethods(parseAuctionMethods(a.accepted_payment_methods));
-      setStartsAt(typeof a.starts_at === "string" ? a.starts_at.slice(0, 16) : "");
+      setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
+      setStartsAt(typeof a["starts_at"] === "string" ? a["starts_at"].slice(0, 16) : "");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       toast.error(errMsg(e));
