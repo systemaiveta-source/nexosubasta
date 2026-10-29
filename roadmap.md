@@ -1,4 +1,8 @@
 # NEXO roadmap
+- [x] Ambigüedad f: reproducida en manual_method_guard, corregida con alias explícitos y verificada mediante alta/edición/lectura/eliminación de método temporal inactivo y rechazo de requisitos inválidos.
+- [x] Errores actuales de tipos en pagos corregidos; 18 pruebas y lint de los cinco módulos de pagos aprobados; vista previa sin errores de compilación.
+- [ ] Guardado desde administración de extremo a extremo, activación/desactivación, conservación de historial y aprobación única: bloqueados para verificación por falta de sesión administradora autorizada; la cuenta solicitante es participante y la herramienta no permite solicitar autorización para otra cuenta en este contexto.
+- [ ] Auditoría integral solicitada: cuentas/membresías, productos, servicios con elección del cliente, operaciones/chat, catálogos, notificaciones, pantallas, PWA y pruebas; detenida en la primera prioridad al encontrar el bloqueo de verificación administrativa solicitado por el usuario; no publicar ni activar servicios externos.
 - [ ] Pagos manuales: métodos estructurados, comprobantes privados, historial, revisión y aprobación única; sin publicación ni proveedores externos.
 - [x] Fase 1: marca, sistema de diseño, inicio, páginas legales, instalación PWA (manifiesto + iconos)
 - [x] Fase 2: cuentas (correo, Google), roles, perfiles en base de datos
