@@ -13,6 +13,7 @@ import { useAuth, useRoles } from "@/lib/auth";
 import { money, errMsg, statusLabel } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
 import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
+import { parseAuctionMethods } from "@/lib/auction-payments";
 import type { AuctionMethod } from "@/lib/auction-payments";
 import { CURRENCIES, COUNTRIES } from "@/lib/currency";
 
@@ -68,6 +69,8 @@ function Seller() {
     reserve: "",
     expected: "",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [startsAt, setStartsAt] = useState("");
   const [methods, setMethods] = useState<AuctionMethod[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -150,54 +153,48 @@ function Seller() {
     setBusy(true);
     try {
       const cur = f.currency || profile.data?.currency || "USD";
-      const { data: a, error } = await supabase
-        .from("auctions")
-        .insert({
-          seller_id: user.id,
+      const { data: draftId, error } = await supabase.rpc("save_auction_draft", {
+        _id: editingId ?? "00000000-0000-0000-0000-000000000000",
+        _data: {
           title: f.title.trim(),
           description: f.description.trim(),
           category_id: f.category_id || null,
           country: f.country || null,
           city: f.city || null,
           scope: f.scope,
-          delivery_terms:
-            f.delivery_terms || (type === "service" ? "Servicio acordado por chat" : "A convenir"),
-          accepted_payment_methods: methods,
+          delivery_terms: f.delivery_terms,
           images,
-          starting_price: type === "service" ? 1 : Number(f.starting_price),
+          starting_price: type === "item" ? Number(f.starting_price) : 1,
           min_increment: Number(f.min_increment),
           currency: cur,
-          status: "draft",
           auction_type: type,
           duration_hours:
             type === "item"
               ? Number(f.duration_hours)
               : Math.max(1, Math.ceil(Number(f.duration_minutes) / 60)),
           duration_minutes: type === "service" ? Number(f.duration_minutes) : null,
-          service_from: type === "service" ? f.service_from || null : null,
-          service_to: type === "service" ? f.service_to || null : null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      if (
-        (type === "item" && (f.reserve || f.expected)) ||
-        (type === "service" && f.starting_price)
-      ) {
-        const { error: e2 } = await supabase.from("auction_private").insert({
-          auction_id: a.id,
+          service_from: f.service_from || null,
+          service_to: f.service_to || null,
+          accepted_payment_methods: methods,
+          starts_at: startsAt ? new Date(startsAt).toISOString() : null,
+        },
+        _private: {
           reserve_price: type === "item" && f.reserve ? Number(f.reserve) : null,
           expected_price: type === "item" && f.expected ? Number(f.expected) : null,
           service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
-        });
-        if (e2) throw e2;
-      }
+        },
+      });
+      if (error) throw error;
+      if (!draftId) throw new Error("No se pudo guardar el borrador");
       if (publish) {
-        const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: a.id });
+        const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
         if (e3) {
           toast.error(errMsg(e3) + " (guardada como borrador)");
         } else toast.success("¡Subasta publicada!");
       } else toast.success("Borrador guardado");
+      setEditingId(null);
+      setStartsAt("");
+      setMethods([]);
       setImages([]);
       setF((p) => ({
         ...p,
@@ -208,6 +205,53 @@ function Seller() {
         starting_price: "",
       }));
       qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function editDraft(id: string) {
+    setBusy(true);
+    try {
+      const result = await supabase.rpc("my_auction_draft", { _id: id });
+      if (result.error) throw result.error;
+      const parsed = result.data as {
+        auction?: Record<string, unknown>;
+        private?: Record<string, unknown>;
+      };
+      const a = parsed.auction;
+      const p = parsed.private;
+      if (!a) throw new Error("Borrador no disponible");
+      setEditingId(id);
+      setType(a.auction_type === "service" ? "service" : "item");
+      setF({
+        title: String(a.title ?? ""),
+        description: String(a.description ?? ""),
+        category_id: String(a.category_id ?? ""),
+        country: String(a.country ?? ""),
+        city: String(a.city ?? ""),
+        scope: String(a.scope ?? "national"),
+        delivery_terms: String(a.delivery_terms ?? ""),
+        starting_price: String(
+          a.auction_type === "service" ? (p?.service_budget ?? "") : (a.starting_price ?? ""),
+        ),
+        min_increment: String(a.min_increment ?? 1),
+        currency: String(a.currency ?? "USD"),
+        duration_hours: String(a.duration_hours ?? 24),
+        duration_minutes: String(a.duration_minutes ?? 60),
+        service_from: String(a.service_from ?? ""),
+        service_to: String(a.service_to ?? ""),
+        reserve: String(p?.reserve_price ?? ""),
+        expected: String(p?.expected_price ?? ""),
+      });
+      setImages(
+        Array.isArray(a.images) ? a.images.filter((v): v is string => typeof v === "string") : [],
+      );
+      setMethods(parseAuctionMethods(a.accepted_payment_methods));
+      setStartsAt(typeof a.starts_at === "string" ? a.starts_at.slice(0, 16) : "");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       toast.error(errMsg(e));
     } finally {
@@ -425,6 +469,14 @@ function Seller() {
               </label>
             </div>
           </div>
+          <label className="block space-y-2 text-sm">
+            Inicio programado (opcional)
+            <Input
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+            />
+          </label>
           <AuctionPaymentMethods value={methods} onChange={setMethods} />
           <div className="flex gap-2">
             <Button disabled={busy} onClick={() => create(true)}>
@@ -453,9 +505,19 @@ function Seller() {
                     </span>
                   </Link>
                   {a.status === "draft" && (
-                    <Button size="sm" onClick={() => publish(a.id)}>
-                      Publicar
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => editDraft(a.id)}
+                      >
+                        Editar
+                      </Button>
+                      <Button size="sm" onClick={() => publish(a.id)}>
+                        Publicar
+                      </Button>
+                    </>
                   )}
                 </li>
               ))}
