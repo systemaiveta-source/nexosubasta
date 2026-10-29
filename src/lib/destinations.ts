@@ -15,7 +15,7 @@ export function safeDestination(value: string | null | undefined): string | null
     const url = new URL(value, "https://nexo.invalid");
     if (url.origin !== "https://nexo.invalid" || url.pathname.includes("..")) return null;
     const known =
-      /^\/(?:subastas(?:\/[a-f0-9-]{36})?|panel|vendedor|operaciones|perfil|planes|notificaciones|admin|ayuda|normas|condiciones|privacidad|instalar|usuarios\/[a-f0-9-]{36})?\/?$/i;
+      /^\/(?:subastas(?:\/[a-f0-9-]{36})?|panel|vendedor|operaciones(?:/[a-f0-9-]{36})?|perfil|planes|notificaciones|admin|ayuda|normas|condiciones|privacidad|instalar|usuarios\/[a-f0-9-]{36})?\/?$/i;
     if (!known.test(url.pathname)) return null;
     // Keep only a non-secret query; hashes may contain OAuth tokens, so never forward them.
     if (/[?&](?:access_token|refresh_token|token|code)=/i.test(url.search)) return null;

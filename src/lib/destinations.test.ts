@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { authDestination, safeDestination } from "./destinations";
 
 describe("destinos internos NEXO", () => {
+  it("conserva el chat exacto", () => expect(safeDestination("/operaciones/00000000-0000-0000-0000-000000000001")).toBe("/operaciones/00000000-0000-0000-0000-000000000001"));
   it("conserva el destino de membresía con su solicitud", () =>
     expect(safeDestination("/planes?request=123")).toBe("/planes?request=123"));
   it("conserva el detalle exacto de la subasta", () =>
