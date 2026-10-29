@@ -1,4 +1,5 @@
 # NEXO roadmap
+- [ ] Pasada integrada 29 octubre: motor de productos, presupuesto privado/elección de servicios, operaciones/chat, catálogos y pruebas; sin publicación, pagos externos ni cambios de roles.
 - [x] Centro interno de notificaciones: lectura por usuario, filtro, paginación, actualización y marcado; destinos conocidos compartidos con retorno tras iniciar sesión. 24 pruebas aprobadas; navegación con cuenta real, filtro vacío, móvil y cierre de sesión comprobados.
 - [ ] Notificaciones con registros reales: la cuenta de prueba no tiene avisos; quedan marcado/lectura con avisos, eventos, aislamiento entre dos cuentas y push sin proveedor configurado verificado.
 - [x] Ambigüedad f: reproducida en manual_method_guard, corregida con alias explícitos y verificada mediante alta/edición/lectura/eliminación de método temporal inactivo y rechazo de requisitos inválidos.
