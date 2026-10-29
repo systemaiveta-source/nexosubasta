@@ -1,6 +1,10 @@
 export function money(v: number | string | null | undefined, currency = "USD") {
   if (v === null || v === undefined) return "—";
-  return new Intl.NumberFormat("es", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(v));
+  return new Intl.NumberFormat("es", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(Number(v));
 }
 
 export function timeLeft(endsAt: string | null, now: number) {
@@ -21,7 +25,7 @@ export const statusLabel: Record<string, string> = {
   draft: "Borrador",
   scheduled: "Programada",
   active: "Activa",
-  ended_sold: "Vendida",
+  ended_sold: "Adjudicada",
   ended_unsold: "Sin venta",
   cancelled: "Cancelada",
 };
@@ -40,12 +44,19 @@ export const scopeLabel: Record<string, string> = {
 };
 
 /** Minimum next valid bid, mirroring the server rule (server is authoritative). */
-export function minNextBid(startingPrice: number, currentPrice: number | null, minIncrement: number) {
-  return currentPrice === null ? startingPrice : Math.round((currentPrice + minIncrement) * 100) / 100;
+export function minNextBid(
+  startingPrice: number,
+  currentPrice: number | null,
+  minIncrement: number,
+) {
+  return currentPrice === null
+    ? startingPrice
+    : Math.round((currentPrice + minIncrement) * 100) / 100;
 }
 
 export function errMsg(e: unknown) {
-  if (e && typeof e === "object" && "message" in e) return String((e as { message: string }).message);
+  if (e && typeof e === "object" && "message" in e)
+    return String((e as { message: string }).message);
   return "Ha ocurrido un error";
 }
 

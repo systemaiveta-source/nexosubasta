@@ -36,6 +36,48 @@
       "when": 1793309189178,
       "tag": "0004_fix_manual_method_guard_ambiguous_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793311150410,
+      "tag": "0005_secure_services_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793311184196,
+      "tag": "0006_atomic_bids_client_service_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793311470042,
+      "tag": "0007_auction_payment_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793311551804,
+      "tag": "0008_transactional_draft_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793311587208,
+      "tag": "0009_new_draft_wrapper",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793311754851,
+      "tag": "0010_completion_stage_guard",
+      "breakpoints": true
     }
   ]
 }

@@ -77,6 +77,13 @@ export type Database = {
             referencedRelation: "auctions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_flags_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auction_events: {
@@ -107,6 +114,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_events_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -148,10 +162,73 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "auction_extensions_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "auction_extensions_bid_id_fkey"
             columns: ["bid_id"]
             isOneToOne: false
             referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auction_payment_acceptances: {
+        Row: {
+          accepted_at: string
+          auction_id: string
+          bid_id: string
+          id: string
+          methods_snapshot: Json
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          auction_id: string
+          bid_id: string
+          id?: string
+          methods_snapshot: Json
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          auction_id?: string
+          bid_id?: string
+          id?: string
+          methods_snapshot?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_payment_acceptances_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: true
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -161,16 +238,19 @@ export type Database = {
           auction_id: string
           expected_price: number | null
           reserve_price: number | null
+          service_budget: number | null
         }
         Insert: {
           auction_id: string
           expected_price?: number | null
           reserve_price?: number | null
+          service_budget?: number | null
         }
         Update: {
           auction_id?: string
           expected_price?: number | null
           reserve_price?: number | null
+          service_budget?: number | null
         }
         Relationships: [
           {
@@ -180,10 +260,18 @@ export type Database = {
             referencedRelation: "auctions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "auction_private_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       auctions: {
         Row: {
+          accepted_payment_methods: Json
           auction_type: string
           bid_count: number
           category_id: string | null
@@ -207,6 +295,7 @@ export type Database = {
           original_ends_at: string | null
           reserve_met: boolean
           scope: string
+          selection_pending: boolean
           seller_id: string
           service_from: string | null
           service_to: string | null
@@ -218,6 +307,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          accepted_payment_methods?: Json
           auction_type?: string
           bid_count?: number
           category_id?: string | null
@@ -241,6 +331,7 @@ export type Database = {
           original_ends_at?: string | null
           reserve_met?: boolean
           scope?: string
+          selection_pending?: boolean
           seller_id: string
           service_from?: string | null
           service_to?: string | null
@@ -252,6 +343,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          accepted_payment_methods?: Json
           auction_type?: string
           bid_count?: number
           category_id?: string | null
@@ -275,6 +367,7 @@ export type Database = {
           original_ends_at?: string | null
           reserve_met?: boolean
           scope?: string
+          selection_pending?: boolean
           seller_id?: string
           service_from?: string | null
           service_to?: string | null
@@ -307,6 +400,7 @@ export type Database = {
           amount: number
           auction_id: string
           bidder_id: string
+          conditions: string
           created_at: string
           id: string
           idempotency_key: string
@@ -315,6 +409,7 @@ export type Database = {
           amount: number
           auction_id: string
           bidder_id: string
+          conditions?: string
           created_at?: string
           id?: string
           idempotency_key: string
@@ -323,6 +418,7 @@ export type Database = {
           amount?: number
           auction_id?: string
           bidder_id?: string
+          conditions?: string
           created_at?: string
           id?: string
           idempotency_key?: string
@@ -333,6 +429,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -442,24 +545,30 @@ export type Database = {
       }
       messages: {
         Row: {
+          attachment_path: string | null
           body: string
           created_at: string
           id: string
           sender_id: string
+          submission_key: string | null
           transaction_id: string
         }
         Insert: {
+          attachment_path?: string | null
           body: string
           created_at?: string
           id?: string
           sender_id: string
+          submission_key?: string | null
           transaction_id: string
         }
         Update: {
+          attachment_path?: string | null
           body?: string
           created_at?: string
           id?: string
           sender_id?: string
+          submission_key?: string | null
           transaction_id?: string
         }
         Relationships: [
@@ -501,6 +610,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      operation_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          transaction_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          transaction_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operation_events_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_methods: {
         Row: {
@@ -823,41 +967,53 @@ export type Database = {
       }
       transactions: {
         Row: {
+          agreed_method: string | null
           amount: number
           auction_id: string
           buyer_confirmed: boolean
+          buyer_confirmed_at: string | null
           buyer_id: string
           completed_at: string | null
           created_at: string
           currency: string
           id: string
+          payment_stage: string
           seller_confirmed: boolean
+          seller_confirmed_at: string | null
           seller_id: string
           status: string
         }
         Insert: {
+          agreed_method?: string | null
           amount: number
           auction_id: string
           buyer_confirmed?: boolean
+          buyer_confirmed_at?: string | null
           buyer_id: string
           completed_at?: string | null
           created_at?: string
           currency?: string
           id?: string
+          payment_stage?: string
           seller_confirmed?: boolean
+          seller_confirmed_at?: string | null
           seller_id: string
           status?: string
         }
         Update: {
+          agreed_method?: string | null
           amount?: number
           auction_id?: string
           buyer_confirmed?: boolean
+          buyer_confirmed_at?: string | null
           buyer_id?: string
           completed_at?: string | null
           created_at?: string
           currency?: string
           id?: string
+          payment_stage?: string
           seller_confirmed?: boolean
+          seller_confirmed_at?: string | null
           seller_id?: string
           status?: string
         }
@@ -867,6 +1023,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: true
             referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions_safe"
             referencedColumns: ["id"]
           },
           {
@@ -949,6 +1112,132 @@ export type Database = {
       }
     }
     Views: {
+      auctions_safe: {
+        Row: {
+          accepted_payment_methods: Json | null
+          auction_type: string | null
+          bid_count: number | null
+          category_id: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          current_price: number | null
+          delivery_terms: string | null
+          description: string | null
+          duration_hours: number | null
+          duration_minutes: number | null
+          ends_at: string | null
+          extensions_count: number | null
+          flagged: boolean | null
+          has_reserve: boolean | null
+          id: string | null
+          images: string[] | null
+          leader_id: string | null
+          min_increment: number | null
+          original_ends_at: string | null
+          reserve_met: boolean | null
+          scope: string | null
+          selection_pending: boolean | null
+          seller_id: string | null
+          service_from: string | null
+          service_to: string | null
+          starting_price: number | null
+          starts_at: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          accepted_payment_methods?: Json | null
+          auction_type?: string | null
+          bid_count?: number | null
+          category_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_price?: number | null
+          delivery_terms?: string | null
+          description?: string | null
+          duration_hours?: number | null
+          duration_minutes?: number | null
+          ends_at?: string | null
+          extensions_count?: number | null
+          flagged?: boolean | null
+          has_reserve?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          leader_id?: string | null
+          min_increment?: number | null
+          original_ends_at?: string | null
+          reserve_met?: boolean | null
+          scope?: string | null
+          selection_pending?: boolean | null
+          seller_id?: string | null
+          service_from?: string | null
+          service_to?: string | null
+          starting_price?: never
+          starts_at?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          accepted_payment_methods?: Json | null
+          auction_type?: string | null
+          bid_count?: number | null
+          category_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_price?: number | null
+          delivery_terms?: string | null
+          description?: string | null
+          duration_hours?: number | null
+          duration_minutes?: number | null
+          ends_at?: string | null
+          extensions_count?: number | null
+          flagged?: boolean | null
+          has_reserve?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          leader_id?: string | null
+          min_increment?: number | null
+          original_ends_at?: string | null
+          reserve_met?: boolean | null
+          scope?: string | null
+          selection_pending?: boolean | null
+          seller_id?: string | null
+          service_from?: string | null
+          service_to?: string | null
+          starting_price?: never
+          starts_at?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_reputation: {
         Row: {
           avg_rating: number | null
@@ -1000,14 +1289,33 @@ export type Database = {
         Args: { _max_days: number; _min_hours: number; _min_increment: number }
         Returns: undefined
       }
+      advance_operation: {
+        Args: { _method?: string; _stage: string; _tx: string }
+        Returns: undefined
+      }
       apply_referral_commission: {
         Args: { _buyer: string; _plan: string }
         Returns: undefined
       }
       become_seller: { Args: never; Returns: undefined }
+      bid_with_payment_acceptance: {
+        Args: {
+          _accept: boolean
+          _amount: number
+          _auction: string
+          _conditions?: string
+          _key: string
+          _terms: Json
+        }
+        Returns: Json
+      }
       cancel_auction: {
         Args: { _auction_id: string; _reason: string }
         Returns: undefined
+      }
+      choose_service_provider: {
+        Args: { _auction: string; _bid: string }
+        Returns: string
       }
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
@@ -1025,6 +1333,7 @@ export type Database = {
         Args: { _comment: string; _rating: number; _tx: string }
         Returns: undefined
       }
+      my_auction_draft: { Args: { _id: string }; Returns: Json }
       my_profile: {
         Args: never
         Returns: {
@@ -1047,6 +1356,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      new_auction_draft: {
+        Args: { _data: Json; _private: Json }
+        Returns: string
+      }
       notify: {
         Args: { _body: string; _link: string; _title: string; _user: string }
         Returns: undefined
@@ -1067,6 +1380,7 @@ export type Database = {
       publish_auction: {
         Args: { _auction_id: string }
         Returns: {
+          accepted_payment_methods: Json
           auction_type: string
           bid_count: number
           category_id: string | null
@@ -1090,6 +1404,7 @@ export type Database = {
           original_ends_at: string | null
           reserve_met: boolean
           scope: string
+          selection_pending: boolean
           seller_id: string
           service_from: string | null
           service_to: string | null
@@ -1119,6 +1434,23 @@ export type Database = {
       review_manual_membership: {
         Args: { _decision: string; _reason?: string; _request: string }
         Returns: string
+      }
+      save_auction_draft: {
+        Args: { _data: Json; _id: string; _private: Json }
+        Returns: string
+      }
+      send_operation_message: {
+        Args: { _attachment?: string; _body: string; _key: string; _tx: string }
+        Returns: string
+      }
+      service_bid_conditions: {
+        Args: {
+          _amount: number
+          _auction: string
+          _conditions: string
+          _key: string
+        }
+        Returns: Json
       }
       set_auction_start: {
         Args: { _auction_id: string; _starts_at: string }

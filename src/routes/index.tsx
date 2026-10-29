@@ -6,10 +6,17 @@ import logo from "@/assets/nexo-logo.png.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NEXO — Subastas y marketplace" },
-      { name: "description", content: "Compra y vende en subastas transparentes, locales e internacionales, con reglas claras y precios de reserva protegidos." },
-      { property: "og:title", content: "NEXO — Subastas y marketplace" },
-      { property: "og:description", content: "Subastas transparentes con reglas claras y precios de reserva protegidos." },
+      { title: "NEXO — Sistema de subastas" },
+      {
+        name: "description",
+        content:
+          "Participa y subasta en subastas transparentes, locales e internacionales, con reglas claras y precios de reserva protegidos.",
+      },
+      { property: "og:title", content: "NEXO — Sistema de subastas" },
+      {
+        property: "og:description",
+        content: "Subastas transparentes con reglas claras y precios de reserva protegidos.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -18,10 +25,30 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: Gavel, color: "text-nexo-red", title: "Ofertas validadas", text: "Cada oferta se verifica en el servidor; nunca se acepta una oferta duplicada ni fuera de tiempo." },
-  { icon: Timer, color: "text-nexo-blue", title: "Cierre justo", text: "Una oferta en el último minuto amplía el cierre 60 segundos, para que nadie gane por sorpresa." },
-  { icon: ShieldCheck, color: "text-nexo-yellow", title: "Reserva protegida", text: "El precio mínimo del vendedor es privado. Solo se muestra si se ha alcanzado o no." },
-  { icon: Smartphone, color: "text-nexo-green", title: "En cualquier dispositivo", text: "Úsalo en el navegador o instálalo como app en tu móvil o computadora." },
+  {
+    icon: Gavel,
+    color: "text-nexo-red",
+    title: "Ofertas validadas",
+    text: "Cada oferta se verifica en el servidor; nunca se acepta una oferta duplicada ni fuera de tiempo.",
+  },
+  {
+    icon: Timer,
+    color: "text-nexo-blue",
+    title: "Cierre justo",
+    text: "Una oferta en el último minuto amplía el cierre 60 segundos, para que nadie gane por sorpresa.",
+  },
+  {
+    icon: ShieldCheck,
+    color: "text-nexo-yellow",
+    title: "Reserva protegida",
+    text: "El precio mínimo del vendedor es privado. Solo se muestra si se ha alcanzado o no.",
+  },
+  {
+    icon: Smartphone,
+    color: "text-nexo-green",
+    title: "En cualquier dispositivo",
+    text: "Úsalo en el navegador o instálalo como app en tu móvil o computadora.",
+  },
 ];
 
 function Index() {
@@ -30,16 +57,23 @@ function Index() {
       <section className="mx-auto max-w-6xl px-4 pb-12 pt-14 text-center sm:pt-20">
         <img src={logo.url} alt="NEXO" className="mx-auto h-20 w-auto sm:h-28" />
         <h1 className="mx-auto mt-8 max-w-3xl font-display text-3xl font-bold leading-tight sm:text-5xl">
-          Subastas claras para comprar y vender con confianza
+          NEXO · Subastas
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground sm:text-lg">
-          Locales, nacionales e internacionales. Reglas transparentes, un solo ganador y trato directo entre comprador y vendedor.
+          Locales, nacionales e internacionales. Reglas transparentes, un solo ganador y trato
+          directo entre participante y subastador.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <span className="inline-flex items-center rounded-full border border-border bg-accent px-4 py-2 text-sm font-medium text-accent-foreground">
-            Catálogo y cuentas: próximamente
-          </span>
-          <Link to="/instalar" className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft hover:opacity-90">
+          <Link
+            to="/subastas"
+            className="inline-flex items-center rounded-md border border-border bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
+          >
+            Explorar subastas
+          </Link>
+          <Link
+            to="/instalar"
+            className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft hover:opacity-90"
+          >
             Instalar NEXO
           </Link>
         </div>

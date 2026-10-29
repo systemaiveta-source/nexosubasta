@@ -7,7 +7,8 @@ export type AuctionListItem = {
   id: string;
   title: string;
   images: string[];
-  starting_price: number;
+  starting_price: number | null;
+  auction_type?: string | null;
   current_price: number | null;
   currency: string;
   status: string;
@@ -38,10 +39,24 @@ export function StatusBadge({ status }: { status: string }) {
     cancelled: "bg-nexo-red/15 text-nexo-red",
     draft: "bg-muted text-muted-foreground",
   };
-  return <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls[status] ?? "bg-muted"}`}>{statusLabel[status] ?? status}</span>;
+  return (
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls[status] ?? "bg-muted"}`}
+    >
+      {statusLabel[status] ?? status}
+    </span>
+  );
 }
 
-export function AuctionCard({ a, img, now }: { a: AuctionListItem; img?: string | undefined; now: number }) {
+export function AuctionCard({
+  a,
+  img,
+  now,
+}: {
+  a: AuctionListItem;
+  img?: string | undefined;
+  now: number;
+}) {
   return (
     <Link
       to="/subastas/$id"
@@ -50,29 +65,54 @@ export function AuctionCard({ a, img, now }: { a: AuctionListItem; img?: string 
     >
       <div className="aspect-[4/3] overflow-hidden bg-muted">
         {img ? (
-          <img src={img} alt={a.title} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+          <img
+            src={img}
+            alt={a.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition group-hover:scale-105"
+          />
         ) : (
-          <div className="grid h-full place-items-center text-muted-foreground"><ImageOff className="h-8 w-8" /></div>
+          <div className="grid h-full place-items-center text-muted-foreground">
+            <ImageOff className="h-8 w-8" />
+          </div>
         )}
       </div>
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-2">
           <StatusBadge status={a.status} />
-          {a.status === "active" && <span className="text-xs font-medium tabular-nums text-nexo-red">{timeLeft(a.ends_at, now)}</span>}
+          {a.status === "active" && (
+            <span className="text-xs font-medium tabular-nums text-nexo-red">
+              {timeLeft(a.ends_at, now)}
+            </span>
+          )}
         </div>
         <h3 className="line-clamp-2 font-semibold leading-snug">{a.title}</h3>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">{a.current_price ? "Oferta actual" : "Precio inicial"}</p>
-            <p className="font-display text-lg font-bold">{money(a.current_price ?? a.starting_price, a.currency)}</p>
+            <p className="text-xs text-muted-foreground">
+              {a.current_price
+                ? "Oferta actual"
+                : a.auction_type === "service"
+                  ? "Solicitud de servicio"
+                  : "Precio inicial"}
+            </p>
+            <p className="font-display text-lg font-bold">
+              {a.auction_type === "service" && a.current_price === null
+                ? "Sin ofertas"
+                : money(a.current_price ?? a.starting_price, a.currency)}
+            </p>
           </div>
           <p className="text-xs text-muted-foreground">{a.bid_count} ofertas</p>
         </div>
-        {(a.city || a.country) && <p className="text-xs text-muted-foreground">{[a.city, a.country].filter(Boolean).join(", ")}</p>}
+        {(a.city || a.country) && (
+          <p className="text-xs text-muted-foreground">
+            {[a.city, a.country].filter(Boolean).join(", ")}
+          </p>
+        )}
       </div>
     </Link>
   );
 }
 
 export const AUCTION_LIST_COLUMNS =
-  "id,title,images,starting_price,current_price,currency,status,ends_at,starts_at,bid_count,city,country,has_reserve,reserve_met";
+  "id,title,images,auction_type,starting_price,current_price,currency,status,ends_at,starts_at,bid_count,city,country,has_reserve,reserve_met";
