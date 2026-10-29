@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
+
 import { supabase } from "@/integrations/supabase/client";
-import { PageShell, Empty } from "@/components/SiteLayout";
+import { PageShell } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { useAuth } from "@/lib/auth";
-import { money, errMsg } from "@/lib/format";
+import { ManualMembershipCheckout, type CheckoutPlan } from "@/components/ManualMembershipCheckout";
+import { MembershipRequests, snapshotMethod, snapshotPlan, type RequestRow } from "@/components/MembershipRequests";
+import { methodConfig } from "@/lib/manual-payments";
+import { QueryFailure } from "@/components/ManualPaymentShared";
+import { money } from "@/lib/format";
 
 export const Route = createFileRoute("/planes")({
   head: () => ({
@@ -26,99 +30,20 @@ export const Route = createFileRoute("/planes")({
 const periodLabel: Record<string, string> = { monthly: "Mensual", quarterly: "Trimestral", semiannual: "Semestral", annual: "Anual" };
 
 function Plans() {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const [sel, setSel] = useState<string | null>(null);
-  const [method, setMethod] = useState("");
-  const [ref, setRef] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const plans = useQuery({
-    queryKey: ["plans"],
-    queryFn: async () => (await supabase.from("plans").select("*").eq("active", true).order("months")).data ?? [],
-  });
-  const methods = useQuery({
-    queryKey: ["pay-methods"],
-    queryFn: async () => (await supabase.from("payment_methods").select("*").eq("active", true).order("sort")).data ?? [],
-  });
-  const balance = useQuery({
-    queryKey: ["wallet", user?.id],
-    enabled: !!user,
-    queryFn: async () => Number((await supabase.rpc("wallet_balance", { _user: user!.id })).data ?? 0),
-  });
-
-  const plan = plans.data?.find((p) => p.id === sel);
-
-  async function request() {
-    if (!user || !plan) return;
-    if (!method) return void toast.error("Elige un método de pago");
-    if (ref.trim().length < 3) return void toast.error("Escribe la referencia o comprobante del pago");
-    setBusy(true);
-    const { error } = await supabase.from("subscription_requests").insert({ user_id: user.id, plan_id: plan.id, payment_method_id: method, reference: ref.trim() });
-    setBusy(false);
-    if (error) return void toast.error(errMsg(error));
-    toast.success("Solicitud enviada. Activaremos tu membresía al verificar el pago.");
-    setSel(null); setRef("");
-  }
-
-  async function payWallet() {
-    if (!plan) return;
-    setBusy(true);
-    const { error } = await supabase.rpc("pay_membership_with_wallet", { _plan: plan.id });
-    setBusy(false);
-    if (error) return void toast.error(errMsg(error));
-    toast.success("¡Membresía activada con tu saldo!");
-    qc.invalidateQueries();
-    setSel(null);
-  }
-
-  return (
-    <PageShell title="Membresías">
-      <p className="mb-6 max-w-2xl text-muted-foreground">Con una membresía activa puedes subastar artículos y servicios, aparecer en espacios destacados y ganar comisiones por tus referidos.</p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {plans.data?.map((p, i) => (
-          <div key={p.id} className={`flex flex-col rounded-2xl border bg-card p-5 shadow-soft ${sel === p.id ? "border-primary ring-2 ring-primary" : "border-border"}`}>
-            <span className={`mb-2 h-1.5 w-10 rounded-full ${["bg-nexo-red", "bg-nexo-blue", "bg-nexo-yellow", "bg-nexo-green"][i % 4]}`} />
-            <h2 className="font-display text-xl font-bold">{p.name}</h2>
-            <p className="text-sm text-muted-foreground">{periodLabel[p.period] ?? p.period}</p>
-            <p className="my-3 font-display text-3xl font-bold">{money(p.price, p.currency)}</p>
-            <ul className="mb-4 flex-1 space-y-1.5 text-sm">
-              <li>• Hasta {p.max_active_auctions ?? "ilimitadas"} subastas activas</li>
-              <li>• {Number(p.referral_pct)}% de comisión por referidos</li>
-              {p.benefits.map((b) => <li key={b}>• {b}</li>)}
-            </ul>
-            {user ? (
-              <Button variant={sel === p.id ? "default" : "outline"} onClick={() => setSel(p.id)}>Elegir</Button>
-            ) : (
-              <Button asChild variant="outline"><Link to="/auth" search={{ redirect: "/planes" }}>Entrar para elegir</Link></Button>
-            )}
-          </div>
-        ))}
-      </div>
-      {plan && (
-        <div className="mt-8 max-w-xl space-y-4 rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-display text-lg font-bold">Pagar {plan.name} — {money(plan.price, plan.currency)}</h2>
-          {balance.data !== undefined && balance.data >= Number(plan.price) && (
-            <Button className="w-full" disabled={busy} onClick={payWallet}>Pagar con mi saldo ({money(balance.data)})</Button>
-          )}
-          {methods.data?.length ? (
-            <>
-              <div className="space-y-2">
-                {methods.data.map((m) => (
-                  <label key={m.id} className="flex cursor-pointer gap-3 rounded-lg border border-border p-3">
-                    <input type="radio" name="pm" checked={method === m.id} onChange={() => setMethod(m.id)} />
-                    <span><b>{m.name}</b><span className="block whitespace-pre-line text-sm text-muted-foreground">{m.instructions}</span></span>
-                  </label>
-                ))}
-              </div>
-              <Input placeholder="Número de referencia o comprobante" value={ref} onChange={(e) => setRef(e.target.value)} maxLength={120} />
-              <Button className="w-full" disabled={busy} onClick={request}>Enviar comprobante</Button>
-            </>
-          ) : (
-            <Empty>Aún no hay métodos de pago disponibles. Vuelve pronto.</Empty>
-          )}
-        </div>
-      )}
-    </PageShell>
-  );
+ const {user}=useAuth();const qc=useQueryClient();const [sel,setSel]=useState<string|null>(null);const [correct,setCorrect]=useState<RequestRow|null>(null);const [sent,setSent]=useState('');
+ const plans=useQuery({queryKey:['plans'],queryFn:async()=>{const {data,error}=await supabase.from('plans').select('*').eq('active',true).order('months');if(error)throw error;return data;}});
+ const methods=useQuery({queryKey:['pay-methods'],queryFn:async()=>{const {data,error}=await supabase.from('payment_methods').select('*').eq('active',true).order('sort');if(error)throw error;return data;}});
+ const profile=useQuery({queryKey:['checkout-profile',user?.id],enabled:!!user,queryFn:async()=>{const {data,error}=await supabase.rpc('my_profile');if(error)throw error;return data;}});
+ const subs=useQuery({queryKey:['checkout-membership',user?.id],enabled:!!user,queryFn:async()=>{const {data,error}=await supabase.from('subscriptions').select('id,status,ends_at,plans(name)').eq('status','active').gt('ends_at',new Date().toISOString());if(error)throw error;return data;}});
+ const plan=correct?snapshotPlan(correct):plans.data?.find(p=>p.id===sel);
+ const chosenPlan=plan&&('id' in plan)?plan as CheckoutPlan:correct&&plan?{...plan,id:correct.plan_id}:null;
+ const applicable=(methods.data??[]).filter(m=>{const c=methodConfig(m.details);return c.currency===(chosenPlan?.currency??'USD')&&(!c.countries.length||c.countries.some(country=>country.toLowerCase()===profile.data?.country?.toLowerCase()));});
+ const checkoutMethods=correct?applicable.filter(m=>m.id===correct.payment_method_id).map(()=>snapshotMethod(correct)):applicable;
+ return <PageShell title="Membresías">
+ {subs.data?.map(s=><p key={s.id} className="mb-4 border-l-2 border-nexo-green bg-secondary p-3 text-sm">Membresía {s.plans?.name} activa hasta {new Date(s.ends_at).toLocaleDateString('es')}</p>)}
+ {plans.isError?<QueryFailure retry={()=>plans.refetch()}/>:plans.isPending?<p role="status">Cargando planes…</p>:<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{plans.data.map((p,i)=><div key={p.id} className={`flex min-w-0 flex-col rounded-lg border bg-card p-5 ${sel===p.id?'border-primary':'border-border'}`}><span className={`mb-3 h-1 w-10 ${['bg-nexo-red','bg-nexo-blue','bg-nexo-yellow','bg-nexo-green'][i%4]}`}/><h2 className="break-words text-lg font-semibold">{p.name}</h2><p className="text-sm text-muted-foreground">{periodLabel[p.period]??p.period} · {p.months} meses</p><p className="my-4 text-3xl font-bold">{money(p.price,p.currency)}</p><ul className="mb-5 flex-1 space-y-2 text-sm">{p.benefits.map(b=><li key={b}>• {b}</li>)}</ul>{user?<Button variant={sel===p.id?'default':'outline'} onClick={()=>{setSel(p.id);setCorrect(null);setSent('');}}>Elegir</Button>:<Button asChild variant="outline"><Link to="/auth" search={{redirect:'/planes'}}>Entrar para elegir</Link></Button>}</div>)}</div>}
+ {sent&&<div role="status" className="mt-6 border-l-2 border-nexo-green bg-secondary p-4"><p className="font-semibold">Pendiente de revisión</p><p className="mt-1 break-all font-mono text-sm">Solicitud: {sent}</p><p className="mt-2 text-sm">Tu membresía se activará solo cuando el administrador apruebe el pago.</p></div>}
+ {user&&chosenPlan&&(methods.isError?<QueryFailure retry={()=>methods.refetch()}/>:methods.isPending||profile.isPending?<p className="py-6">Cargando métodos…</p>:<div className="mt-8 max-w-3xl"><ManualMembershipCheckout key={correct?.id??chosenPlan.id} plan={chosenPlan} methods={checkoutMethods} requestId={correct?.id} initialValues={correct?.proof_values as Record<string,string>|undefined} onSent={id=>{setSent(id);setSel(null);setCorrect(null);qc.invalidateQueries({queryKey:['membership-requests']});}}/></div>)}
+ {user&&<div className="mt-12 border-t border-border pt-8"><MembershipRequests onCorrect={r=>{setCorrect(r);setSel(null);setSent('');window.scrollTo({top:0,behavior:'smooth'});}}/></div>}
+ </PageShell>;
 }
