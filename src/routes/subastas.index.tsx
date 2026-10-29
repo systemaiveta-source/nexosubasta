@@ -4,7 +4,12 @@ import { z } from "zod";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Empty } from "@/components/SiteLayout";
-import { AuctionCard, AUCTION_LIST_COLUMNS, useNow, type AuctionListItem } from "@/components/AuctionCard";
+import {
+  AuctionCard,
+  AUCTION_LIST_COLUMNS,
+  useNow,
+  type AuctionListItem,
+} from "@/components/AuctionCard";
 import { useImageUrls } from "@/lib/images";
 import { Input } from "@/components/ui/input";
 
@@ -22,7 +27,10 @@ export const Route = createFileRoute("/subastas/")({
   head: () => ({
     meta: [
       { title: "Catálogo de subastas — NEXO" },
-      { name: "description", content: "Explora subastas activas por categoría, ubicación y precio en NEXO." },
+      {
+        name: "description",
+        content: "Explora subastas activas por categoría, ubicación y precio en NEXO.",
+      },
       { property: "og:title", content: "Catálogo de subastas — NEXO" },
       { property: "og:description", content: "Subastas activas, programadas y finalizadas." },
       { property: "og:type", content: "website" },
@@ -36,17 +44,29 @@ function Catalog() {
   const s = Route.useSearch();
   const navigate = useNavigate({ from: "/subastas/" });
   const now = useNow();
-  const set = (patch: Partial<typeof s>) => navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+  const set = (patch: Partial<typeof s>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
 
   const cats = useQuery({
     queryKey: ["categories"],
-    queryFn: async () => (await supabase.from("categories").select("id,name,slug").order("sort")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("categories")
+          .select("id,name,slug")
+          .neq("slug", "nft-cripto")
+          .order("sort")
+      ).data ?? [],
   });
 
   const list = useQuery({
     queryKey: ["catalog", s],
     queryFn: async () => {
-      let q = supabase.from("auctions").select(AUCTION_LIST_COLUMNS).neq("status", "draft").neq("status", "cancelled");
+      let q = supabase
+        .from("auctions_safe")
+        .select(AUCTION_LIST_COLUMNS)
+        .neq("status", "draft")
+        .neq("status", "cancelled");
       const estado = s.estado ?? "active";
       if (estado === "ended") q = q.in("status", ["ended_sold", "ended_unsold"]);
       else q = q.eq("status", estado);
@@ -57,8 +77,10 @@ function Catalog() {
       const orden = s.orden ?? "ending";
       if (orden === "ending") q = q.order("ends_at", { ascending: estado !== "ended" });
       if (orden === "new") q = q.order("created_at", { ascending: false });
-      if (orden === "price_asc") q = q.order("current_price", { ascending: true, nullsFirst: true });
-      if (orden === "price_desc") q = q.order("current_price", { ascending: false, nullsFirst: false });
+      if (orden === "price_asc")
+        q = q.order("current_price", { ascending: true, nullsFirst: true });
+      if (orden === "price_desc")
+        q = q.order("current_price", { ascending: false, nullsFirst: false });
       const { data, error } = await q.limit(60);
       if (error) throw error;
       return data as unknown as AuctionListItem[];
@@ -81,38 +103,76 @@ function Catalog() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input name="q" defaultValue={s.q} placeholder="Buscar artículos…" className="pl-9" />
         </form>
-        <select className={sel} value={s.cat ?? ""} onChange={(e) => set({ cat: e.target.value || undefined })} aria-label="Categoría">
+        <select
+          className={sel}
+          value={s.cat ?? ""}
+          onChange={(e) => set({ cat: e.target.value || undefined })}
+          aria-label="Categoría"
+        >
           <option value="">Todas las categorías</option>
-          {cats.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {cats.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
-        <select className={sel} value={s.scope ?? ""} onChange={(e) => set({ scope: (e.target.value || undefined) as typeof s.scope })} aria-label="Alcance">
+        <select
+          className={sel}
+          value={s.scope ?? ""}
+          onChange={(e) => set({ scope: (e.target.value || undefined) as typeof s.scope })}
+          aria-label="Alcance"
+        >
           <option value="">Cualquier alcance</option>
           <option value="local">Local</option>
           <option value="national">Nacional</option>
           <option value="international">Internacional</option>
         </select>
-        <select className={sel} value={s.estado ?? "active"} onChange={(e) => set({ estado: e.target.value as typeof s.estado })} aria-label="Estado">
+        <select
+          className={sel}
+          value={s.estado ?? "active"}
+          onChange={(e) => set({ estado: e.target.value as typeof s.estado })}
+          aria-label="Estado"
+        >
           <option value="active">Activas</option>
           <option value="scheduled">Próximas</option>
           <option value="ended">Finalizadas</option>
         </select>
-        <select className={sel} value={s.orden ?? "ending"} onChange={(e) => set({ orden: e.target.value as typeof s.orden })} aria-label="Orden">
+        <select
+          className={sel}
+          value={s.orden ?? "ending"}
+          onChange={(e) => set({ orden: e.target.value as typeof s.orden })}
+          aria-label="Orden"
+        >
           <option value="ending">Terminan antes</option>
           <option value="new">Más recientes</option>
           <option value="price_asc">Precio: menor</option>
           <option value="price_desc">Precio: mayor</option>
         </select>
-        <Input placeholder="País" defaultValue={s.pais} onBlur={(e) => set({ pais: e.target.value || undefined })} className="lg:col-span-1" />
+        <Input
+          placeholder="País"
+          defaultValue={s.pais}
+          onBlur={(e) => set({ pais: e.target.value || undefined })}
+          className="lg:col-span-1"
+        />
       </div>
       {list.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-muted" />)}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-muted" />
+          ))}
         </div>
       ) : list.error ? (
         <Empty>No se pudo cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.</Empty>
       ) : list.data?.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {list.data.map((a) => <AuctionCard key={a.id} a={a} img={a.images[0] ? imgs.data?.[a.images[0]] : undefined} now={now} />)}
+          {list.data.map((a) => (
+            <AuctionCard
+              key={a.id}
+              a={a}
+              img={a.images[0] ? imgs.data?.[a.images[0]] : undefined}
+              now={now}
+            />
+          ))}
         </div>
       ) : (
         <Empty>No hay subastas que coincidan con tu búsqueda.</Empty>

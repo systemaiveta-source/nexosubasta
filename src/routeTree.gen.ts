@@ -28,6 +28,7 @@ import { Route as AuthenticatedVendedorRouteImport } from './routes/_authenticat
 import { Route as SubastasIndexRouteImport } from './routes/subastas.index'
 import { Route as SubastasIdRouteImport } from './routes/subastas.$id'
 import { Route as UsuariosIdRouteImport } from './routes/usuarios.$id'
+import { Route as AuthenticatedOperacionesIdRouteImport } from './routes/_authenticated/operaciones.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -125,6 +126,12 @@ const UsuariosIdRoute = UsuariosIdRouteImport.update({
   path: '/usuarios/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOperacionesIdRoute =
+  AuthenticatedOperacionesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedOperacionesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,13 +145,14 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/operaciones': typeof AuthenticatedOperacionesRoute
+  '/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/panel': typeof AuthenticatedPanelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/subastas/$id': typeof SubastasIdRoute
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas/': typeof SubastasIndexRoute
+  '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,13 +166,14 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/operaciones': typeof AuthenticatedOperacionesRoute
+  '/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/panel': typeof AuthenticatedPanelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/vendedor': typeof AuthenticatedVendedorRoute
   '/subastas/$id': typeof SubastasIdRoute
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas': typeof SubastasIndexRoute
+  '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -180,13 +189,14 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/notificaciones': typeof AuthenticatedNotificacionesRoute
-  '/_authenticated/operaciones': typeof AuthenticatedOperacionesRoute
+  '/_authenticated/operaciones': typeof AuthenticatedOperacionesRouteWithChildren
   '/_authenticated/panel': typeof AuthenticatedPanelRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/vendedor': typeof AuthenticatedVendedorRoute
   '/subastas/$id': typeof SubastasIdRoute
   '/usuarios/$id': typeof UsuariosIdRoute
   '/subastas/': typeof SubastasIndexRoute
+  '/_authenticated/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/subastas/$id'
     | '/usuarios/$id'
     | '/subastas/'
+    | '/operaciones/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/subastas/$id'
     | '/usuarios/$id'
     | '/subastas'
+    | '/operaciones/$id'
   id:
     | '__root__'
     | '/'
@@ -250,6 +262,7 @@ export interface FileRouteTypes {
     | '/subastas/$id'
     | '/usuarios/$id'
     | '/subastas/'
+    | '/_authenticated/operaciones/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -403,13 +416,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsuariosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/operaciones/$id': {
+      id: '/_authenticated/operaciones/$id'
+      path: '/$id'
+      fullPath: '/operaciones/$id'
+      preLoaderRoute: typeof AuthenticatedOperacionesIdRouteImport
+      parentRoute: typeof AuthenticatedOperacionesRoute
+    }
   }
 }
+
+interface AuthenticatedOperacionesRouteChildren {
+  AuthenticatedOperacionesIdRoute: typeof AuthenticatedOperacionesIdRoute
+}
+
+const AuthenticatedOperacionesRouteChildren: AuthenticatedOperacionesRouteChildren =
+  {
+    AuthenticatedOperacionesIdRoute: AuthenticatedOperacionesIdRoute,
+  }
+
+const AuthenticatedOperacionesRouteWithChildren =
+  AuthenticatedOperacionesRoute._addFileChildren(
+    AuthenticatedOperacionesRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedNotificacionesRoute: typeof AuthenticatedNotificacionesRoute
-  AuthenticatedOperacionesRoute: typeof AuthenticatedOperacionesRoute
+  AuthenticatedOperacionesRoute: typeof AuthenticatedOperacionesRouteWithChildren
   AuthenticatedPanelRoute: typeof AuthenticatedPanelRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedVendedorRoute: typeof AuthenticatedVendedorRoute
@@ -418,7 +452,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedNotificacionesRoute: AuthenticatedNotificacionesRoute,
-  AuthenticatedOperacionesRoute: AuthenticatedOperacionesRoute,
+  AuthenticatedOperacionesRoute: AuthenticatedOperacionesRouteWithChildren,
   AuthenticatedPanelRoute: AuthenticatedPanelRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedVendedorRoute: AuthenticatedVendedorRoute,

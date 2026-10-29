@@ -35,28 +35,46 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 const input = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
-const btn = "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50";
-const btn2 = "rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary disabled:opacity-50";
+const btn =
+  "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50";
+const btn2 =
+  "rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary disabled:opacity-50";
 const card = "rounded-xl border border-border bg-card p-4";
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : (e as { message?: string })?.message ?? "Error");
+const errMsg = (e: unknown) =>
+  e instanceof Error ? e.message : ((e as { message?: string })?.message ?? "Error");
 const fmtDate = (d: string | null) => (d ? new Date(d).toLocaleString("es") : "—");
 
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useRoles();
   const [tab, setTab] = useState<Tab>("resumen");
-  if (loading) return <PageShell title="Administración"><Empty>Cargando…</Empty></PageShell>;
-  if (!isStaff) return <PageShell title="Administración"><Empty>No tienes acceso a esta sección.</Empty></PageShell>;
+  if (loading)
+    return (
+      <PageShell title="Administración">
+        <Empty>Cargando…</Empty>
+      </PageShell>
+    );
+  if (!isStaff)
+    return (
+      <PageShell title="Administración">
+        <Empty>No tienes acceso a esta sección.</Empty>
+      </PageShell>
+    );
   return (
     <PageShell title="Administración">
       <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1">
         {TABS.map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+          >
             {l}
           </button>
         ))}
       </div>
-      {!isAdmin && tab !== "resumen" && tab !== "subastas" ? <Empty>Solo los administradores pueden usar esta sección.</Empty> : (
+      {!isAdmin && tab !== "resumen" && tab !== "subastas" ? (
+        <Empty>Solo los administradores pueden usar esta sección.</Empty>
+      ) : (
         <>
           {tab === "resumen" && <Resumen go={setTab} />}
           {tab === "pagos" && <MembershipRequests admin />}
@@ -72,7 +90,15 @@ function AdminPage() {
   );
 }
 
-function Stat({ label, value, onClick }: { label: string; value: ReactNode; onClick?: () => void }) {
+function Stat({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value: ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <button onClick={onClick} className={`${card} text-left hover:bg-secondary/50`}>
       <p className="text-sm text-muted-foreground">{label}</p>
@@ -85,15 +111,21 @@ function Resumen({ go }: { go: (t: Tab) => void }) {
   const q = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const c = async (t: "profiles" | "auctions" | "subscription_requests" | "subscriptions" | "disputes", f?: [string, string]) => {
+      const c = async (
+        t: "profiles" | "auctions" | "subscription_requests" | "subscriptions" | "disputes",
+        f?: [string, string],
+      ) => {
         let qq = supabase.from(t).select("id", { count: "exact", head: true });
         if (f) qq = qq.eq(f[0], f[1]);
         const { count } = await qq;
         return count ?? 0;
       };
       const [users, active, pending, subs, disputes] = await Promise.all([
-        c("profiles"), c("auctions", ["status", "active"]), c("subscription_requests", ["status", "pending"]),
-        c("subscriptions", ["status", "active"]), c("disputes", ["status", "open"]),
+        c("profiles"),
+        c("auctions", ["status", "active"]),
+        c("subscription_requests", ["status", "pending"]),
+        c("subscriptions", ["status", "active"]),
+        c("disputes", ["status", "open"]),
       ]);
       return { users, active, pending, subs, disputes };
     },
@@ -123,42 +155,127 @@ function Planes() {
   if (!q.data) return <Empty>Cargando…</Empty>;
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {q.data.map((p) => <PlanForm key={p.id} p={p} onSaved={() => qc.invalidateQueries({ queryKey: ["admin-plans"] })} />)}
+      {q.data.map((p) => (
+        <PlanForm
+          key={p.id}
+          p={p}
+          onSaved={() => qc.invalidateQueries({ queryKey: ["admin-plans"] })}
+        />
+      ))}
     </div>
   );
 }
 
-type PlanRow = { id: string; name: string; price: number | null; referral_pct: number; max_active_auctions: number | null; benefits: string[]; active: boolean; months: number };
+type PlanRow = {
+  id: string;
+  name: string;
+  price: number | null;
+  referral_pct: number;
+  max_active_auctions: number | null;
+  benefits: string[];
+  active: boolean;
+  months: number;
+};
 function PlanForm({ p, onSaved }: { p: PlanRow; onSaved: () => void }) {
   const [f, setF] = useState({
-    name: p.name, price: String(p.price ?? ""), pct: String(p.referral_pct), max: String(p.max_active_auctions ?? ""),
-    benefits: p.benefits.join("\n"), active: p.active,
+    name: p.name,
+    price: String(p.price ?? ""),
+    pct: String(p.referral_pct),
+    max: String(p.max_active_auctions ?? ""),
+    benefits: p.benefits.join("\n"),
+    active: p.active,
   });
   const m = useMutation({
     mutationFn: async () => {
-      const price = Number(f.price), pct = Number(f.pct);
-      if (!(price >= 0) || !(pct >= 0 && pct <= 100)) throw new Error("Precio o porcentaje no válido");
-      const { error } = await supabase.from("plans").update({
-        name: f.name.trim(), price, referral_pct: pct, max_active_auctions: f.max ? Number(f.max) : null,
-        benefits: f.benefits.split("\n").map((s) => s.trim()).filter(Boolean), active: f.active,
-      }).eq("id", p.id);
+      const price = Number(f.price),
+        pct = Number(f.pct);
+      if (!(price >= 0) || !(pct >= 0 && pct <= 100))
+        throw new Error("Precio o porcentaje no válido");
+      const { error } = await supabase
+        .from("plans")
+        .update({
+          name: f.name.trim(),
+          price,
+          referral_pct: pct,
+          max_active_auctions: f.max ? Number(f.max) : null,
+          benefits: f.benefits
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          active: f.active,
+        })
+        .eq("id", p.id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Membresía guardada"); onSaved(); },
+    onSuccess: () => {
+      toast.success("Membresía guardada");
+      onSaved();
+    },
     onError: (e) => toast.error(errMsg(e)),
   });
   return (
     <div className={`${card} space-y-2`}>
-      <p className="text-xs text-muted-foreground">{p.months} {p.months === 1 ? "mes" : "meses"}</p>
-      <label className="block text-sm">Nombre<input className={input} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
+      <p className="text-xs text-muted-foreground">
+        {p.months} {p.months === 1 ? "mes" : "meses"}
+      </p>
+      <label className="block text-sm">
+        Nombre
+        <input
+          className={input}
+          value={f.name}
+          onChange={(e) => setF({ ...f, name: e.target.value })}
+        />
+      </label>
       <div className="grid grid-cols-3 gap-2">
-        <label className="text-sm">Precio (USD)<input className={input} inputMode="decimal" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} /></label>
-        <label className="text-sm">% referidos<input className={input} inputMode="decimal" value={f.pct} onChange={(e) => setF({ ...f, pct: e.target.value })} /></label>
-        <label className="text-sm">Subastas máx.<input className={input} inputMode="numeric" value={f.max} placeholder="Sin límite" onChange={(e) => setF({ ...f, max: e.target.value })} /></label>
+        <label className="text-sm">
+          Precio (USD)
+          <input
+            className={input}
+            inputMode="decimal"
+            value={f.price}
+            onChange={(e) => setF({ ...f, price: e.target.value })}
+          />
+        </label>
+        <label className="text-sm">
+          % referidos
+          <input
+            className={input}
+            inputMode="decimal"
+            value={f.pct}
+            onChange={(e) => setF({ ...f, pct: e.target.value })}
+          />
+        </label>
+        <label className="text-sm">
+          Subastas máx.
+          <input
+            className={input}
+            inputMode="numeric"
+            value={f.max}
+            placeholder="Sin límite"
+            onChange={(e) => setF({ ...f, max: e.target.value })}
+          />
+        </label>
       </div>
-      <label className="block text-sm">Beneficios (uno por línea)<textarea rows={4} className={input} value={f.benefits} onChange={(e) => setF({ ...f, benefits: e.target.value })} /></label>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Visible para los usuarios</label>
-      <button className={btn} disabled={m.isPending} onClick={() => m.mutate()}>Guardar</button>
+      <label className="block text-sm">
+        Beneficios (uno por línea)
+        <textarea
+          rows={4}
+          className={input}
+          value={f.benefits}
+          onChange={(e) => setF({ ...f, benefits: e.target.value })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={f.active}
+          onChange={(e) => setF({ ...f, active: e.target.checked })}
+        />{" "}
+        Visible para los usuarios
+      </label>
+      <button className={btn} disabled={m.isPending} onClick={() => m.mutate()}>
+        Guardar
+      </button>
     </div>
   );
 }
@@ -178,29 +295,53 @@ function Usuarios() {
     queryKey: ["admin-plans"],
     queryFn: async () => (await supabase.from("plans").select("*").order("months")).data ?? [],
   });
-  const done = () => { toast.success("Hecho"); qc.invalidateQueries({ queryKey: ["admin-users"] }); };
+  const done = () => {
+    toast.success("Hecho");
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  };
   const role = useMutation({
     mutationFn: async (a: { u: string; r: "admin" | "moderator" | "seller"; g: boolean }) => {
-      const { error } = await supabase.rpc("admin_set_role", { _user: a.u, _role: a.r, _grant: a.g });
+      const { error } = await supabase.rpc("admin_set_role", {
+        _user: a.u,
+        _role: a.r,
+        _grant: a.g,
+      });
       if (error) throw error;
-    }, onSuccess: done, onError: (e) => toast.error(errMsg(e)),
+    },
+    onSuccess: done,
+    onError: (e) => toast.error(errMsg(e)),
   });
   const status = useMutation({
     mutationFn: async (a: { u: string; st: string }) => {
       const { error } = await supabase.rpc("admin_set_status", { _user: a.u, _status: a.st });
       if (error) throw error;
-    }, onSuccess: done, onError: (e) => toast.error(errMsg(e)),
+    },
+    onSuccess: done,
+    onError: (e) => toast.error(errMsg(e)),
   });
   const grant = useMutation({
     mutationFn: async (a: { u: string; p: string; m: number }) => {
-      const { error } = await supabase.rpc("admin_grant_subscription", { _user: a.u, _plan: a.p, _months: a.m });
+      const { error } = await supabase.rpc("admin_grant_subscription", {
+        _user: a.u,
+        _plan: a.p,
+        _months: a.m,
+      });
       if (error) throw error;
-    }, onSuccess: done, onError: (e) => toast.error(errMsg(e)),
+    },
+    onSuccess: done,
+    onError: (e) => toast.error(errMsg(e)),
   });
-  const list = (q.data ?? []).filter((u) => !s || `${u.display_name} ${u.email}`.toLowerCase().includes(s.toLowerCase()));
+  const list = (q.data ?? []).filter(
+    (u) => !s || `${u.display_name} ${u.email}`.toLowerCase().includes(s.toLowerCase()),
+  );
   return (
     <div className="space-y-3">
-      <input className={input} placeholder="Buscar por nombre o correo" value={s} onChange={(e) => setS(e.target.value)} />
+      <input
+        className={input}
+        placeholder="Buscar por nombre o correo"
+        value={s}
+        onChange={(e) => setS(e.target.value)}
+      />
       {!list.length && <Empty>{q.isLoading ? "Cargando…" : "Sin resultados."}</Empty>}
       {list.map((u) => {
         const has = (r: string) => u.roles.includes(r);
@@ -208,27 +349,70 @@ function Usuarios() {
           <div key={u.id} className={card}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <Link to="/usuarios/$id" params={{ id: u.id }} className="font-semibold hover:underline">{u.display_name}</Link>
+                <Link
+                  to="/usuarios/$id"
+                  params={{ id: u.id }}
+                  className="font-semibold hover:underline"
+                >
+                  {u.display_name}
+                </Link>
                 <p className="truncate text-sm text-muted-foreground">{u.email}</p>
-                <p className="text-xs text-muted-foreground">Roles: {u.roles.join(", ")} · Membresía hasta: {u.seller_sub_until ? new Date(u.seller_sub_until).toLocaleDateString("es") : "ninguna"}</p>
+                <p className="text-xs text-muted-foreground">
+                  Roles: {u.roles.join(", ")} · Membresía hasta:{" "}
+                  {u.seller_sub_until
+                    ? new Date(u.seller_sub_until).toLocaleDateString("es")
+                    : "ninguna"}
+                </p>
               </div>
-              <span className={`rounded-full px-3 py-1 text-xs ${u.account_status === "active" ? "bg-secondary" : "bg-destructive text-destructive-foreground"}`}>
+              <span
+                className={`rounded-full px-3 py-1 text-xs ${u.account_status === "active" ? "bg-secondary" : "bg-destructive text-destructive-foreground"}`}
+              >
                 {u.account_status === "active" ? "Activa" : "Suspendida"}
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {(["seller", "moderator", "admin"] as const).map((r) => (
-                <button key={r} className={btn2} disabled={role.isPending} onClick={() => role.mutate({ u: u.id, r, g: !has(r) })}>
-                  {has(r) ? "Quitar" : "Dar"} {r === "seller" ? "vendedor" : r === "moderator" ? "moderador" : "admin"}
+                <button
+                  key={r}
+                  className={btn2}
+                  disabled={role.isPending}
+                  onClick={() => role.mutate({ u: u.id, r, g: !has(r) })}
+                >
+                  {has(r) ? "Quitar" : "Dar"}{" "}
+                  {r === "seller" ? "vendedor" : r === "moderator" ? "moderador" : "admin"}
                 </button>
               ))}
-              <button className={btn2} disabled={status.isPending} onClick={() => status.mutate({ u: u.id, st: u.account_status === "active" ? "suspended" : "active" })}>
+              <button
+                className={btn2}
+                disabled={status.isPending}
+                onClick={() =>
+                  status.mutate({
+                    u: u.id,
+                    st: u.account_status === "active" ? "suspended" : "active",
+                  })
+                }
+              >
                 {u.account_status === "active" ? "Suspender" : "Reactivar"}
               </button>
-              <select className={`${btn2} bg-background`} defaultValue="" disabled={grant.isPending}
-                onChange={(e) => { const p = plans.data?.find((x) => x.id === e.target.value); if (p && confirm(`¿Regalar ${p.name} a ${u.display_name}?`)) grant.mutate({ u: u.id, p: p.id, m: p.months }); e.target.value = ""; }}>
-                <option value="" disabled>Regalar membresía…</option>
-                {plans.data?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <select
+                className={`${btn2} bg-background`}
+                defaultValue=""
+                disabled={grant.isPending}
+                onChange={(e) => {
+                  const p = plans.data?.find((x) => x.id === e.target.value);
+                  if (p && confirm(`¿Regalar ${p.name} a ${u.display_name}?`))
+                    grant.mutate({ u: u.id, p: p.id, m: p.months });
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>
+                  Regalar membresía…
+                </option>
+                {plans.data?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -243,9 +427,14 @@ function Subastas() {
   const q = useQuery({
     queryKey: ["admin-auctions"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("auctions")
-        .select("id,title,status,current_price,starting_price,currency,bid_count,ends_at,auction_type,profiles!auctions_seller_id_fkey(display_name)")
-        .neq("status", "draft").order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase
+        .from("auctions_safe")
+        .select(
+          "id,title,status,current_price,starting_price,currency,bid_count,ends_at,auction_type,profiles!auctions_seller_id_fkey(display_name)",
+        )
+        .neq("status", "draft")
+        .order("created_at", { ascending: false })
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -257,25 +446,51 @@ function Subastas() {
       const { error } = await supabase.rpc("cancel_auction", { _auction_id: id, _reason: reason });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Subasta cancelada"); qc.invalidateQueries({ queryKey: ["admin-auctions"] }); },
+    onSuccess: () => {
+      toast.success("Subasta cancelada");
+      qc.invalidateQueries({ queryKey: ["admin-auctions"] });
+    },
     onError: (e) => toast.error(errMsg(e)),
   });
-  const st: Record<string, string> = { active: "Activa", scheduled: "Programada", ended_sold: "Vendida", ended_unsold: "Sin venta", cancelled: "Cancelada" };
-  if (!q.data?.length) return <Empty>{q.isLoading ? "Cargando…" : "No hay subastas publicadas."}</Empty>;
+  const st: Record<string, string> = {
+    active: "Activa",
+    scheduled: "Programada",
+    ended_sold: "Vendida",
+    ended_unsold: "Sin venta",
+    cancelled: "Cancelada",
+  };
+  if (!q.data?.length)
+    return <Empty>{q.isLoading ? "Cargando…" : "No hay subastas publicadas."}</Empty>;
   return (
     <div className="space-y-3">
       {q.data.map((a) => (
         <div key={a.id} className={`${card} flex flex-wrap items-center justify-between gap-2`}>
           <div className="min-w-0">
-            <Link to="/subastas/$id" params={{ id: a.id }} className="font-semibold hover:underline">{a.title}</Link>
+            <Link
+              to="/subastas/$id"
+              params={{ id: a.id }}
+              className="font-semibold hover:underline"
+            >
+              {a.title}
+            </Link>
             <p className="text-sm text-muted-foreground">
-              {a.auction_type === "service" ? "Servicio" : "Artículo"} · {a.profiles?.display_name} · {a.currency} {a.current_price ?? a.starting_price} · {a.bid_count} ofertas · cierra {fmtDate(a.ends_at)}
+              {a.auction_type === "service" ? "Servicio" : "Artículo"} · {a.profiles?.display_name}{" "}
+              · {a.currency} {a.current_price ?? a.starting_price} · {a.bid_count} ofertas · cierra{" "}
+              {fmtDate(a.ends_at)}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs">{st[a.status] ?? a.status}</span>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs">
+              {st[a.status] ?? a.status}
+            </span>
             {(a.status === "active" || a.status === "scheduled") && (
-              <button className={btn2} disabled={cancel.isPending} onClick={() => cancel.mutate(a.id)}>Cancelar</button>
+              <button
+                className={btn2}
+                disabled={cancel.isPending}
+                onClick={() => cancel.mutate(a.id)}
+              >
+                Cancelar
+              </button>
             )}
           </div>
         </div>
@@ -287,30 +502,79 @@ function Subastas() {
 function Ajustes() {
   const q = useQuery({
     queryKey: ["admin-settings"],
-    queryFn: async () => (await supabase.from("platform_settings").select("*").eq("id", 1).single()).data,
+    queryFn: async () =>
+      (await supabase.from("platform_settings").select("*").eq("id", 1).single()).data,
   });
   if (!q.data) return <Empty>Cargando…</Empty>;
   return <AjustesForm s={q.data} />;
 }
 
-function AjustesForm({ s }: { s: { min_increment: number; min_duration_hours: number; max_duration_days: number; extension_seconds: number } }) {
+function AjustesForm({
+  s,
+}: {
+  s: {
+    min_increment: number;
+    min_duration_hours: number;
+    max_duration_days: number;
+    extension_seconds: number;
+  };
+}) {
   const qc = useQueryClient();
-  const [f, setF] = useState({ inc: String(s.min_increment), h: String(s.min_duration_hours), d: String(s.max_duration_days) });
+  const [f, setF] = useState({
+    inc: String(s.min_increment),
+    h: String(s.min_duration_hours),
+    d: String(s.max_duration_days),
+  });
   const m = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("admin_update_settings", { _min_increment: Number(f.inc), _min_hours: Number(f.h), _max_days: Number(f.d) });
+      const { error } = await supabase.rpc("admin_update_settings", {
+        _min_increment: Number(f.inc),
+        _min_hours: Number(f.h),
+        _max_days: Number(f.d),
+      });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Ajustes guardados"); qc.invalidateQueries({ queryKey: ["admin-settings"] }); },
+    onSuccess: () => {
+      toast.success("Ajustes guardados");
+      qc.invalidateQueries({ queryKey: ["admin-settings"] });
+    },
     onError: (e) => toast.error(errMsg(e)),
   });
   return (
     <div className={`${card} max-w-md space-y-3`}>
-      <label className="block text-sm">Incremento mínimo permitido<input className={input} inputMode="decimal" value={f.inc} onChange={(e) => setF({ ...f, inc: e.target.value })} /></label>
-      <label className="block text-sm">Duración mínima de artículos (horas)<input className={input} inputMode="numeric" value={f.h} onChange={(e) => setF({ ...f, h: e.target.value })} /></label>
-      <label className="block text-sm">Duración máxima (días)<input className={input} inputMode="numeric" value={f.d} onChange={(e) => setF({ ...f, d: e.target.value })} /></label>
-      <p className="text-sm text-muted-foreground">Extensión por oferta en el último minuto: {s.extension_seconds} segundos (fijo).</p>
-      <button className={btn} disabled={m.isPending} onClick={() => m.mutate()}>Guardar</button>
+      <label className="block text-sm">
+        Incremento mínimo permitido
+        <input
+          className={input}
+          inputMode="decimal"
+          value={f.inc}
+          onChange={(e) => setF({ ...f, inc: e.target.value })}
+        />
+      </label>
+      <label className="block text-sm">
+        Duración mínima de artículos (horas)
+        <input
+          className={input}
+          inputMode="numeric"
+          value={f.h}
+          onChange={(e) => setF({ ...f, h: e.target.value })}
+        />
+      </label>
+      <label className="block text-sm">
+        Duración máxima (días)
+        <input
+          className={input}
+          inputMode="numeric"
+          value={f.d}
+          onChange={(e) => setF({ ...f, d: e.target.value })}
+        />
+      </label>
+      <p className="text-sm text-muted-foreground">
+        Extensión por oferta en el último minuto: {s.extension_seconds} segundos (fijo).
+      </p>
+      <button className={btn} disabled={m.isPending} onClick={() => m.mutate()}>
+        Guardar
+      </button>
     </div>
   );
 }
@@ -318,15 +582,27 @@ function AjustesForm({ s }: { s: { min_increment: number; min_duration_hours: nu
 function Registro() {
   const q = useQuery({
     queryKey: ["admin-audit"],
-    queryFn: async () => (await supabase.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(100)).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("admin_audit_log")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100)
+      ).data ?? [],
   });
-  if (!q.data?.length) return <Empty>{q.isLoading ? "Cargando…" : "Sin acciones registradas."}</Empty>;
+  if (!q.data?.length)
+    return <Empty>{q.isLoading ? "Cargando…" : "Sin acciones registradas."}</Empty>;
   return (
     <div className="space-y-2">
       {q.data.map((r) => (
         <div key={r.id} className="rounded-lg border border-border p-3 text-sm">
           <b>{r.action}</b> <span className="text-muted-foreground">· {fmtDate(r.created_at)}</span>
-          {r.details && <pre className="mt-1 overflow-x-auto text-xs text-muted-foreground">{JSON.stringify(r.details)}</pre>}
+          {r.details && (
+            <pre className="mt-1 overflow-x-auto text-xs text-muted-foreground">
+              {JSON.stringify(r.details)}
+            </pre>
+          )}
         </div>
       ))}
     </div>
