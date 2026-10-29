@@ -12,3 +12,4 @@
 - Manual membership submissions and review transitions use transactional database RPCs; direct request writes are revoked to prevent bypassing validation and single approval.
 - Membership documents use a private bucket and authenticated, signature-checked server uploads; temporary signed links are generated only under storage RLS.
 - Payment method configuration and proof requirements share a client-safe schema; each request freezes method and plan snapshots to preserve payment instructions and purchased duration.
+- PL/pgSQL validation routines must use distinct variable names and explicitly qualified set-returning-function column aliases to prevent variable/column ambiguity without weakening validation.
