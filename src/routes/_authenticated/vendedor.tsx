@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useRoles } from "@/lib/auth";
 import { money, errMsg, statusLabel } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
-import { CURRENCIES } from "@/lib/currency";
+import { CURRENCIES, COUNTRIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   head: () => ({
@@ -301,7 +301,14 @@ function Seller() {
             </div>
             <div className="space-y-1.5">
               <Label>País</Label>
-              <Input value={f.country} onChange={set("country")} />
+              <select aria-label="País" className={sel} value={f.country} onChange={set("country")}>
+                <option value="">Elegir país…</option>
+                {COUNTRIES.map(([code, name]) => (
+                  <option key={code} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label>Ciudad</Label>
