@@ -10,7 +10,7 @@ export const fieldSchema = z.object({
   required: z.boolean(),
 });
 export type ProofField = z.infer<typeof fieldSchema>;
-export const defaultFields: ProofField[] = [{ id: "reference", label: "Referencia / número de transacción", help: "Copia la referencia que aparece en tu comprobante.", type: "text", required: true }];
+export const defaultFields: [ProofField] = [{ id: "reference", label: "Referencia / número de transacción", help: "Copia la referencia que aparece en tu comprobante.", type: "text", required: true }];
 export const configSchema = z.object({
   description: z.string().max(500).default(""),
   countries: z.array(z.string().trim().min(2).max(80)).max(30).default([]),
@@ -21,8 +21,8 @@ export const configSchema = z.object({
 }).superRefine((v, ctx) => {
   if (new Set(v.requirements.map(f => f.id)).size !== v.requirements.length) ctx.addIssue({ code: "custom", message: "Cada campo debe tener un identificador único" });
   if (!v.requirements.some(f => f.required)) ctx.addIssue({ code: "custom", message: "Exige al menos un comprobante obligatorio" });
-  if (v.data.payment_link && !safeUrl(v.data.payment_link)) ctx.addIssue({ code: "custom", message: "El enlace de pago debe ser HTTPS válido" });
-  if (v.data.email && !z.string().email().safeParse(v.data.email).success) ctx.addIssue({ code: "custom", message: "Correo del método no válido" });
+  if (v.data['payment_link'] && !safeUrl(v.data['payment_link'])) ctx.addIssue({ code: "custom", message: "El enlace de pago debe ser HTTPS válido" });
+  if (v.data['email'] && !z.string().email().safeParse(v.data['email']).success) ctx.addIssue({ code: "custom", message: "Correo del método no válido" });
 });
 export type MethodConfig = z.infer<typeof configSchema>;
 export type PaymentMethod = { id: string; name: string; kind: string; instructions: string; active: boolean; sort: number; details: unknown };

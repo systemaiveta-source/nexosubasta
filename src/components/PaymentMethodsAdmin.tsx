@@ -36,7 +36,7 @@ export function PaymentMethodsAdmin() {
   <Dialog open={!!deleting} onOpenChange={open=>!open&&setDeleting(null)}><DialogContent><DialogTitle>¿Eliminar {deleting?.name}?</DialogTitle><DialogDescription>Si tiene pagos asociados, no podrá eliminarse. Desactívalo para conservar el historial.</DialogDescription><div className="flex gap-2"><Button variant="outline" onClick={()=>setDeleting(null)}>Cancelar</Button><Button variant="destructive" disabled={busy} onClick={remove}>Eliminar</Button></div></DialogContent></Dialog>
  </div>;
 }
-function MethodEditor({method,onSaved}:{method?:PaymentMethod;onSaved:()=>void}) {
+function MethodEditor({method,onSaved}:{method?:PaymentMethod | undefined;onSaved:()=>void}) {
  const initial=methodConfig(method?.details??{});
  const [name,setName]=useState(method?.name??'');const [kind,setKind]=useState(kindNames[method?.kind??'']?method?.kind??'manual':'platform');
  const [instructions,setInstructions]=useState(method?.instructions??'');const [active,setActive]=useState(method?.active??false);const [sort,setSort]=useState(method?.sort??1);const [config,setConfig]=useState<MethodConfig>(initial);
