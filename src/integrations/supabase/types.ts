@@ -177,6 +177,62 @@ export type Database = {
           },
         ]
       }
+      auction_payment_acceptances: {
+        Row: {
+          accepted_at: string
+          auction_id: string
+          bid_id: string
+          id: string
+          methods_snapshot: Json
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          auction_id: string
+          bid_id: string
+          id?: string
+          methods_snapshot: Json
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          auction_id?: string
+          bid_id?: string
+          id?: string
+          methods_snapshot?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_payment_acceptances_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: true
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_payment_acceptances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_private: {
         Row: {
           auction_id: string
@@ -215,6 +271,7 @@ export type Database = {
       }
       auctions: {
         Row: {
+          accepted_payment_methods: Json
           auction_type: string
           bid_count: number
           category_id: string | null
@@ -250,6 +307,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          accepted_payment_methods?: Json
           auction_type?: string
           bid_count?: number
           category_id?: string | null
@@ -285,6 +343,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          accepted_payment_methods?: Json
           auction_type?: string
           bid_count?: number
           category_id?: string | null
@@ -1055,6 +1114,7 @@ export type Database = {
     Views: {
       auctions_safe: {
         Row: {
+          accepted_payment_methods: Json | null
           auction_type: string | null
           bid_count: number | null
           category_id: string | null
@@ -1090,6 +1150,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          accepted_payment_methods?: Json | null
           auction_type?: string | null
           bid_count?: number | null
           category_id?: string | null
@@ -1125,6 +1186,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          accepted_payment_methods?: Json | null
           auction_type?: string | null
           bid_count?: number | null
           category_id?: string | null
@@ -1236,6 +1298,17 @@ export type Database = {
         Returns: undefined
       }
       become_seller: { Args: never; Returns: undefined }
+      bid_with_payment_acceptance: {
+        Args: {
+          _accept: boolean
+          _amount: number
+          _auction: string
+          _conditions?: string
+          _key: string
+          _terms: Json
+        }
+        Returns: Json
+      }
       cancel_auction: {
         Args: { _auction_id: string; _reason: string }
         Returns: undefined
@@ -1302,6 +1375,7 @@ export type Database = {
       publish_auction: {
         Args: { _auction_id: string }
         Returns: {
+          accepted_payment_methods: Json
           auction_type: string
           bid_count: number
           category_id: string | null
