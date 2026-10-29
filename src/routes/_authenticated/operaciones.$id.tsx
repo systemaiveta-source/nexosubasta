@@ -145,7 +145,14 @@ function Operation() {
                 </p>
                 <Button
                   disabled={
-                    busy || !canComplete(t.status, t.buyer_confirmed, t.seller_confirmed, isBuyer)
+                    busy ||
+                    !canComplete(
+                      t.status,
+                      t.buyer_confirmed,
+                      t.seller_confirmed,
+                      isBuyer,
+                      t.payment_stage,
+                    )
                   }
                   onClick={() => {
                     if (confirm("¿Confirmas que tu parte del acuerdo se completó?"))

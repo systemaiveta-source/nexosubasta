@@ -11,8 +11,13 @@ export function canComplete(
   buyerConfirmed: boolean,
   sellerConfirmed: boolean,
   isBuyer: boolean,
+  stage = "completion_pending",
 ) {
-  return status === "pending" && !(isBuyer ? buyerConfirmed : sellerConfirmed);
+  return (
+    status === "pending" &&
+    stage === "completion_pending" &&
+    !(isBuyer ? buyerConfirmed : sellerConfirmed)
+  );
 }
 export function nextOperationStage(stage: string, isBuyer: boolean): string | null {
   if (stage === "payment_pending") return isBuyer ? "receipt_sent" : "payment_confirmed";

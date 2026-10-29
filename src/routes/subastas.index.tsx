@@ -11,9 +11,13 @@ import {
   type AuctionListItem,
 } from "@/components/AuctionCard";
 import { useImageUrls } from "@/lib/images";
+import { Button } from "@/components/ui/button";
+import { COUNTRIES } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 
 const search = z.object({
+  page: z.number().int().min(0).optional(),
+  tipo: z.enum(["item", "service"]).optional(),
   q: z.string().optional(),
   cat: z.string().optional(),
   scope: z.enum(["local", "national", "international"]).optional(),
@@ -45,7 +49,7 @@ function Catalog() {
   const navigate = useNavigate({ from: "/subastas/" });
   const now = useNow();
   const set = (patch: Partial<typeof s>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+    navigate({ search: (prev) => ({ ...prev, page: 0, ...patch }), replace: true });
 
   const cats = useQuery({
     queryKey: ["categories"],
@@ -67,6 +71,7 @@ function Catalog() {
         .select(AUCTION_LIST_COLUMNS)
         .neq("status", "draft")
         .neq("status", "cancelled");
+      if (s.tipo) q = q.eq("auction_type", s.tipo);
       const estado = s.estado ?? "active";
       if (estado === "ended") q = q.in("status", ["ended_sold", "ended_unsold"]);
       else q = q.eq("status", estado);
@@ -81,7 +86,7 @@ function Catalog() {
         q = q.order("current_price", { ascending: true, nullsFirst: true });
       if (orden === "price_desc")
         q = q.order("current_price", { ascending: false, nullsFirst: false });
-      const { data, error } = await q.limit(60);
+      const { data, error } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
       if (error) throw error;
       return data as unknown as AuctionListItem[];
     },
@@ -148,12 +153,29 @@ function Catalog() {
           <option value="price_asc">Precio: menor</option>
           <option value="price_desc">Precio: mayor</option>
         </select>
-        <Input
-          placeholder="País"
-          defaultValue={s.pais}
-          onBlur={(e) => set({ pais: e.target.value || undefined })}
-          className="lg:col-span-1"
-        />
+        <select
+          aria-label="País"
+          className={sel}
+          value={s.pais ?? ""}
+          onChange={(e) => set({ pais: e.target.value || undefined })}
+        >
+          <option value="">Todos los países</option>
+          {COUNTRIES.map(([c, n]) => (
+            <option key={c} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Tipo de subasta"
+          className={sel}
+          value={s.tipo ?? ""}
+          onChange={(e) => set({ tipo: (e.target.value || undefined) as typeof s.tipo })}
+        >
+          <option value="">Productos y servicios</option>
+          <option value="item">Productos</option>
+          <option value="service">Servicios</option>
+        </select>
       </div>
       {list.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -177,6 +199,23 @@ function Catalog() {
       ) : (
         <Empty>No hay subastas que coincidan con tu búsqueda.</Empty>
       )}
+      <div className="mt-6 flex items-center justify-between">
+        <Button
+          variant="outline"
+          disabled={!s.page}
+          onClick={() => set({ page: (s.page ?? 0) - 1 })}
+        >
+          Anterior
+        </Button>
+        <span className="text-sm">Página {(s.page ?? 0) + 1}</span>
+        <Button
+          variant="outline"
+          disabled={(list.data?.length ?? 0) < 24}
+          onClick={() => set({ page: (s.page ?? 0) + 1 })}
+        >
+          Siguiente
+        </Button>
+      </div>
     </PageShell>
   );
 }
