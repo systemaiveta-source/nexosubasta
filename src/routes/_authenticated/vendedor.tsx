@@ -180,15 +180,12 @@ function Seller() {
         (type === "item" && (f.reserve || f.expected)) ||
         (type === "service" && f.starting_price)
       ) {
-        const { error: e2 } = await supabase
-          .from("auction_private")
-          .insert({
-            auction_id: a.id,
-            reserve_price: type === "item" && f.reserve ? Number(f.reserve) : null,
-            expected_price: type === "item" && f.expected ? Number(f.expected) : null,
-            service_budget:
-              type === "service" && f.starting_price ? Number(f.starting_price) : null,
-          });
+        const { error: e2 } = await supabase.from("auction_private").insert({
+          auction_id: a.id,
+          reserve_price: type === "item" && f.reserve ? Number(f.reserve) : null,
+          expected_price: type === "item" && f.expected ? Number(f.expected) : null,
+          service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
+        });
         if (e2) throw e2;
       }
       if (publish) {
