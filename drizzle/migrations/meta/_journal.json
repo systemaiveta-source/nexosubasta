@@ -29,6 +29,13 @@
       "when": 1793236826871,
       "tag": "0003_manual_membership_review",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793309189178,
+      "tag": "0004_fix_manual_method_guard_ambiguous_reference",
+      "breakpoints": true
     }
   ]
 }
