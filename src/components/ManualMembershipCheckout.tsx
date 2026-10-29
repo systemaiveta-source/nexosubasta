@@ -1,24 +1,249 @@
-import { useRef, useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { methodConfig, validateProof, validateDocument, type PaymentMethod } from '@/lib/manual-payments';
-import { uploadMembershipDocument } from '@/lib/manual-payments.functions';
-import { MethodDetails, PrivateDocument, paymentInput } from './ManualPaymentShared';
-import { money,errMsg } from '@/lib/format';
-export type CheckoutPlan={id:string;name:string;price:number|null;currency:string;months:number;benefits:string[]};
-export function ManualMembershipCheckout({plan,methods,requestId,initialValues={},onSent}:{plan:CheckoutPlan;methods:PaymentMethod[];requestId?:string | undefined;initialValues?:Record<string,string> | undefined;onSent:(id:string)=>void}) {
- const [methodId,setMethodId]=useState(methods.length===1?methods[0]?.id??'':'');const [values,setValues]=useState(initialValues);const [errors,setErrors]=useState<Record<string,string>>({});const [error,setError]=useState('');const [uploading,setUploading]=useState('');const [busy,setBusy]=useState(false);const [review,setReview]=useState(false);const lock=useRef(false);const key=useRef<string|null>(null);const upload=useServerFn(uploadMembershipDocument);
- const method=methods.find(m=>m.id===methodId);const fields=methodConfig(method?.details??{}).requirements;
- async function file(id:string,f:File|undefined){if(!f)return;setUploading(id);setError('');try{validateDocument(f.type,f.size);const data=new FormData();data.set('file',f);data.set('purpose','proof');const result=await upload({data});setValues(v=>({...v,[id]:result.path}));setErrors(e=>({...e,[id]:''}));}catch(e){setError(errMsg(e));}finally{setUploading('');}}
- async function send(){if(lock.current||!method)return;const invalid=validateProof(fields,values);setErrors(invalid);if(Object.keys(invalid).length)return;lock.current=true;setBusy(true);setError('');key.current??=crypto.randomUUID();try{const {data,error}=await supabase.rpc('submit_manual_membership',{_plan:plan.id,_method:method.id,_values:values,_key:key.current,...(requestId ? {_request:requestId} : {})});if(error)throw error;toast.success('Comprobante enviado. Pendiente de revisión.');onSent(data);}catch(e){setError(errMsg(e));}finally{lock.current=false;setBusy(false);}}
- return <section className="min-w-0 space-y-5 border-t border-border pt-6">
- <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-semibold">Pagar {plan.name}</h2><p className="text-sm text-muted-foreground">{plan.months} {plan.months===1?'mes':'meses'} · {plan.currency}</p></div><div><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-bold">{money(plan.price,plan.currency)}</p></div></div><ul className="grid gap-1 text-sm sm:grid-cols-2">{plan.benefits.map(b=><li key={b}>• {b}</li>)}</ul>
- <p className="border-l-2 border-primary bg-secondary p-3 text-sm">Enviar un comprobante no activa la membresía. Primero debe aprobarlo un administrador.</p>
- {!methods.length?<p className="text-sm text-muted-foreground">No hay métodos activos para la moneda y el país de tu perfil. Contacta a NEXO desde Ayuda.</p>:<fieldset className="space-y-2"><legend className="mb-2 font-semibold">Método de pago</legend>{methods.map(m=><label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 ${methodId===m.id?'border-primary bg-primary/5':'border-border'}`}><input type="radio" name="membership-method" value={m.id} checked={methodId===m.id} disabled={busy||!!uploading} onChange={()=>{setMethodId(m.id);setValues({});setReview(false);setErrors({});}}/><span className="min-w-0 break-words text-sm font-medium">{m.name}</span></label>)}</fieldset>}
- {method&&<><h3 className="font-semibold">Datos para pagar</h3><MethodDetails method={method}/><h3 className="border-t border-border pt-4 font-semibold">{review?'Revisar comprobante':'Enviar comprobante'}</h3>{review?<div className="space-y-3">{fields.map(f=><div key={f.id}><p className="text-xs text-muted-foreground">{f.label}</p>{f.type==='file'&&values[f.id]?<PrivateDocument path={values[f.id] ?? ''}/>:<p className="break-all text-sm">{values[f.id]||'No enviado'}</p>}</div>)}</div>:<div className="grid gap-4 sm:grid-cols-2">{fields.map(f=><label key={f.id} className="block min-w-0 space-y-1 text-sm"><span className="font-medium">{f.label} {f.required?'*':'(opcional)'}</span><span className="block text-xs text-muted-foreground">{f.help}</span>{f.type==='file'?<><input type="file" className={paymentInput} accept="image/jpeg,image/png,image/webp,application/pdf" disabled={!!uploading||busy} onChange={e=>file(f.id,e.target.files?.[0])}/><span className="block text-xs text-muted-foreground">JPG, PNG, WebP o PDF · máximo 5 MB</span>{values[f.id]&&<span className="block text-xs text-nexo-green">Archivo privado cargado</span>}</>:<input className={paymentInput} type={f.type==='email'?'email':f.type==='url'?'url':'text'} inputMode={f.type==='number'?'numeric':undefined} maxLength={f.type==='number'?100:2000} value={values[f.id]??''} aria-invalid={!!errors[f.id]} onChange={e=>setValues({...values,[f.id]:e.target.value})}/>} {errors[f.id]&&<span role="alert" className="block text-xs text-destructive">{errors[f.id]}</span>}</label>)}</div>}
- {uploading&&<div role="status" className="space-y-2 text-sm"><p>Subiendo comprobante…</p><progress className="w-full"/></div>}{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
- <div className="flex flex-wrap gap-2">{review?<><Button variant="outline" disabled={busy} onClick={()=>setReview(false)}>Editar</Button><Button disabled={busy||!!uploading} onClick={send}>{busy?'Enviando…':'Confirmar envío'}</Button></>:<Button disabled={busy||!!uploading} onClick={()=>{const invalid=validateProof(fields,values);setErrors(invalid);if(!Object.keys(invalid).length)setReview(true);}}>Revisar antes de enviar</Button>}</div></>}
- </section>;
+import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  methodConfig,
+  validateProof,
+  validateDocument,
+  type PaymentMethod,
+} from "@/lib/manual-payments";
+import { uploadMembershipDocument } from "@/lib/manual-payments.functions";
+import { MethodDetails, PrivateDocument, paymentInput } from "./ManualPaymentShared";
+import { money, errMsg } from "@/lib/format";
+export type CheckoutPlan = {
+  id: string;
+  name: string;
+  price: number | null;
+  currency: string;
+  months: number;
+  benefits: string[];
+};
+export function ManualMembershipCheckout({
+  plan,
+  methods,
+  requestId,
+  initialValues = {},
+  onSent,
+}: {
+  plan: CheckoutPlan;
+  methods: PaymentMethod[];
+  requestId?: string | undefined;
+  initialValues?: Record<string, string> | undefined;
+  onSent: (id: string) => void;
+}) {
+  const [methodId, setMethodId] = useState(methods.length === 1 ? (methods[0]?.id ?? "") : "");
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
+  const lock = useRef(false);
+  const key = useRef<string | null>(null);
+  const upload = useServerFn(uploadMembershipDocument);
+  const method = methods.find((m) => m.id === methodId);
+  const fields = methodConfig(method?.details ?? {}).requirements;
+  async function file(id: string, f: File | undefined) {
+    if (!f) return;
+    setUploading(id);
+    setError("");
+    try {
+      validateDocument(f.type, f.size);
+      const data = new FormData();
+      data.set("file", f);
+      data.set("purpose", "proof");
+      const result = await upload({ data });
+      setValues((v) => ({ ...v, [id]: result.path }));
+      setErrors((e) => ({ ...e, [id]: "" }));
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setUploading("");
+    }
+  }
+  async function send() {
+    if (lock.current || !method) return;
+    const invalid = validateProof(fields, values);
+    setErrors(invalid);
+    if (Object.keys(invalid).length) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    key.current ??= crypto.randomUUID();
+    try {
+      const { data, error } = await supabase.rpc("submit_manual_membership", {
+        _plan: plan.id,
+        _method: method.id,
+        _values: values,
+        _key: key.current,
+        ...(requestId ? { _request: requestId } : {}),
+      });
+      if (error) throw error;
+      toast.success("Comprobante enviado. Pendiente de revisión.");
+      onSent(data);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="min-w-0 space-y-5 border-t border-border pt-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Pagar {plan.name}</h2>
+          <p className="text-sm text-muted-foreground">
+            {plan.months} {plan.months === 1 ? "mes" : "meses"} · {plan.currency}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-2xl font-bold">{money(plan.price, plan.currency)}</p>
+        </div>
+      </div>
+      <ul className="grid gap-1 text-sm sm:grid-cols-2">
+        {plan.benefits.map((b) => (
+          <li key={b}>• {b}</li>
+        ))}
+      </ul>
+      <p className="border-l-2 border-primary bg-secondary p-3 text-sm">
+        Enviar un comprobante no activa la membresía. Primero debe aprobarlo un administrador.
+      </p>
+      {!methods.length ? (
+        <p className="text-sm text-muted-foreground">
+          No hay métodos activos para la moneda y el país de tu perfil. Contacta a NEXO desde Ayuda.
+        </p>
+      ) : (
+        <fieldset className="space-y-2">
+          <legend className="mb-2 font-semibold">Método de pago</legend>
+          {methods.map((m) => (
+            <label
+              key={m.id}
+              className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 ${methodId === m.id ? "border-primary bg-primary/5" : "border-border"}`}
+            >
+              <input
+                type="radio"
+                name="membership-method"
+                value={m.id}
+                checked={methodId === m.id}
+                disabled={busy || !!uploading}
+                onChange={() => {
+                  setMethodId(m.id);
+                  setValues({});
+                  setReview(false);
+                  setErrors({});
+                }}
+              />
+              <span className="min-w-0 break-words text-sm font-medium">{m.name}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {method && (
+        <>
+          <h3 className="font-semibold">Datos para pagar</h3>
+          <MethodDetails method={method} />
+          <h3 className="border-t border-border pt-4 font-semibold">
+            {review ? "Revisar comprobante" : "Enviar comprobante"}
+          </h3>
+          {review ? (
+            <div className="space-y-3">
+              {fields.map((f) => (
+                <div key={f.id}>
+                  <p className="text-xs text-muted-foreground">{f.label}</p>
+                  {f.type === "file" && values[f.id] ? (
+                    <PrivateDocument path={values[f.id] ?? ""} />
+                  ) : (
+                    <p className="break-all text-sm">{values[f.id] || "No enviado"}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {fields.map((f) => (
+                <label key={f.id} className="block min-w-0 space-y-1 text-sm">
+                  <span className="font-medium">
+                    {f.label} {f.required ? "*" : "(opcional)"}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{f.help}</span>
+                  {f.type === "file" ? (
+                    <>
+                      <input
+                        type="file"
+                        className={paymentInput}
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        disabled={!!uploading || busy}
+                        onChange={(e) => file(f.id, e.target.files?.[0])}
+                      />
+                      <span className="block text-xs text-muted-foreground">
+                        JPG, PNG, WebP o PDF · máximo 5 MB
+                      </span>
+                      {values[f.id] && (
+                        <span className="block text-xs text-nexo-green">
+                          Archivo privado cargado
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <input
+                      className={paymentInput}
+                      type={f.type === "email" ? "email" : f.type === "url" ? "url" : "text"}
+                      inputMode={f.type === "number" ? "numeric" : undefined}
+                      maxLength={f.type === "number" ? 100 : 2000}
+                      value={values[f.id] ?? ""}
+                      aria-invalid={!!errors[f.id]}
+                      onChange={(e) => setValues({ ...values, [f.id]: e.target.value })}
+                    />
+                  )}{" "}
+                  {errors[f.id] && (
+                    <span role="alert" className="block text-xs text-destructive">
+                      {errors[f.id]}
+                    </span>
+                  )}
+                </label>
+              ))}
+            </div>
+          )}
+          {uploading && (
+            <div role="status" className="space-y-2 text-sm">
+              <p>Subiendo comprobante…</p>
+              <progress className="w-full" />
+            </div>
+          )}
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {review ? (
+              <>
+                <Button variant="outline" disabled={busy} onClick={() => setReview(false)}>
+                  Editar
+                </Button>
+                <Button disabled={busy || !!uploading} onClick={send}>
+                  {busy ? "Enviando…" : "Confirmar envío"}
+                </Button>
+              </>
+            ) : (
+              <Button
+                disabled={busy || !!uploading}
+                onClick={() => {
+                  const invalid = validateProof(fields, values);
+                  setErrors(invalid);
+                  if (!Object.keys(invalid).length) setReview(true);
+                }}
+              >
+                Revisar antes de enviar
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
 }

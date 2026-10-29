@@ -1,61 +1,538 @@
-import { useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Trash2, ArrowUp, ArrowDown, Save, Eye } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { dataLabels, methodConfig, methodKeys, methodSchema, validateDocument, defaultFields, type MethodConfig, type PaymentMethod, type ProofField } from '@/lib/manual-payments';
-import { savePaymentMethod, uploadMembershipDocument } from '@/lib/manual-payments.functions';
-import { MethodDetails, paymentInput, QueryFailure } from './ManualPaymentShared';
-import { errMsg } from '@/lib/format';
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Plus, Trash2, ArrowUp, ArrowDown, Save, Eye } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import {
+  dataLabels,
+  methodConfig,
+  methodKeys,
+  methodSchema,
+  validateDocument,
+  defaultFields,
+  type MethodConfig,
+  type PaymentMethod,
+  type ProofField,
+} from "@/lib/manual-payments";
+import { savePaymentMethod, uploadMembershipDocument } from "@/lib/manual-payments.functions";
+import { MethodDetails, paymentInput, QueryFailure } from "./ManualPaymentShared";
+import { errMsg } from "@/lib/format";
 
-const kindNames: Record<string,string> = { bank:'Transferencia bancaria', wallet:'Billetera', platform:'Plataforma', crypto:'Criptomoneda', manual:'Otro medio manual' };
+const kindNames: Record<string, string> = {
+  bank: "Transferencia bancaria",
+  wallet: "Billetera",
+  platform: "Plataforma",
+  crypto: "Criptomoneda",
+  manual: "Otro medio manual",
+};
 export function PaymentMethodsAdmin() {
- const qc = useQueryClient();
- const q = useQuery({ queryKey:['admin-pm'], queryFn: async () => { const { data,error } = await supabase.from('payment_methods').select('*').order('sort').order('name'); if(error) throw error; return data; } });
- const [editor,setEditor]=useState<PaymentMethod | 'new' | null>(null);
- const [deleting,setDeleting]=useState<PaymentMethod|null>(null);
- const [busy,setBusy]=useState(false);
- const refresh=()=> { qc.invalidateQueries({queryKey:['admin-pm']}); qc.invalidateQueries({queryKey:['pay-methods']}); };
- async function change(pm: PaymentMethod, values: { active?: boolean; sort?: number }) {
-  setBusy(true); try { const {error}=await supabase.from('payment_methods').update(values).eq('id',pm.id); if(error) throw error; refresh(); } catch(e){toast.error(errMsg(e));} finally{setBusy(false);}
- }
- async function remove(){ if(!deleting)return; setBusy(true);try {const {error}=await supabase.from('payment_methods').delete().eq('id',deleting.id);if(error)throw error;setDeleting(null);refresh();toast.success('Método eliminado');}catch{toast.error('Tiene pagos asociados o no se puede eliminar. Puedes desactivarlo.');}finally{setBusy(false);} }
- return <div className="space-y-5">
-  <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">Métodos de pago</h2><p className="text-sm text-muted-foreground">{q.data?.filter(m=>m.active).length ?? 0} activos · {q.data?.length ?? 0} en total</p></div><Button onClick={()=>setEditor('new')}><Plus className="size-4"/>Nuevo método</Button></div>
-  {q.isError ? <QueryFailure retry={()=>q.refetch()}/> : q.isPending ? <p role="status">Cargando métodos…</p> : !q.data.length ? <p className="py-8 text-muted-foreground">Todavía no hay métodos de pago.</p> : <div className="divide-y divide-border border-y border-border">{q.data.map((m,i)=><div key={m.id} className="flex min-w-0 flex-wrap items-center gap-3 py-4">
-   <div className="flex items-center gap-1"><Button variant="ghost" size="icon" className="size-8" aria-label={`Subir ${m.name}`} title="Subir" disabled={busy||i===0} onClick={()=>change(m,{sort:Math.max(0,(q.data[i-1]?.sort??0)-1)})}><ArrowUp className="size-4"/></Button><Button variant="ghost" size="icon" className="size-8" aria-label={`Bajar ${m.name}`} title="Bajar" disabled={busy||i===q.data.length-1} onClick={()=>change(m,{sort:(q.data[i+1]?.sort??0)+1})}><ArrowDown className="size-4"/></Button></div>
-   <div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{m.name}</h3><p className="text-xs text-muted-foreground">{kindNames[m.kind]??m.kind} · {methodConfig(m.details).currency} · Orden {m.sort}</p></div>
-   <label className="flex items-center gap-2 text-sm"><Switch checked={m.active} disabled={busy} onCheckedChange={active=>change(m,{active})} aria-label={`Activar ${m.name}`}/>{m.active?'Activo':'Inactivo'}</label>
-   <Button size="icon" variant="outline" title="Editar" aria-label={`Editar ${m.name}`} onClick={()=>setEditor(m)}><Pencil className="size-4"/></Button><Button size="icon" variant="ghost" title="Eliminar" aria-label={`Eliminar ${m.name}`} onClick={()=>setDeleting(m)}><Trash2 className="size-4"/></Button>
-  </div>)}</div>}
-  <Dialog open={editor!==null} onOpenChange={open=>!open&&setEditor(null)}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto"><DialogTitle>{editor==='new'?'Nuevo método':'Editar método'}</DialogTitle><DialogDescription>Datos de pago y comprobantes requeridos.</DialogDescription>{editor&&<MethodEditor key={typeof editor==='string'?'new':editor.id} method={typeof editor==='string'?undefined:editor} onSaved={()=>{setEditor(null);refresh();}}/>}</DialogContent></Dialog>
-  <Dialog open={!!deleting} onOpenChange={open=>!open&&setDeleting(null)}><DialogContent><DialogTitle>¿Eliminar {deleting?.name}?</DialogTitle><DialogDescription>Si tiene pagos asociados, no podrá eliminarse. Desactívalo para conservar el historial.</DialogDescription><div className="flex gap-2"><Button variant="outline" onClick={()=>setDeleting(null)}>Cancelar</Button><Button variant="destructive" disabled={busy} onClick={remove}>Eliminar</Button></div></DialogContent></Dialog>
- </div>;
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["admin-pm"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .order("sort")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [editor, setEditor] = useState<PaymentMethod | "new" | null>(null);
+  const [deleting, setDeleting] = useState<PaymentMethod | null>(null);
+  const [busy, setBusy] = useState(false);
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["admin-pm"] });
+    qc.invalidateQueries({ queryKey: ["pay-methods"] });
+  };
+  async function change(pm: PaymentMethod, values: { active?: boolean; sort?: number }) {
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("payment_methods").update(values).eq("id", pm.id);
+      if (error) throw error;
+      refresh();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function remove() {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("payment_methods").delete().eq("id", deleting.id);
+      if (error) throw error;
+      setDeleting(null);
+      refresh();
+      toast.success("Método eliminado");
+    } catch {
+      toast.error("Tiene pagos asociados o no se puede eliminar. Puedes desactivarlo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Métodos de pago</h2>
+          <p className="text-sm text-muted-foreground">
+            {q.data?.filter((m) => m.active).length ?? 0} activos · {q.data?.length ?? 0} en total
+          </p>
+        </div>
+        <Button onClick={() => setEditor("new")}>
+          <Plus className="size-4" />
+          Nuevo método
+        </Button>
+      </div>
+      {q.isError ? (
+        <QueryFailure retry={() => q.refetch()} />
+      ) : q.isPending ? (
+        <p role="status">Cargando métodos…</p>
+      ) : !q.data.length ? (
+        <p className="py-8 text-muted-foreground">Todavía no hay métodos de pago.</p>
+      ) : (
+        <div className="divide-y divide-border border-y border-border">
+          {q.data.map((m, i) => (
+            <div key={m.id} className="flex min-w-0 flex-wrap items-center gap-3 py-4">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  aria-label={`Subir ${m.name}`}
+                  title="Subir"
+                  disabled={busy || i === 0}
+                  onClick={() => change(m, { sort: Math.max(0, (q.data[i - 1]?.sort ?? 0) - 1) })}
+                >
+                  <ArrowUp className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  aria-label={`Bajar ${m.name}`}
+                  title="Bajar"
+                  disabled={busy || i === q.data.length - 1}
+                  onClick={() => change(m, { sort: (q.data[i + 1]?.sort ?? 0) + 1 })}
+                >
+                  <ArrowDown className="size-4" />
+                </Button>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="break-words font-semibold">{m.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {kindNames[m.kind] ?? m.kind} · {methodConfig(m.details).currency} · Orden{" "}
+                  {m.sort}
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  checked={m.active}
+                  disabled={busy}
+                  onCheckedChange={(active) => change(m, { active })}
+                  aria-label={`Activar ${m.name}`}
+                />
+                {m.active ? "Activo" : "Inactivo"}
+              </label>
+              <Button
+                size="icon"
+                variant="outline"
+                title="Editar"
+                aria-label={`Editar ${m.name}`}
+                onClick={() => setEditor(m)}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Eliminar"
+                aria-label={`Eliminar ${m.name}`}
+                onClick={() => setDeleting(m)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <Dialog open={editor !== null} onOpenChange={(open) => !open && setEditor(null)}>
+        <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto">
+          <DialogTitle>{editor === "new" ? "Nuevo método" : "Editar método"}</DialogTitle>
+          <DialogDescription>Datos de pago y comprobantes requeridos.</DialogDescription>
+          {editor && (
+            <MethodEditor
+              key={typeof editor === "string" ? "new" : editor.id}
+              method={typeof editor === "string" ? undefined : editor}
+              onSaved={() => {
+                setEditor(null);
+                refresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogTitle>¿Eliminar {deleting?.name}?</DialogTitle>
+          <DialogDescription>
+            Si tiene pagos asociados, no podrá eliminarse. Desactívalo para conservar el historial.
+          </DialogDescription>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setDeleting(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={remove}>
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
-function MethodEditor({method,onSaved}:{method?:PaymentMethod | undefined;onSaved:()=>void}) {
- const initial=methodConfig(method?.details??{});
- const [name,setName]=useState(method?.name??'');const [kind,setKind]=useState(kindNames[method?.kind??'']?method?.kind??'manual':'platform');
- const [instructions,setInstructions]=useState(method?.instructions??'');const [active,setActive]=useState(method?.active??false);const [sort,setSort]=useState(method?.sort??1);const [config,setConfig]=useState<MethodConfig>(initial);
- const [countries,setCountries]=useState(initial.countries.join(', '));const [preview,setPreview]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [uploading,setUploading]=useState(false);
- const save=useServerFn(savePaymentMethod);const upload=useServerFn(uploadMembershipDocument);
- const field=(label:string,element:React.ReactNode)=> <label className="block min-w-0 space-y-1 text-sm"><span className="font-medium">{label}</span>{element}</label>;
- const setRequirement=(i:number,patch:Partial<ProofField>)=>setConfig({...config,requirements:config.requirements.map((r,index)=>index===i?{...r,...patch}:r)});
- async function qr(file:File|undefined){if(!file)return;setUploading(true);setError('');try{validateDocument(file.type,file.size,true);const data=new FormData();data.set('file',file);data.set('purpose','qr');const result=await upload({data});setConfig(c=>({...c,qr_path:result.path}));}catch(e){setError(errMsg(e));}finally{setUploading(false);}}
- async function submit(){if(busy)return;setError(''); const data={id:method?.id,name,kind:kind as 'manual',instructions,active,sort,details:{...config,countries:countries.split(',').map(v=>v.trim()).filter(Boolean),data:Object.fromEntries(Object.entries(config.data).filter(([key])=>methodKeys(kind).includes(key)))}};const parsed=methodSchema.safeParse(data);if(!parsed.success){setError(parsed.error.issues.map(i=>i.message).join(' · '));return;}setBusy(true);try{await save({data:parsed.data});toast.success('Método guardado');onSaved();}catch(e){setError(errMsg(e));}finally{setBusy(false);}}
- return <div className="space-y-5">
-  <div className="grid gap-4 sm:grid-cols-2">{field('Nombre público',<input className={paymentInput} value={name} maxLength={100} onChange={e=>setName(e.target.value)}/>)}{field('Tipo',<select className={paymentInput} value={kind} onChange={e=>setKind(e.target.value)}>{Object.entries(kindNames).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>)}{field('Países (separados por coma; vacío = todos)',<input className={paymentInput} value={countries} onChange={e=>setCountries(e.target.value)}/>)}{field('Moneda',<input className={paymentInput} value={config.currency} maxLength={3} onChange={e=>setConfig({...config,currency:e.target.value.toUpperCase()})}/>)}{field('Orden',<input type="number" min={0} max={10000} className={paymentInput} value={sort} onChange={e=>setSort(Number(e.target.value))}/>)}<label className="flex items-center gap-3 text-sm"><Switch checked={active} onCheckedChange={setActive}/>Activo en checkout</label></div>
-  {field('Descripción pública',<textarea className={paymentInput} maxLength={500} value={config.description} onChange={e=>setConfig({...config,description:e.target.value})}/>)}
-  <h3 className="border-t border-border pt-4 font-semibold">Datos del destinatario</h3><div className="grid gap-4 sm:grid-cols-2">{methodKeys(kind).map(key=>field(dataLabels[key]??key,<input key={key} className={paymentInput} type={key==='email'?'email':key==='payment_link'?'url':'text'} value={config.data[key]??''} maxLength={500} onChange={e=>setConfig({...config,data:{...config.data,[key]:e.target.value}})}/>))}</div>
-  {field('Instrucciones',<textarea rows={3} className={paymentInput} value={instructions} maxLength={4000} onChange={e=>setInstructions(e.target.value)}/>)}
-  {field('QR / imagen de instrucciones (JPG, PNG, WebP; máximo 5 MB)',<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} className={paymentInput} onChange={e=>qr(e.target.files?.[0])}/>)}{uploading&&<p role="status">Subiendo imagen…</p>}{config.qr_path&&<div className="flex gap-2 text-sm"><span>Imagen privada cargada</span><Button variant="link" size="sm" onClick={()=>setConfig({...config,qr_path:''})}>Quitar</Button></div>}
-  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4"><h3 className="font-semibold">Comprobantes exigidos</h3><Button variant="outline" size="sm" disabled={config.requirements.length>=12} onClick={()=>setConfig({...config,requirements:[...config.requirements,{id:`campo_${config.requirements.length+1}`,label:'',help:'',type:'text',required:true}]})}><Plus className="size-4"/>Campo</Button></div>
-  <div className="space-y-4">{config.requirements.map((r,i)=><div key={i} className="border-b border-border pb-4"><div className="grid gap-3 sm:grid-cols-3">{field('Etiqueta',<input className={paymentInput} maxLength={100} value={r.label} onChange={e=>setRequirement(i,{label:e.target.value})}/>)}{field('Tipo de comprobante',<select className={paymentInput} value={r.type} onChange={e=>setRequirement(i,{type:e.target.value as ProofField['type']})}><option value="text">Referencia / texto</option><option value="number">Número de operación</option><option value="email">Correo usado</option><option value="url">URL HTTPS</option><option value="file">Imagen / PDF</option></select>)}{field('Identificador (sin espacios)',<input className={paymentInput} value={r.id} maxLength={40} onChange={e=>setRequirement(i,{id:e.target.value})}/>)}{field('Ayuda',<input className={paymentInput} value={r.help} maxLength={300} onChange={e=>setRequirement(i,{help:e.target.value})}/>)}<label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={r.required} onChange={e=>setRequirement(i,{required:e.target.checked})}/>Obligatorio</label><Button variant="ghost" aria-label={`Eliminar campo ${r.label}`} disabled={config.requirements.length===1} onClick={()=>setConfig({...config,requirements:config.requirements.filter((_,index)=>index!==i)})}><Trash2 className="size-4"/>Quitar campo</Button></div></div>)}</div>
-  {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
-  <div className="flex gap-2"><Button disabled={busy||uploading} onClick={submit}><Save className="size-4"/>{busy?'Guardando…':'Guardar método'}</Button><Button variant="outline" onClick={()=>setPreview(!preview)}><Eye className="size-4"/>Vista previa</Button></div>
-  {preview&&<div className="border-t border-border pt-5"><h3 className="mb-4 font-semibold">{name||'Método de pago'}</h3><MethodDetails method={{id:method?.id??'',name,kind,instructions,active,sort,details:config}}/><h4 className="mt-4 font-semibold">Comprobantes</h4>{config.requirements.map(r=><p key={r.id} className="text-sm">{r.label} · {r.required?'Obligatorio':'Opcional'} · {r.help}</p>)}</div>}
- </div>;
+function MethodEditor({
+  method,
+  onSaved,
+}: {
+  method?: PaymentMethod | undefined;
+  onSaved: () => void;
+}) {
+  const initial = methodConfig(method?.details ?? {});
+  const [name, setName] = useState(method?.name ?? "");
+  const [kind, setKind] = useState(
+    kindNames[method?.kind ?? ""] ? (method?.kind ?? "manual") : "platform",
+  );
+  const [instructions, setInstructions] = useState(method?.instructions ?? "");
+  const [active, setActive] = useState(method?.active ?? false);
+  const [sort, setSort] = useState(method?.sort ?? 1);
+  const [config, setConfig] = useState<MethodConfig>(initial);
+  const [countries, setCountries] = useState(initial.countries.join(", "));
+  const [preview, setPreview] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const save = useServerFn(savePaymentMethod);
+  const upload = useServerFn(uploadMembershipDocument);
+  const field = (label: string, element: React.ReactNode) => (
+    <label className="block min-w-0 space-y-1 text-sm">
+      <span className="font-medium">{label}</span>
+      {element}
+    </label>
+  );
+  const setRequirement = (i: number, patch: Partial<ProofField>) =>
+    setConfig({
+      ...config,
+      requirements: config.requirements.map((r, index) => (index === i ? { ...r, ...patch } : r)),
+    });
+  async function qr(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      validateDocument(file.type, file.size, true);
+      const data = new FormData();
+      data.set("file", file);
+      data.set("purpose", "qr");
+      const result = await upload({ data });
+      setConfig((c) => ({ ...c, qr_path: result.path }));
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setUploading(false);
+    }
+  }
+  async function submit() {
+    if (busy) return;
+    setError("");
+    const data = {
+      id: method?.id,
+      name,
+      kind: kind as "manual",
+      instructions,
+      active,
+      sort,
+      details: {
+        ...config,
+        countries: countries
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+        data: Object.fromEntries(
+          Object.entries(config.data).filter(([key]) => methodKeys(kind).includes(key)),
+        ),
+      },
+    };
+    const parsed = methodSchema.safeParse(data);
+    if (!parsed.success) {
+      setError(parsed.error.issues.map((i) => i.message).join(" · "));
+      return;
+    }
+    setBusy(true);
+    try {
+      await save({ data: parsed.data });
+      toast.success("Método guardado");
+      onSaved();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {field(
+          "Nombre público",
+          <input
+            className={paymentInput}
+            value={name}
+            maxLength={100}
+            onChange={(e) => setName(e.target.value)}
+          />,
+        )}
+        {field(
+          "Tipo",
+          <select className={paymentInput} value={kind} onChange={(e) => setKind(e.target.value)}>
+            {Object.entries(kindNames).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>,
+        )}
+        {field(
+          "Países (separados por coma; vacío = todos)",
+          <input
+            className={paymentInput}
+            value={countries}
+            onChange={(e) => setCountries(e.target.value)}
+          />,
+        )}
+        {field(
+          "Moneda",
+          <input
+            className={paymentInput}
+            value={config.currency}
+            maxLength={3}
+            onChange={(e) => setConfig({ ...config, currency: e.target.value.toUpperCase() })}
+          />,
+        )}
+        {field(
+          "Orden",
+          <input
+            type="number"
+            min={0}
+            max={10000}
+            className={paymentInput}
+            value={sort}
+            onChange={(e) => setSort(Number(e.target.value))}
+          />,
+        )}
+        <label className="flex items-center gap-3 text-sm">
+          <Switch checked={active} onCheckedChange={setActive} />
+          Activo en checkout
+        </label>
+      </div>
+      {field(
+        "Descripción pública",
+        <textarea
+          className={paymentInput}
+          maxLength={500}
+          value={config.description}
+          onChange={(e) => setConfig({ ...config, description: e.target.value })}
+        />,
+      )}
+      <h3 className="border-t border-border pt-4 font-semibold">Datos del destinatario</h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {methodKeys(kind).map((key) =>
+          field(
+            dataLabels[key] ?? key,
+            <input
+              key={key}
+              className={paymentInput}
+              type={key === "email" ? "email" : key === "payment_link" ? "url" : "text"}
+              value={config.data[key] ?? ""}
+              maxLength={500}
+              onChange={(e) =>
+                setConfig({ ...config, data: { ...config.data, [key]: e.target.value } })
+              }
+            />,
+          ),
+        )}
+      </div>
+      {field(
+        "Instrucciones",
+        <textarea
+          rows={3}
+          className={paymentInput}
+          value={instructions}
+          maxLength={4000}
+          onChange={(e) => setInstructions(e.target.value)}
+        />,
+      )}
+      {field(
+        "QR / imagen de instrucciones (JPG, PNG, WebP; máximo 5 MB)",
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={uploading}
+          className={paymentInput}
+          onChange={(e) => qr(e.target.files?.[0])}
+        />,
+      )}
+      {uploading && <p role="status">Subiendo imagen…</p>}
+      {config.qr_path && (
+        <div className="flex gap-2 text-sm">
+          <span>Imagen privada cargada</span>
+          <Button variant="link" size="sm" onClick={() => setConfig({ ...config, qr_path: "" })}>
+            Quitar
+          </Button>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+        <h3 className="font-semibold">Comprobantes exigidos</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={config.requirements.length >= 12}
+          onClick={() =>
+            setConfig({
+              ...config,
+              requirements: [
+                ...config.requirements,
+                {
+                  id: `campo_${config.requirements.length + 1}`,
+                  label: "",
+                  help: "",
+                  type: "text",
+                  required: true,
+                },
+              ],
+            })
+          }
+        >
+          <Plus className="size-4" />
+          Campo
+        </Button>
+      </div>
+      <div className="space-y-4">
+        {config.requirements.map((r, i) => (
+          <div key={i} className="border-b border-border pb-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {field(
+                "Etiqueta",
+                <input
+                  className={paymentInput}
+                  maxLength={100}
+                  value={r.label}
+                  onChange={(e) => setRequirement(i, { label: e.target.value })}
+                />,
+              )}
+              {field(
+                "Tipo de comprobante",
+                <select
+                  className={paymentInput}
+                  value={r.type}
+                  onChange={(e) =>
+                    setRequirement(i, { type: e.target.value as ProofField["type"] })
+                  }
+                >
+                  <option value="text">Referencia / texto</option>
+                  <option value="number">Número de operación</option>
+                  <option value="email">Correo usado</option>
+                  <option value="url">URL HTTPS</option>
+                  <option value="file">Imagen / PDF</option>
+                </select>,
+              )}
+              {field(
+                "Identificador (sin espacios)",
+                <input
+                  className={paymentInput}
+                  value={r.id}
+                  maxLength={40}
+                  onChange={(e) => setRequirement(i, { id: e.target.value })}
+                />,
+              )}
+              {field(
+                "Ayuda",
+                <input
+                  className={paymentInput}
+                  value={r.help}
+                  maxLength={300}
+                  onChange={(e) => setRequirement(i, { help: e.target.value })}
+                />,
+              )}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={r.required}
+                  onChange={(e) => setRequirement(i, { required: e.target.checked })}
+                />
+                Obligatorio
+              </label>
+              <Button
+                variant="ghost"
+                aria-label={`Eliminar campo ${r.label}`}
+                disabled={config.requirements.length === 1}
+                onClick={() =>
+                  setConfig({
+                    ...config,
+                    requirements: config.requirements.filter((_, index) => index !== i),
+                  })
+                }
+              >
+                <Trash2 className="size-4" />
+                Quitar campo
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button disabled={busy || uploading} onClick={submit}>
+          <Save className="size-4" />
+          {busy ? "Guardando…" : "Guardar método"}
+        </Button>
+        <Button variant="outline" onClick={() => setPreview(!preview)}>
+          <Eye className="size-4" />
+          Vista previa
+        </Button>
+      </div>
+      {preview && (
+        <div className="border-t border-border pt-5">
+          <h3 className="mb-4 font-semibold">{name || "Método de pago"}</h3>
+          <MethodDetails
+            method={{
+              id: method?.id ?? "",
+              name,
+              kind,
+              instructions,
+              active,
+              sort,
+              details: config,
+            }}
+          />
+          <h4 className="mt-4 font-semibold">Comprobantes</h4>
+          {config.requirements.map((r) => (
+            <p key={r.id} className="text-sm">
+              {r.label} · {r.required ? "Obligatorio" : "Opcional"} · {r.help}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
