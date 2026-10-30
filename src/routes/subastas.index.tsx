@@ -153,7 +153,13 @@ function Catalog() {
           <option value="price_asc">Precio: menor</option>
           <option value="price_desc">Precio: mayor</option>
         </select>
-        <CatalogSelect kind="country" label="País" value={s.pais ?? ""} onChange={(pais) => set({ pais: pais || undefined })} empty="Todos los países" />
+        <CatalogSelect
+          kind="country"
+          label="País"
+          value={s.pais ?? ""}
+          onChange={(pais) => set({ pais: pais || undefined })}
+          empty="Todos los países"
+        />
         <select
           aria-label="Tipo de subasta"
           className={sel}

@@ -7,7 +7,12 @@ describe("confirmaciones independientes", () => {
     expect(mutuallyComplete("pending", "completion_pending", true, true, true)).toBe(false);
     expect(mutuallyComplete("pending", "coordination", true, true, false)).toBe(false);
   });
-  it("operación completada deja chat de solo lectura", () => { expect(chatWritable("completed")).toBe(false); expect(chatWritable("cancelled")).toBe(false); expect(chatWritable("pending")).toBe(true); expect(chatWritable("disputed")).toBe(true); });
+  it("operación completada deja chat de solo lectura", () => {
+    expect(chatWritable("completed")).toBe(false);
+    expect(chatWritable("cancelled")).toBe(false);
+    expect(chatWritable("pending")).toBe(true);
+    expect(chatWritable("disputed")).toBe(true);
+  });
   it("no finaliza antes de pago y entrega", () =>
     expect(canComplete("pending", false, false, true, "coordination")).toBe(false));
   it("una parte no confirma por la otra", () => {

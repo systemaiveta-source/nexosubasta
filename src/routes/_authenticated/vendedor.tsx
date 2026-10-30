@@ -78,7 +78,11 @@ function Seller() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
   const [methods, setMethods] = useState<AuctionMethod[]>([]);
-  const [delivery, setDelivery] = useState<Delivery>({ mode: "pickup", cost: null, conditions: "" });
+  const [delivery, setDelivery] = useState<Delivery>({
+    mode: "pickup",
+    cost: null,
+    conditions: "",
+  });
   const [request, setRequest] = useState<ServiceRequest>(emptyServiceRequest);
   const saveDraft = useServerFn(saveExtendedDraft);
   const [images, setImages] = useState<string[]>([]);
@@ -192,7 +196,15 @@ function Seller() {
           service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
         },
       };
-      const { id: draftId } = await saveDraft({ data: { id: editingId, auction: draftArgs._data, private: draftArgs._private, delivery: type === "item" ? deliverySchema.parse(delivery) : null, request: type === "service" ? request : null } });
+      const { id: draftId } = await saveDraft({
+        data: {
+          id: editingId,
+          auction: draftArgs._data,
+          private: draftArgs._private,
+          delivery: type === "item" ? deliverySchema.parse(delivery) : null,
+          request: type === "service" ? request : null,
+        },
+      });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
       if (publish) {
         const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
@@ -264,9 +276,17 @@ function Seller() {
           : [],
       );
       setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
-      setDelivery(parseDelivery(a["delivery_snapshot"]) ?? { mode: "other", cost: null, conditions: String(a["delivery_terms"] ?? "") });
+      setDelivery(
+        parseDelivery(a["delivery_snapshot"]) ?? {
+          mode: "other",
+          cost: null,
+          conditions: String(a["delivery_terms"] ?? ""),
+        },
+      );
       const details = await supabase.rpc("get_service_request", { _auction: id });
-      setRequest(details.data ? details.data as unknown as ServiceRequest : emptyServiceRequest());
+      setRequest(
+        details.data ? (details.data as unknown as ServiceRequest) : emptyServiceRequest(),
+      );
       setStartsAt(typeof a["starts_at"] === "string" ? a["starts_at"].slice(0, 16) : "");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
@@ -355,7 +375,12 @@ function Seller() {
             </div>
             <div className="space-y-1.5">
               <Label>País</Label>
-              <CatalogSelect kind="country" label="País" value={f.country} onChange={(country) => setF((p) => ({ ...p, country }))} />
+              <CatalogSelect
+                kind="country"
+                label="País"
+                value={f.country}
+                onChange={(country) => setF((p) => ({ ...p, country }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Ciudad</Label>
@@ -363,7 +388,12 @@ function Seller() {
             </div>
             <div className="space-y-1.5">
               <Label>Moneda</Label>
-              <CatalogSelect kind="currency" label="Moneda" value={f.currency} onChange={(currency) => setF((p) => ({ ...p, currency }))} />
+              <CatalogSelect
+                kind="currency"
+                label="Moneda"
+                value={f.currency}
+                onChange={(currency) => setF((p) => ({ ...p, currency }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -429,37 +459,44 @@ function Seller() {
             )}
           </div>
           {type === "item" && <DeliveryForm value={delivery} onChange={setDelivery} />}
-          {type === "service" && <p className="text-sm text-muted-foreground">No incluyas direcciones, contactos ni datos confidenciales en el título o descripción pública.</p>}
-          {type === "item" && <div>
-            <Label>Fotos desde tu dispositivo</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {images.map((p) => (
-                <div key={p} className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted">
-                  {previews.data?.[p] && (
-                    <img src={previews.data[p]} alt="" className="h-full w-full object-cover" />
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Quitar"
-                    className="absolute right-0.5 top-0.5 rounded-full bg-background p-0.5"
-                    onClick={() => setImages((x) => x.filter((y) => y !== p))}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground">
-                <ImagePlus className="h-6 w-6" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => addFiles(e.target.files)}
-                />
-              </label>
+          {type === "service" && (
+            <p className="text-sm text-muted-foreground">
+              No incluyas direcciones, contactos ni datos confidenciales en el título o descripción
+              pública.
+            </p>
+          )}
+          {type === "item" && (
+            <div>
+              <Label>Fotos desde tu dispositivo</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {images.map((p) => (
+                  <div key={p} className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted">
+                    {previews.data?.[p] && (
+                      <img src={previews.data[p]} alt="" className="h-full w-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Quitar"
+                      className="absolute right-0.5 top-0.5 rounded-full bg-background p-0.5"
+                      onClick={() => setImages((x) => x.filter((y) => y !== p))}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground">
+                  <ImagePlus className="h-6 w-6" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => addFiles(e.target.files)}
+                  />
+                </label>
+              </div>
             </div>
-          </div>}
+          )}
           <label className="block space-y-2 text-sm">
             Inicio programado (opcional)
             <Input

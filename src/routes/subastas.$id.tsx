@@ -76,10 +76,18 @@ function AuctionPage() {
     },
   });
   const a = auction.data;
-  const serviceDetails = useQuery({ queryKey: ["service-details", id, user?.id], enabled: !!user && a?.auction_type === "service", retry: false, queryFn: () => getServiceRequest({ data: { id } }) });
-  const request = serviceDetails.data as unknown as (ServiceRequest & { locations_verified: boolean }) | null;
+  const serviceDetails = useQuery({
+    queryKey: ["service-details", id, user?.id],
+    enabled: !!user && a?.auction_type === "service",
+    retry: false,
+    queryFn: () => getServiceRequest({ data: { id } }),
+  });
+  const request = serviceDetails.data as unknown as
+    (ServiceRequest & { locations_verified: boolean }) | null;
   const serviceCategory = SERVICE_CATALOG.find((entry) => entry.id === request?.category);
-  useEffect(() => { setAccepted(false); }, [id, a?.delivery_snapshot, a?.accepted_payment_methods]);
+  useEffect(() => {
+    setAccepted(false);
+  }, [id, a?.delivery_snapshot, a?.accepted_payment_methods]);
 
   const bids = useQuery({
     queryKey: ["bids", id, user?.id],
@@ -192,7 +200,7 @@ function AuctionPage() {
     !!user &&
     !isSeller &&
     !isLeader &&
-    (methods.length === 0 && !delivery || accepted) &&
+    ((methods.length === 0 && !delivery) || accepted) &&
     (a.auction_type !== "service" || !!request);
 
   async function placeBid(e: React.FormEvent) {
@@ -310,13 +318,60 @@ function AuctionPage() {
               </p>
               <p className="flex items-start gap-2">
                 <Truck className="mt-0.5 h-4 w-4 text-nexo-blue" />
-                {delivery ? <span>{deliveryModes[delivery.mode]}{delivery.mode === "paid" ? ` · ${money(delivery.cost, a.currency)} adicionales` : ""}<br />{delivery.conditions}</span> : a.delivery_terms || "Entrega por acordar; no se asume envío gratuito"}
+                {delivery ? (
+                  <span>
+                    {deliveryModes[delivery.mode]}
+                    {delivery.mode === "paid"
+                      ? ` · ${money(delivery.cost, a.currency)} adicionales`
+                      : ""}
+                    <br />
+                    {delivery.conditions}
+                  </span>
+                ) : (
+                  a.delivery_terms || "Entrega por acordar; no se asume envío gratuito"
+                )}
               </p>
             </div>
           </div>
-          {a.auction_type === "service" && <section className="mt-6 space-y-3 border-y border-border py-4"><h2 className="font-semibold">Detalles para cotizar</h2>
-            {request && serviceCategory ? <><p>{serviceCategory.name} · {request.subcategory}</p><dl className="space-y-3 text-sm">{serviceCategory.fields.filter((field) => request.values[field.key] && (!field.when || request.values[field.when[0]] === field.when[1])).map((field) => <div key={field.key}><dt className="font-medium">{field.label}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{request.values[field.key]}</dd></div>)}</dl>{request.category === "transport" && <p className="text-sm text-muted-foreground">Mapa y validación de ruta pendientes de configurar Google Maps. No se admiten ofertas de transporte sin ubicaciones validadas.</p>}</> : <p className="text-sm text-muted-foreground">Información privada disponible para el cliente y proveedores con membresía activa. No puedes ofertar sin acceder a los detalles completos.</p>}
-          </section>}
+          {a.auction_type === "service" && (
+            <section className="mt-6 space-y-3 border-y border-border py-4">
+              <h2 className="font-semibold">Detalles para cotizar</h2>
+              {request && serviceCategory ? (
+                <>
+                  <p>
+                    {serviceCategory.name} · {request.subcategory}
+                  </p>
+                  <dl className="space-y-3 text-sm">
+                    {serviceCategory.fields
+                      .filter(
+                        (field) =>
+                          request.values[field.key] &&
+                          (!field.when || request.values[field.when[0]] === field.when[1]),
+                      )
+                      .map((field) => (
+                        <div key={field.key}>
+                          <dt className="font-medium">{field.label}</dt>
+                          <dd className="whitespace-pre-wrap break-words text-muted-foreground">
+                            {request.values[field.key]}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                  {request.category === "transport" && (
+                    <p className="text-sm text-muted-foreground">
+                      Mapa y validación de ruta pendientes de configurar Google Maps. No se admiten
+                      ofertas de transporte sin ubicaciones validadas.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Información privada disponible para el cliente y proveedores con membresía activa.
+                  No puedes ofertar sin acceder a los detalles completos.
+                </p>
+              )}
+            </section>
+          )}
         </div>
 
         <div className="space-y-5">
@@ -435,7 +490,8 @@ function AuctionPage() {
                             checked={accepted}
                             onChange={(e) => setAccepted(e.target.checked)}
                           />
-                          Acepto los métodos de pago y las condiciones de entrega indicadas. NEXO no procesa ni verifica el pago.
+                          Acepto los métodos de pago y las condiciones de entrega indicadas. NEXO no
+                          procesa ni verifica el pago.
                         </label>
                       </div>
                     )}

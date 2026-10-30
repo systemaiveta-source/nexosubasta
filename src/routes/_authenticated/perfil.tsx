@@ -165,7 +165,12 @@ function Profile() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>País</Label>
-              <CatalogSelect kind="country" label="País" value={form.country} onChange={(country) => setForm({ ...form, country })} />
+              <CatalogSelect
+                kind="country"
+                label="País"
+                value={form.country}
+                onChange={(country) => setForm({ ...form, country })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Ciudad</Label>
@@ -183,7 +188,12 @@ function Profile() {
             </div>
             <div className="space-y-1.5">
               <Label>Moneda preferida</Label>
-              <CatalogSelect kind="currency" label="Moneda preferida" value={form.currency} onChange={(currency) => setForm({ ...form, currency })} />
+              <CatalogSelect
+                kind="currency"
+                label="Moneda preferida"
+                value={form.currency}
+                onChange={(currency) => setForm({ ...form, currency })}
+              />
             </div>
           </div>
           <Button onClick={save}>Guardar</Button>

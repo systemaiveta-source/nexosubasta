@@ -151,7 +151,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             onClick={() => setOpen(false)}
           >
             {links}
-            {installation.available && <Button variant="ghost" onClick={installation.install}>Instalar app</Button>}
+            {installation.available && (
+              <Button variant="ghost" onClick={installation.install}>
+                Instalar app
+              </Button>
+            )}
             <Link to="/ayuda" className={linkCls}>
               Ayuda
             </Link>
@@ -175,7 +179,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <Link to="/planes" className="hover:text-foreground">
               Planes
             </Link>
-            {installation.available && <Button variant="link" onClick={installation.install}>Instalar app</Button>}
+            {installation.available && (
+              <Button variant="link" onClick={installation.install}>
+                Instalar app
+              </Button>
+            )}
             <Link to="/normas" className="hover:text-foreground">
               Normas
             </Link>
