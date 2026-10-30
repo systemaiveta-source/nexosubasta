@@ -1,4 +1,5 @@
 # NEXO roadmap
+- [ ] Nuevo requisito: avisos Web Push propios de la PWA sin Firebase. Requiere suscripciones privadas, claves VAPID seguras y envío servidor independiente de sesión; no confundir instalación con entrega automática. Sin envíos reales ni despliegue.
 - [ ] Ajuste solicitado 30 octubre: unificar búsqueda/selección de país y moneda; distinguir sección pública y especialidad privada; corregir permiso push contextual. Firebase fue cancelado: entrega en segundo plano y activación automática pendientes de conexión y configuración autorizada.
 - [x] Ampliación 30 octubre: instalación compartida sin logout y ocultamiento, cierre/chat solo lectura protegido, búsqueda ISO completa, entrega aceptada y congelada, 17 categorías específicas privadas, preferencias y cola push desactivada; pruebas y límites en docs/cierre-integrado.md.
 - [ ] Transporte: faltan conexión Google Maps y verificador autorizado real de origen/destino; borrador permitido, publicación/oferta bloqueadas hasta validar. Fotos privadas opcionales de solicitudes pendientes.
