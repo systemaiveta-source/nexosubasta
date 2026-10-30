@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gavel, ShieldCheck, Timer, Smartphone } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import logo from "@/assets/nexo-logo.png.asset.json";
+import { useInstall } from "@/lib/install";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,6 +54,7 @@ const features = [
 ];
 
 function Index() {
+  const installation = useInstall();
   return (
     <SiteLayout>
       <section className="mx-auto max-w-6xl px-4 pb-12 pt-14 text-center sm:pt-20">
@@ -70,12 +73,7 @@ function Index() {
           >
             Explorar subastas
           </Link>
-          <Link
-            to="/instalar"
-            className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft hover:opacity-90"
-          >
-            Instalar NEXO
-          </Link>
+          {installation.available && <Button onClick={installation.install}>Instalar NEXO</Button>}
         </div>
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-4 pb-20 sm:grid-cols-2 lg:grid-cols-4">

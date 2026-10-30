@@ -7,10 +7,11 @@ export function InstallProvider({ children }: { children: ReactNode }) {
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   useEffect(() => {
     const mode = window.matchMedia("(display-mode: standalone)");
-    const sync = () => setInstalled(isInstalled(mode.matches, (navigator as Navigator & { standalone?: boolean }).standalone === true, false));
+    let completed = false;
+    const sync = () => setInstalled(isInstalled(mode.matches, (navigator as Navigator & { standalone?: boolean }).standalone === true, completed));
     sync();
     const offered = (event: Event) => { event.preventDefault(); setPrompt(event as InstallEvent); };
-    const complete = () => { setInstalled(true); setPrompt(null); };
+    const complete = () => { completed = true; setInstalled(true); setPrompt(null); };
     mode.addEventListener("change", sync);
     window.addEventListener("beforeinstallprompt", offered);
     window.addEventListener("appinstalled", complete);
