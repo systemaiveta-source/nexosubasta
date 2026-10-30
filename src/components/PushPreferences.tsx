@@ -125,12 +125,6 @@ export function PushPreferences() {
               {pushError}
             </p>
           )}
-          {!query.data.configured && (
-            <p className="text-sm text-muted-foreground">
-              Los avisos fuera de NEXO están pendientes de configuración segura del envío. No
-              necesitas una cuenta Firebase. Puedes guardar tus preferencias de avisos internos.
-            </p>
-          )}
           {query.data.configured && !query.data.deliveryEnabled && (
             <p role="status" className="text-sm text-muted-foreground">
               Puedes autorizar este dispositivo, pero el envío externo aún no está activado.
