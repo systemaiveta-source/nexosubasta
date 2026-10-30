@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { auctionPushPath, pushConfigured } from "./push";
+import { pushConfigured } from "./push";
 import { webPushSubscriptionSchema } from "./web-push-schema";
 export const getPushSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -80,93 +80,12 @@ export const disablePushDevices = createServerFn({ method: "POST" })
     if (result.error) throw new Error("No se pudieron desactivar los dispositivos");
     return { ok: true };
   });
-/** Deliberately not scheduled or called by the UI: activation requires configured FCM and explicit authorization. */
+/** No UI auto-send: an authenticated administrator may dispatch only after runtime activation. */
 export const dispatchPushBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const role = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
+    const role = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (role.error || !role.data) throw new Error("No autorizado");
-    const key = process.env["FIREBASE_MESSAGING_API_KEY"];
-    const authorization = process.env["LOVABLE_API_KEY"];
-    if (!key || !authorization || process.env["NEXO_PUSH_DELIVERY_ENABLED"] !== "true")
-      throw new Error("Envíos push desactivados: falta configuración y autorización de activación");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const batch = await supabaseAdmin.rpc("claim_push_batch", { _limit: 20 });
-    if (batch.error) throw new Error("No se pudo obtener el lote");
-    let sent = 0;
-    for (const item of batch.data) {
-      const path = auctionPushPath(item.auction_id);
-      if (!path) {
-        await supabaseAdmin
-          .from("push_outbox")
-          .update({ status: "skipped" })
-          .eq("id", item.queue_id);
-        continue;
-      }
-      const data: Record<string, string> = {
-        title: item.title,
-        body: `${item.category_name} · Nueva subasta en NEXO`,
-        path,
-      };
-      if (item.image_path) {
-        const signed = await supabaseAdmin.storage
-          .from("auction-images")
-          .createSignedUrl(item.image_path, 7200);
-        const image = signed.data?.signedUrl;
-        const browserOrigin = process.env["VITE_SUPABASE_URL"];
-        if (browserOrigin && image) {
-          const url = new URL(image);
-          const origin = new URL(browserOrigin);
-          url.host = origin.host;
-          url.protocol = origin.protocol;
-          data["image"] = url.href;
-        }
-      }
-      try {
-        const response = await fetch(
-          "https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${authorization}`,
-              "X-Connection-Api-Key": key,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                token: item.device_token,
-                data,
-                webpush: { headers: { TTL: "3600", Urgency: "normal" } },
-              },
-            }),
-          },
-        );
-        if (!response.ok) {
-          const errorBody = await response.text();
-          // Do not log provider bodies containing device tokens; retain HTTP status and bounded failure category.
-          console.error(`Push provider rejected delivery [${response.status}]`);
-          if (response.status === 404 && errorBody.includes("UNREGISTERED"))
-            await supabaseAdmin
-              .from("push_devices")
-              .update({ active: false })
-              .eq("id", item.device_id);
-          await supabaseAdmin
-            .from("push_outbox")
-            .update({ status: "failed" })
-            .eq("id", item.queue_id);
-          continue;
-        }
-        await supabaseAdmin.from("push_outbox").update({ status: "sent" }).eq("id", item.queue_id);
-        sent++;
-      } catch {
-        await supabaseAdmin
-          .from("push_outbox")
-          .update({ status: "failed" })
-          .eq("id", item.queue_id);
-      }
-    }
-    return { sent, attempted: batch.data.length };
+    const { deliverWebPushBatch } = await import("./web-push.server");
+    return deliverWebPushBatch();
   });

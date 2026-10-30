@@ -24,4 +24,4 @@
 - Country and currency controls use a single searchable popover; public auction category and private service specialty stay separate to preserve catalog filters and private validation.
 - Delivery snapshots are validated on drafts and frozen by deferred bid constraints; closed operations reject new messages at the database boundary.
 - Service requests use a client-safe category schema and a private RLS table; exact locations never belong to the public auction projection, and unverified transport cannot publish.
-- Push uses an opt-in transactional outbox and messaging-only worker; dispatch is admin-authorized, bounded and disabled until explicit runtime activation, with no automatic sends during development.
+- Native Web Push uses owner-scoped subscriptions, a messaging-only worker and WebCrypto encryption; dispatch is admin-authorized and bounded, endpoints are allowlisted, and delivery stays disabled until explicit runtime activation. Legacy FCM storage/worker remains untouched for compatibility, but current UI does not use Firebase.
