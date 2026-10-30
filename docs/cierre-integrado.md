@@ -1,5 +1,14 @@
 # Cierre integrado NEXO — 29 octubre 2026
 
+## Compartir subastas en redes — 30 octubre 2026
+
+- Botones en ficha pública: compartir nativo (copiar como alternativa), WhatsApp, Facebook, X, Telegram y copiar enlace exacto del dominio publicado. Cancelar diálogo nativo no muestra error. No se enviaron publicaciones ni mensajes reales.
+- Información para rastreadores servida en HTML inicial: título del artículo, descripción pública acotada, canonical/og:url propios; og:image/twitter:image mismo artículo vía endpoint estable, sin URLs firmadas que caduquen. Servicios usan descripción genérica y no difunden adjuntos ni direcciones. Borradores no habilitan compartir ni imagen.
+- Miniatura 1200×630 JPEG con fotografía completa centrada sin recortar el producto; lectura anónima de auctions_safe y auction-images bajo permisos existentes, sin cliente privilegiado ni cambios de esquema. Límite de entrada 8MB/12M píxeles y formatos JPEG/PNG/WebP; imágenes ausentes responden 404, imágenes fuera de límites 422. Mayores o formatos no admitidos quedan sin miniatura hasta sustituir la foto. La dependencia WASM se incluye para Workers, no es un servicio comercial.
+- Archivos: AuctionShare.tsx; auction-share.ts/.functions.ts/.test.ts; subastas.$id.tsx; api/public/subastas/$id/miniatura.ts; package.json/bun.lock; AGENTS; roadmap; memoria y este cierre.
+- Verificación real local con artículo existente «CREMA PARA LOS PIES»: HTML inicial contiene título específico, URL imagen estable, endpoint respondió 200 image/jpeg, **1200×630 / 80.018 bytes**; artículo no existente 404. Menú apunta a la ficha exacta, móvil sin desbordamientos ni errores JS. No se guardaron datos. **15 archivos / 59 tests aprobados** a las 01:53:31 UTC; lint dirigido limpio. Error inicial de tipo nullable corregido; compilación/typecheck automático **OK 01:53:23 UTC**.
+- **No publicado ni desplegado.** Las redes usan el sitio publicado anterior hasta la próxima publicación autorizada; el trabajo actual se prueba en preview. Tras publicar, cada red decide cuándo releer el enlace y si presenta miniatura. No se verificó publicación/raspado real en Facebook/WhatsApp/X por la prohibición de publicar.
+
 ## Corrección de formularios y Web Push nativo — 30 octubre, 01:47 UTC
 
 - País y moneda ahora tienen un solo control con búsqueda desplegable, no una caja de búsqueda permanente más otro selector. Aplica a perfil, publicación y catálogo. Buscar no cambia moneda ni convierte importes. Los servicios conservan dos datos distintos necesarios: «Sección del catálogo» pública y categoría especializada privada; se eliminó la etiqueta confusa repetida, no su validación.
