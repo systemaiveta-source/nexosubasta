@@ -75,7 +75,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth?redirect=${encodeURIComponent(authDestination(redirect))}`,
-            data: { display_name: name.trim() },
+            data: { display_name: name.trim(), ...(refCode ? { ref: refCode } : {}) },
           },
         });
         if (error) throw error;
@@ -119,6 +119,11 @@ function AuthPage() {
           <h1 className="font-display text-2xl font-bold">
             {mode === "in" ? "Entrar" : mode === "up" ? "Crear cuenta" : "Recuperar contraseña"}
           </h1>
+          {refCode && mode === "up" && !sent && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Te invitó un miembro de NEXO (código <b>{refCode}</b>).
+            </p>
+          )}
           {sent ? (
             <p className="mt-6 rounded-lg bg-accent p-4 text-sm text-accent-foreground">{sent}</p>
           ) : (
