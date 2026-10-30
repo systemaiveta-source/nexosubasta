@@ -11,7 +11,10 @@ function Control() {
     </>
   );
 }
-afterEach(() => { cleanup(); localStorage.removeItem("nexo-installed"); });
+afterEach(() => {
+  cleanup();
+  localStorage.removeItem("nexo-installed");
+});
 describe("instalación sin salir de la cuenta", () => {
   it("standalone e iOS ocultan la oferta", () => {
     expect(isInstalled(true, false, false)).toBe(true);

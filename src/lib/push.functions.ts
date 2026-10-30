@@ -67,7 +67,10 @@ export const registerPushDevice = createServerFn({ method: "POST" })
       throw new Error("Push pendiente de configuración");
     const result = await context.supabase
       .from("push_devices")
-      .upsert({ user_id: context.userId, token: data.token, active: true }, { onConflict: "token" });
+      .upsert(
+        { user_id: context.userId, token: data.token, active: true },
+        { onConflict: "token" },
+      );
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
     return { ok: true };
   });
@@ -113,7 +116,9 @@ export const dispatchPushBatch = createServerFn({ method: "POST" })
         path,
       };
       if (item.image_path) {
-        const signed = await supabaseAdmin.storage.from("auction-images").createSignedUrl(item.image_path, 7200);
+        const signed = await supabaseAdmin.storage
+          .from("auction-images")
+          .createSignedUrl(item.image_path, 7200);
         const image = signed.data?.signedUrl;
         const browserOrigin = process.env["VITE_SUPABASE_URL"];
         if (browserOrigin && image) {
@@ -148,7 +153,10 @@ export const dispatchPushBatch = createServerFn({ method: "POST" })
           // Do not log provider bodies containing device tokens; retain HTTP status and bounded failure category.
           console.error(`Push provider rejected delivery [${response.status}]`);
           if (response.status === 404 && errorBody.includes("UNREGISTERED"))
-            await supabaseAdmin.from("push_devices").update({ active: false }).eq("id", item.device_id);
+            await supabaseAdmin
+              .from("push_devices")
+              .update({ active: false })
+              .eq("id", item.device_id);
           await supabaseAdmin
             .from("push_outbox")
             .update({ status: "failed" })
