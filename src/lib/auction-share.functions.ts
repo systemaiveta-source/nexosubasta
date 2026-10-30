@@ -28,8 +28,8 @@ export const getAuctionShare = createServerFn({ method: "GET" })
       .neq("status", "draft")
       .maybeSingle();
     if (result.error) throw new Error("No se pudo consultar la subasta");
-    if (!result.data?.title) return null;
     const a = result.data;
+    if (!a?.title) return null;
     return {
       title: a.title,
       // Never distribute private service descriptions or locations in social previews.
