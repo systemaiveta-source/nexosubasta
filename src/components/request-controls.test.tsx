@@ -42,10 +42,11 @@ describe("controles de solicitudes y catálogos", () => {
   it("buscar no cambia la moneda seleccionada ni convierte importes", () => {
     const change = vi.fn();
     render(<CatalogSelect kind="currency" label="Moneda" value="USD" onChange={change} />);
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "cordoba" } });
-    expect(screen.getByRole("combobox")).toHaveValue("USD");
+    fireEvent.click(screen.getByRole("combobox", { name: "Moneda" }));
+    fireEvent.change(screen.getByLabelText("Buscar moneda"), { target: { value: "cordoba" } });
+    expect(screen.getByRole("combobox", { name: "Moneda" })).toHaveTextContent("USD");
     expect(change).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "NIO" } });
+    fireEvent.click(screen.getByRole("option", { name: /NIO/ }));
     expect(change).toHaveBeenCalledWith("NIO");
   });
 });

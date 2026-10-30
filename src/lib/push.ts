@@ -11,19 +11,19 @@ export function auctionPushPath(id: string) {
 }
 export async function registerPush(config: PushConfig) {
   if (!pushConfigured(config))
-    throw new Error("Push pendiente de configuración; no se solicitó permiso.");
+    throw new Error("Push pendiente de configuración: conecta Firebase con la opción Include web push; no se solicitó permiso.");
   if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator))
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
   if (window.top !== window.self)
     throw new Error("Abre NEXO en una pestaña propia para permitir notificaciones.");
-  const { isSupported, getMessaging, getToken } = await import("firebase/messaging");
-  if (!(await isSupported())) throw new Error("Este navegador no admite push web.");
   const permission =
     Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted")
     throw new Error(
       "Notificaciones bloqueadas. Puedes cambiar el permiso en los ajustes del navegador.",
     );
+  const { isSupported, getMessaging, getToken } = await import("firebase/messaging");
+  if (!(await isSupported())) throw new Error("Este navegador no admite push web.");
   const firebaseConfig = {
     apiKey: config.apiKey,
     projectId: config.projectId,

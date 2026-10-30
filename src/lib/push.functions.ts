@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { auctionPushPath } from "./push";
+import { auctionPushPath, pushConfigured } from "./push";
 export const getPushSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -12,10 +12,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
       vapidKey: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_VAPID_KEY"] ?? "",
     };
     const configured = Boolean(
-      config.apiKey &&
-      config.projectId &&
-      config.appId &&
-      config.vapidKey &&
+      pushConfigured(config) &&
       process.env["FIREBASE_MESSAGING_API_KEY"] &&
       process.env["LOVABLE_API_KEY"],
     );
@@ -36,6 +33,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
       throw new Error("No se pudieron cargar las preferencias");
     return {
       configured,
+      deliveryEnabled: configured && process.env["NEXO_PUSH_DELIVERY_ENABLED"] === "true",
       config,
       preferences: preferences.data ?? { new_auctions: false, categories: [] },
       devices: devices.count ?? 0,
