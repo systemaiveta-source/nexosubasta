@@ -15,6 +15,7 @@
 - PL/pgSQL validation routines must use distinct variable names and explicitly qualified set-returning-function column aliases to prevent variable/column ambiguity without weakening validation.
 - Authentication returns and notification links share a known-route destination validator; notification reads and read-state writes use authenticated server functions scoped to the caller, with polling as a reliable update fallback.
 - Public auction screens read auctions_safe, never legacy starting_price directly; the projection suppresses service budgets and explicitly scopes draft visibility.
+- Auction social metadata is loaded anonymously from auctions_safe; share-image endpoints resolve only public item images and generate bounded JPEG renditions, never expose drafts, service attachments or signed storage URLs in head tags.
 - Draft saves and publication limits use transactional RPCs; publication locks per owner to enforce membership limits under concurrency.
 - Service close only opens client selection; a row-locked selection RPC creates one operation with client as buyer and provider as seller.
 - Operations use authenticated server functions and transactional RPCs for messages, payment stages, disputes and independent confirmations; private attachments use storage RLS and expiring signed links.

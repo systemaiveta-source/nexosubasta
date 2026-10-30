@@ -17,21 +17,13 @@ import { deliveryModes, parseDelivery } from "@/lib/delivery";
 import { getServiceRequest } from "@/lib/auction-details.functions";
 import { SERVICE_CATALOG, type ServiceRequest } from "@/lib/service-catalog";
 import { ServiceRouteMap } from "@/components/ServiceRouteMap";
+import { AuctionShare } from "@/components/AuctionShare";
+import { getAuctionShare } from "@/lib/auction-share.functions";
+import { auctionShareHead } from "@/lib/auction-share";
 
 export const Route = createFileRoute("/subastas/$id")({
-  head: () => ({
-    meta: [
-      { title: "Subasta — NEXO" },
-      {
-        name: "description",
-        content: "Detalles, ofertas y tiempo restante de esta subasta en NEXO.",
-      },
-      { property: "og:title", content: "Subasta en NEXO" },
-      { property: "og:description", content: "Mira la subasta y haz tu oferta." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  loader: ({ params }) => getAuctionShare({ data: { id: params.id } }),
+  head: ({ params, loaderData }) => auctionShareHead(params.id, loaderData ?? null),
   component: AuctionPage,
 });
 
@@ -387,6 +379,7 @@ function AuctionPage() {
             <h1 className="mt-2 font-display text-2xl font-bold leading-tight sm:text-3xl">
               {a.title}
             </h1>
+            {a.status !== "draft" && <div className="mt-3"><AuctionShare id={id} title={a.title} /></div>}
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
