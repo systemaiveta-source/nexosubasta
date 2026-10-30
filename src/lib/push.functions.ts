@@ -28,6 +28,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
       context.supabase
         .from("push_devices")
         .select("id", { count: "exact", head: true })
+        .eq("active", true)
         .eq("user_id", context.userId),
       context.supabase.from("categories").select("id,name").neq("slug", "nft-cripto").order("sort"),
     ]);
@@ -66,7 +67,7 @@ export const registerPushDevice = createServerFn({ method: "POST" })
       throw new Error("Push pendiente de configuración");
     const result = await context.supabase
       .from("push_devices")
-      .upsert({ user_id: context.userId, token: data.token }, { onConflict: "token" });
+      .upsert({ user_id: context.userId, token: data.token, active: true }, { onConflict: "token" });
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
     return { ok: true };
   });
@@ -75,7 +76,7 @@ export const disablePushDevices = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const result = await context.supabase
       .from("push_devices")
-      .delete()
+      .update({ active: false })
       .eq("user_id", context.userId);
     if (result.error) throw new Error("No se pudieron desactivar los dispositivos");
     return { ok: true };
