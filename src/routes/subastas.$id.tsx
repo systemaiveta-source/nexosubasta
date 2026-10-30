@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { deliveryModes, parseDelivery } from "@/lib/delivery";
 import { getServiceRequest } from "@/lib/auction-details.functions";
 import { SERVICE_CATALOG, type ServiceRequest } from "@/lib/service-catalog";
+import { ServiceRouteMap } from "@/components/ServiceRouteMap";
 
 export const Route = createFileRoute("/subastas/$id")({
   head: () => ({
