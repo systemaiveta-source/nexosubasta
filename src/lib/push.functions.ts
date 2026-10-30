@@ -9,10 +9,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
     const config = {
       vapidKey: process.env["NEXO_VAPID_PUBLIC_KEY"] ?? "",
     };
-    const configured = Boolean(
-      pushConfigured(config) &&
-      process.env["NEXO_VAPID_PRIVATE_KEY"],
-    );
+    const configured = Boolean(pushConfigured(config) && process.env["NEXO_VAPID_PRIVATE_KEY"]);
     const [preferences, devices, categories] = await Promise.all([
       context.supabase
         .from("notification_preferences")
@@ -59,12 +56,17 @@ export const registerPushDevice = createServerFn({ method: "POST" })
     z.object({ subscription: webPushSubscriptionSchema }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    if (!process.env["NEXO_VAPID_PRIVATE_KEY"])
-      throw new Error("Push pendiente de configuración");
+    if (!process.env["NEXO_VAPID_PRIVATE_KEY"]) throw new Error("Push pendiente de configuración");
     const result = await context.supabase
       .from("push_devices")
       .upsert(
-        { user_id: context.userId, token: data.subscription.endpoint, transport: "webpush", subscription: data.subscription, active: true },
+        {
+          user_id: context.userId,
+          token: data.subscription.endpoint,
+          transport: "webpush",
+          subscription: data.subscription,
+          active: true,
+        },
         { onConflict: "token" },
       );
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
@@ -84,7 +86,10 @@ export const disablePushDevices = createServerFn({ method: "POST" })
 export const dispatchPushBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const role = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const role = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (role.error || !role.data) throw new Error("No autorizado");
     const { deliverWebPushBatch } = await import("./web-push.server");
     return deliverWebPushBatch();

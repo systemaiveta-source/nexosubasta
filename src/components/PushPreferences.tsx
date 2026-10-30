@@ -127,8 +127,8 @@ export function PushPreferences() {
           )}
           {!query.data.configured && (
             <p className="text-sm text-muted-foreground">
-              Los avisos fuera de NEXO están pendientes de configuración segura del envío.
-              No necesitas una cuenta Firebase. Puedes guardar tus preferencias de avisos internos.
+              Los avisos fuera de NEXO están pendientes de configuración segura del envío. No
+              necesitas una cuenta Firebase. Puedes guardar tus preferencias de avisos internos.
             </p>
           )}
           {query.data.configured && !query.data.deliveryEnabled && (

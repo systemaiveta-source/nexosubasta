@@ -9,9 +9,7 @@ export function auctionPushPath(id: string) {
 }
 export async function registerPush(config: PushConfig) {
   if (!pushConfigured(config))
-    throw new Error(
-      "Push pendiente de configuración segura de NEXO; no se solicitó permiso.",
-    );
+    throw new Error("Push pendiente de configuración segura de NEXO; no se solicitó permiso.");
   if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator))
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
   if (window.top !== window.self)
@@ -22,17 +20,20 @@ export async function registerPush(config: PushConfig) {
     throw new Error(
       "Notificaciones bloqueadas. Puedes cambiar el permiso en los ajustes del navegador.",
     );
-  if (!("PushManager" in window)) throw new Error("Este navegador no admite push web. En iPhone o iPad abre NEXO desde su icono instalado.");
-  const registration = await navigator.serviceWorker.register(
-    "/nexo-push-sw.js",
-  );
+  if (!("PushManager" in window))
+    throw new Error(
+      "Este navegador no admite push web. En iPhone o iPad abre NEXO desde su icono instalado.",
+    );
+  const registration = await navigator.serviceWorker.register("/nexo-push-sw.js");
   await navigator.serviceWorker.ready;
   const decoded = atob(config.vapidKey.replace(/-/g, "+").replace(/_/g, "/") + "=");
   const key = Uint8Array.from(decoded, (char) => char.charCodeAt(0));
   const existing = await registration.pushManager.getSubscription();
-  const subscription = existing ?? await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: key,
-  });
+  const subscription =
+    existing ??
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: key,
+    }));
   return subscription.toJSON();
 }
