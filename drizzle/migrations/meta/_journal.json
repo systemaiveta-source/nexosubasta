@@ -85,6 +85,13 @@
       "when": 1793319516525,
       "tag": "0011_closed_chat_delivery_private_service_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793319560539,
+      "tag": "0012_opt_in_auction_push_outbox",
+      "breakpoints": true
     }
   ]
 }

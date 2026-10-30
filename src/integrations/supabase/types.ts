@@ -272,6 +272,36 @@ export type Database = {
           },
         ]
       }
+      auction_push_events: {
+        Row: {
+          auction_id: string
+          created_at: string
+        }
+        Insert: {
+          auction_id: string
+          created_at?: string
+        }
+        Update: {
+          auction_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_push_events_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_push_events_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auctions: {
         Row: {
           accepted_payment_methods: Json
@@ -587,6 +617,35 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          categories: string[]
+          new_auctions: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: string[]
+          new_auctions?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[]
+          new_auctions?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -804,6 +863,94 @@ export type Database = {
           {
             foreignKeyName: "profiles_referred_by_fkey"
             columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_devices: {
+        Row: {
+          created_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_outbox: {
+        Row: {
+          auction_id: string
+          claimed_at: string | null
+          created_at: string
+          device_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          auction_id: string
+          claimed_at?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          auction_id?: string
+          claimed_at?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_outbox_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_outbox_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_outbox_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "push_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_outbox_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1373,6 +1520,18 @@ export type Database = {
       choose_service_provider: {
         Args: { _auction: string; _bid: string }
         Returns: string
+      }
+      claim_push_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          auction_id: string
+          category_name: string
+          device_id: string
+          device_token: string
+          image_path: string
+          queue_id: string
+          title: string
+        }[]
       }
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
