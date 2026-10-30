@@ -20,3 +20,7 @@
 - Operations use authenticated server functions and transactional RPCs for messages, payment stages, disputes and independent confirmations; private attachments use storage RLS and expiring signed links.
 - Auction payment declarations are separate from membership methods; each bid freezes accepted terms, and a deferred database constraint prevents bypassing acceptance.
 - Operations list is an index route and detail is its sibling leaf; avoid a non-Outlet parent masking the private chat.
+- Installation state lives in one root provider so prompt events survive navigation without touching authentication.
+- Delivery snapshots are validated on drafts and frozen by deferred bid constraints; closed operations reject new messages at the database boundary.
+- Service requests use a client-safe category schema and a private RLS table; exact locations never belong to the public auction projection, and unverified transport cannot publish.
+- Push uses an opt-in transactional outbox and messaging-only worker; dispatch is admin-authorized, bounded and disabled until explicit runtime activation, with no automatic sends during development.
