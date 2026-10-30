@@ -12,7 +12,7 @@ import {
 } from "@/components/AuctionCard";
 import { useImageUrls } from "@/lib/images";
 import { Button } from "@/components/ui/button";
-import { COUNTRIES } from "@/lib/currency";
+import { CatalogSelect } from "@/components/CatalogSelect";
 import { Input } from "@/components/ui/input";
 
 const search = z.object({
@@ -153,19 +153,7 @@ function Catalog() {
           <option value="price_asc">Precio: menor</option>
           <option value="price_desc">Precio: mayor</option>
         </select>
-        <select
-          aria-label="País"
-          className={sel}
-          value={s.pais ?? ""}
-          onChange={(e) => set({ pais: e.target.value || undefined })}
-        >
-          <option value="">Todos los países</option>
-          {COUNTRIES.map(([c, n]) => (
-            <option key={c} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        <CatalogSelect kind="country" label="País" value={s.pais ?? ""} onChange={(pais) => set({ pais: pais || undefined })} empty="Todos los países" />
         <select
           aria-label="Tipo de subasta"
           className={sel}

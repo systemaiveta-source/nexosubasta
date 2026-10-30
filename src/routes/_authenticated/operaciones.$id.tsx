@@ -14,7 +14,7 @@ import {
   uploadOperationDocument,
   openOperationDocument,
 } from "@/lib/operations.functions";
-import { canComplete, nextOperationStage, operationStages } from "@/lib/operations";
+import { canComplete, chatWritable, nextOperationStage, operationStages } from "@/lib/operations";
 import { errMsg, money, txStatusLabel } from "@/lib/format";
 const options = (id: string) =>
   queryOptions({
@@ -199,6 +199,7 @@ function Operation() {
         </section>
         <section>
           <h2 className="mb-3 text-xl font-semibold">Chat privado</h2>
+          {!chatWritable(t.status) && <p role="status" className="mb-3 border-l-2 border-primary pl-3 font-medium">Operación y conversación cerradas. Historial y adjuntos en solo lectura.</p>}
           <ul className="max-h-[600px] space-y-3 overflow-y-auto border-y border-border py-4">
             {data.messages.length ? (
               data.messages.map((m) => (
@@ -232,7 +233,7 @@ function Operation() {
               <li className="text-sm text-muted-foreground">Todavía no hay mensajes.</li>
             )}
           </ul>
-          {isParty && t.status !== "cancelled" && (
+          {isParty && chatWritable(t.status) && (
             <form
               className="mt-4 space-y-3"
               onSubmit={async (e) => {

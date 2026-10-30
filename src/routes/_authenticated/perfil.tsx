@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { money, errMsg } from "@/lib/format";
-import { CURRENCIES, COUNTRIES } from "@/lib/currency";
+import { CatalogSelect } from "@/components/CatalogSelect";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
@@ -165,19 +165,7 @@ function Profile() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>País</Label>
-              <select
-                aria-label="País"
-                className={sel}
-                value={form.country}
-                onChange={(e) => setForm({ ...form, country: e.target.value })}
-              >
-                <option value="">Elegir país…</option>
-                {COUNTRIES.map(([code, name]) => (
-                  <option key={code} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+              <CatalogSelect kind="country" label="País" value={form.country} onChange={(country) => setForm({ ...form, country })} />
             </div>
             <div className="space-y-1.5">
               <Label>Ciudad</Label>
@@ -195,17 +183,7 @@ function Profile() {
             </div>
             <div className="space-y-1.5">
               <Label>Moneda preferida</Label>
-              <select
-                className={sel}
-                value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              >
-                {CURRENCIES.map(([c, n]) => (
-                  <option key={c} value={c}>
-                    {c} — {n}
-                  </option>
-                ))}
-              </select>
+              <CatalogSelect kind="currency" label="Moneda preferida" value={form.currency} onChange={(currency) => setForm({ ...form, currency })} />
             </div>
           </div>
           <Button onClick={save}>Guardar</Button>

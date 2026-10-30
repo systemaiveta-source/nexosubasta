@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { detectPlatform, type Platform } from "@/lib/platform";
+import { useInstall } from "@/lib/install";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/instalar")({
   head: () => ({
@@ -17,8 +19,6 @@ export const Route = createFileRoute("/instalar")({
   component: Instalar,
 });
 
-type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
-
 const guides: { id: Platform; title: string; steps: string[] }[] = [
   { id: "android", title: "Android", steps: ["Abre NEXO en Chrome.", "Pulsa el botón «Instalar» de esta página o el menú ⋮.", "Elige «Instalar aplicación» o «Añadir a pantalla de inicio»."] },
   { id: "ios", title: "iPhone y iPad", steps: ["Abre NEXO en Safari.", "Pulsa el botón Compartir (cuadrado con flecha).", "Elige «Añadir a pantalla de inicio» y confirma."] },
@@ -29,17 +29,10 @@ const guides: { id: Platform; title: string; steps: string[] }[] = [
 
 function Instalar() {
   const [platform, setPlatform] = useState<Platform>("other");
-  const [installed, setInstalled] = useState(false);
-  const [prompt, setPrompt] = useState<BIPEvent | null>(null);
+  const { installed, available, install } = useInstall();
 
   useEffect(() => {
     setPlatform(detectPlatform(navigator.userAgent, navigator.maxTouchPoints));
-    setInstalled(window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true);
-    const onPrompt = (e: Event) => { e.preventDefault(); setPrompt(e as BIPEvent); };
-    const onInstalled = () => { setInstalled(true); setPrompt(null); };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => { window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); };
   }, []);
 
   const ordered = [...guides].sort((a, b) => (a.id === platform ? -1 : b.id === platform ? 1 : 0));
@@ -53,19 +46,16 @@ function Instalar() {
         <div className="mt-6 rounded-xl border border-border bg-card p-5 shadow-soft">
           {installed ? (
             <p className="font-medium text-nexo-green">NEXO ya está instalado en este dispositivo.</p>
-          ) : prompt ? (
-            <button
-              onClick={async () => { await prompt.prompt(); await prompt.userChoice; setPrompt(null); }}
-              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
+          ) : available ? (
+            <Button onClick={install}>
               Instalar NEXO ahora
-            </button>
+            </Button>
           ) : (
             <p className="text-sm text-muted-foreground">Tu navegador no ofrece instalación directa desde aquí. Sigue los pasos para tu sistema.</p>
           )}
         </div>
 
-        <div className="mt-8 space-y-4">
+        {!installed && <div className="mt-8 space-y-4">
           {ordered.map((g) => (
             <div key={g.id} className={`rounded-xl border p-5 ${g.id === platform ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
               <h2 className="font-display text-lg font-semibold">
@@ -76,7 +66,7 @@ function Instalar() {
               </ol>
             </div>
           ))}
-        </div>
+        </div>}
       </section>
     </SiteLayout>
   );
