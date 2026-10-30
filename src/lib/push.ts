@@ -11,7 +11,9 @@ export function auctionPushPath(id: string) {
 }
 export async function registerPush(config: PushConfig) {
   if (!pushConfigured(config))
-    throw new Error("Push pendiente de configuración: conecta Firebase con la opción Include web push; no se solicitó permiso.");
+    throw new Error(
+      "Push pendiente de configuración: conecta Firebase con la opción Include web push; no se solicitó permiso.",
+    );
   if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator))
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
   if (window.top !== window.self)

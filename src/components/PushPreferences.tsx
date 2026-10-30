@@ -120,11 +120,15 @@ export function PushPreferences() {
               </Button>
             )}
           </div>
-          {pushError && <p role="alert" className="text-sm text-destructive">{pushError}</p>}
+          {pushError && (
+            <p role="alert" className="text-sm text-destructive">
+              {pushError}
+            </p>
+          )}
           {!query.data.configured && (
             <p className="text-sm text-muted-foreground">
-              Los avisos fuera de NEXO todavía no están disponibles. Falta conectar Firebase
-              con la opción «Include web push». Puedes guardar tus preferencias de avisos internos.
+              Los avisos fuera de NEXO todavía no están disponibles. Falta conectar Firebase con la
+              opción «Include web push». Puedes guardar tus preferencias de avisos internos.
             </p>
           )}
           {query.data.configured && !query.data.deliveryEnabled && (
@@ -133,10 +137,10 @@ export function PushPreferences() {
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Con los envíos activados, los avisos pueden llegar aunque NEXO esté cerrado.
-            Dependen del permiso, conexión y restricciones del dispositivo. En iPhone o iPad,
-            abre NEXO desde su icono instalado. No se garantiza recepción si el navegador o
-            sistema bloquea la actividad en segundo plano.
+            Con los envíos activados, los avisos pueden llegar aunque NEXO esté cerrado. Dependen
+            del permiso, conexión y restricciones del dispositivo. En iPhone o iPad, abre NEXO desde
+            su icono instalado. No se garantiza recepción si el navegador o sistema bloquea la
+            actividad en segundo plano.
           </p>
         </>
       )}

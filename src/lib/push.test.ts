@@ -15,7 +15,9 @@ describe("push contextual seguro", () => {
     expect(auctionPushPath("12345678-1234-1234-1234-123456789abc?token=secret")).toBeNull();
   });
   it("una app sin sender ID no está configurada", () => {
-    expect(pushConfigured({ apiKey: "public", projectId: "nexo", appId: "invalid", vapidKey: "public" })).toBe(false);
+    expect(
+      pushConfigured({ apiKey: "public", projectId: "nexo", appId: "invalid", vapidKey: "public" }),
+    ).toBe(false);
   });
   it("en iframe no solicita permiso ni registra dispositivos", async () => {
     const permission = vi.fn();
@@ -23,7 +25,14 @@ describe("push contextual seguro", () => {
     vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: {}, self: {} });
     vi.stubGlobal("navigator", { serviceWorker: { register: worker } });
     vi.stubGlobal("Notification", { permission: "default", requestPermission: permission });
-    await expect(registerPush({ apiKey: "public", projectId: "nexo", appId: "1:123:web:abc", vapidKey: "public" })).rejects.toThrow("pestaña propia");
+    await expect(
+      registerPush({
+        apiKey: "public",
+        projectId: "nexo",
+        appId: "1:123:web:abc",
+        vapidKey: "public",
+      }),
+    ).rejects.toThrow("pestaña propia");
     expect(permission).not.toHaveBeenCalled();
     expect(worker).not.toHaveBeenCalled();
   });
@@ -32,8 +41,18 @@ describe("push contextual seguro", () => {
     const worker = vi.fn();
     vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
     vi.stubGlobal("navigator", { serviceWorker: { register: worker } });
-    vi.stubGlobal("Notification", { permission: "denied", requestPermission: vi.fn().mockResolvedValue("denied") });
-    await expect(registerPush({ apiKey: "public", projectId: "nexo", appId: "1:123:web:abc", vapidKey: "public" })).rejects.toThrow("bloqueadas");
+    vi.stubGlobal("Notification", {
+      permission: "denied",
+      requestPermission: vi.fn().mockResolvedValue("denied"),
+    });
+    await expect(
+      registerPush({
+        apiKey: "public",
+        projectId: "nexo",
+        appId: "1:123:web:abc",
+        vapidKey: "public",
+      }),
+    ).rejects.toThrow("bloqueadas");
     expect(worker).not.toHaveBeenCalled();
   });
 });

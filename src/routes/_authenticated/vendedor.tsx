@@ -356,7 +356,12 @@ function Seller() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{type === "service" ? "Sección del catálogo" : "Categoría"}</Label>
-              <select aria-label={type === "service" ? "Sección del catálogo" : "Categoría"} className={sel} value={f.category_id} onChange={set("category_id")}>
+              <select
+                aria-label={type === "service" ? "Sección del catálogo" : "Categoría"}
+                className={sel}
+                value={f.category_id}
+                onChange={set("category_id")}
+              >
                 <option value="">Elegir…</option>
                 {cats.data?.map((c) => (
                   <option key={c.id} value={c.id}>
