@@ -48,7 +48,8 @@ export const Route = createFileRoute("/api/public/subastas/$id/miniatura")({
             !["jpg", "png", "webp"].includes(dimensions.type || "")
           )
             return new Response(null, { status: 422 });
-          const { PhotonImage, resize, watermark, SamplingFilter } = await import("@cf-wasm/photon");
+          const { PhotonImage, resize, watermark, SamplingFilter } =
+            await import("@cf-wasm/photon");
           const input = PhotonImage.new_from_byteslice(bytes);
           try {
             const scale = Math.min(1200 / dimensions.width, 630 / dimensions.height);
@@ -63,7 +64,12 @@ export const Route = createFileRoute("/api/public/subastas/$id/miniatura")({
               const canvas = new Uint8Array(1200 * 630 * 4).fill(255);
               const thumbnail = new PhotonImage(canvas, 1200, 630);
               try {
-                watermark(thumbnail, resized, BigInt(Math.floor((1200 - resized.get_width()) / 2)), BigInt(Math.floor((630 - resized.get_height()) / 2)));
+                watermark(
+                  thumbnail,
+                  resized,
+                  BigInt(Math.floor((1200 - resized.get_width()) / 2)),
+                  BigInt(Math.floor((630 - resized.get_height()) / 2)),
+                );
                 const jpg = thumbnail.get_bytes_jpeg(78);
                 return new Response(new Uint8Array(jpg).buffer, {
                   headers: {
