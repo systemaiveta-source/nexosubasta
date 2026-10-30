@@ -57,18 +57,16 @@ export const registerPushDevice = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (!process.env["NEXO_VAPID_PRIVATE_KEY"]) throw new Error("Push pendiente de configuración");
-    const result = await context.supabase
-      .from("push_devices")
-      .upsert(
-        {
-          user_id: context.userId,
-          token: data.subscription.endpoint,
-          transport: "webpush",
-          subscription: data.subscription,
-          active: true,
-        },
-        { onConflict: "token" },
-      );
+    const result = await context.supabase.from("push_devices").upsert(
+      {
+        user_id: context.userId,
+        token: data.subscription.endpoint,
+        transport: "webpush",
+        subscription: data.subscription,
+        active: true,
+      },
+      { onConflict: "token" },
+    );
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
     return { ok: true };
   });
