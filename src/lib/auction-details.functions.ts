@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { deliverySchema } from "./delivery";
 import { serviceRequestSchema } from "./service-catalog";
+import type { Json } from "@/integrations/supabase/types";
 export const saveExtendedDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -29,11 +30,11 @@ export const saveExtendedDraft = createServerFn({ method: "POST" })
     if (data.auction["auction_type"] === "service" && !data.request)
       throw new Error("Completa los detalles del servicio");
     const result = await context.supabase.rpc("save_extended_draft", {
-      _id: data.id ?? undefined,
-      _data: data.auction as never,
-      _private: data.private as never,
-      _delivery: data.delivery as never,
-      _request: data.request as never,
+      ...(data.id ? { _id: data.id } : {}),
+      _data: JSON.parse(JSON.stringify(data.auction)) as Json,
+      _private: JSON.parse(JSON.stringify(data.private)) as Json,
+      _delivery: data.delivery,
+      _request: data.request,
     });
     if (result.error) throw new Error(result.error.message);
     return { id: result.data };
