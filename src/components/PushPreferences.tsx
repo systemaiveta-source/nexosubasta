@@ -21,6 +21,7 @@ export function PushPreferences() {
     enabled: !!user,
   });
   const save = useServerFn(savePushPreferences);
+  const fetchSettings = useServerFn(getPushSettings);
   const register = useServerFn(registerPushDevice);
   const disable = useServerFn(disablePushDevices);
   const [enabled, setEnabled] = useState(false);
