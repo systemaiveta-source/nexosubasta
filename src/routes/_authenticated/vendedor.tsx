@@ -15,7 +15,13 @@ import { uploadAuctionImage, useImageUrls } from "@/lib/images";
 import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
 import { parseAuctionMethods } from "@/lib/auction-payments";
 import type { AuctionMethod } from "@/lib/auction-payments";
-import { CURRENCIES, COUNTRIES } from "@/lib/currency";
+import { CatalogSelect } from "@/components/CatalogSelect";
+import { DeliveryForm } from "@/components/DeliveryForm";
+import { ServiceRequestForm } from "@/components/ServiceRequestForm";
+import { deliverySchema, parseDelivery, type Delivery } from "@/lib/delivery";
+import { emptyServiceRequest, type ServiceRequest } from "@/lib/service-catalog";
+import { saveExtendedDraft } from "@/lib/auction-details.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   head: () => ({
@@ -72,6 +78,13 @@ function Seller() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
   const [methods, setMethods] = useState<AuctionMethod[]>([]);
+  const [delivery, setDelivery] = useState<Delivery>({
+    mode: "pickup",
+    cost: null,
+    conditions: "",
+  });
+  const [request, setRequest] = useState<ServiceRequest>(emptyServiceRequest);
+  const saveDraft = useServerFn(saveExtendedDraft);
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
@@ -172,8 +185,8 @@ function Seller() {
               ? Number(f.duration_hours)
               : Math.max(1, Math.ceil(Number(f.duration_minutes) / 60)),
           duration_minutes: type === "service" ? Number(f.duration_minutes) : null,
-          service_from: f.service_from || null,
-          service_to: f.service_to || null,
+          service_from: null,
+          service_to: null,
           accepted_payment_methods: methods,
           starts_at: startsAt ? new Date(startsAt).toISOString() : null,
         },
@@ -183,10 +196,15 @@ function Seller() {
           service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
         },
       };
-      const { data: draftId, error } = editingId
-        ? await supabase.rpc("save_auction_draft", { ...draftArgs, _id: editingId })
-        : await supabase.rpc("new_auction_draft", draftArgs);
-      if (error) throw error;
+      const { id: draftId } = await saveDraft({
+        data: {
+          id: editingId,
+          auction: draftArgs._data,
+          private: draftArgs._private,
+          delivery: type === "item" ? deliverySchema.parse(delivery) : null,
+          request: type === "service" ? request : null,
+        },
+      });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
       if (publish) {
         const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
@@ -197,6 +215,8 @@ function Seller() {
       setEditingId(null);
       setStartsAt("");
       setMethods([]);
+      setRequest(emptyServiceRequest());
+      setDelivery({ mode: "pickup", cost: null, conditions: "" });
       setImages([]);
       setF((p) => ({
         ...p,
@@ -256,6 +276,17 @@ function Seller() {
           : [],
       );
       setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
+      setDelivery(
+        parseDelivery(a["delivery_snapshot"]) ?? {
+          mode: "other",
+          cost: null,
+          conditions: String(a["delivery_terms"] ?? ""),
+        },
+      );
+      const details = await supabase.rpc("get_service_request", { _auction: id });
+      setRequest(
+        details.data ? (details.data as unknown as ServiceRequest) : emptyServiceRequest(),
+      );
       setStartsAt(typeof a["starts_at"] === "string" ? a["starts_at"].slice(0, 16) : "");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
@@ -321,18 +352,7 @@ function Seller() {
               maxLength={4000}
             />
           </div>
-          {type === "service" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Dirección de origen</Label>
-                <Input value={f.service_from} onChange={set("service_from")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Dirección de destino</Label>
-                <Input value={f.service_to} onChange={set("service_to")} />
-              </div>
-            </div>
-          )}
+          {type === "service" && <ServiceRequestForm value={request} onChange={setRequest} />}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Categoría</Label>
@@ -355,14 +375,12 @@ function Seller() {
             </div>
             <div className="space-y-1.5">
               <Label>País</Label>
-              <select aria-label="País" className={sel} value={f.country} onChange={set("country")}>
-                <option value="">Elegir país…</option>
-                {COUNTRIES.map(([code, name]) => (
-                  <option key={code} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+              <CatalogSelect
+                kind="country"
+                label="País"
+                value={f.country}
+                onChange={(country) => setF((p) => ({ ...p, country }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Ciudad</Label>
@@ -370,13 +388,12 @@ function Seller() {
             </div>
             <div className="space-y-1.5">
               <Label>Moneda</Label>
-              <select className={sel} value={f.currency} onChange={set("currency")}>
-                {CURRENCIES.map(([c, n]) => (
-                  <option key={c} value={c}>
-                    {c} — {n}
-                  </option>
-                ))}
-              </select>
+              <CatalogSelect
+                kind="currency"
+                label="Moneda"
+                value={f.currency}
+                onChange={(currency) => setF((p) => ({ ...p, currency }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -441,40 +458,45 @@ function Seller() {
               </>
             )}
           </div>
-          <div className="space-y-1.5">
-            <Label>Condiciones de entrega</Label>
-            <Input value={f.delivery_terms} onChange={set("delivery_terms")} />
-          </div>
-          <div>
-            <Label>Fotos desde tu dispositivo</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {images.map((p) => (
-                <div key={p} className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted">
-                  {previews.data?.[p] && (
-                    <img src={previews.data[p]} alt="" className="h-full w-full object-cover" />
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Quitar"
-                    className="absolute right-0.5 top-0.5 rounded-full bg-background p-0.5"
-                    onClick={() => setImages((x) => x.filter((y) => y !== p))}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground">
-                <ImagePlus className="h-6 w-6" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => addFiles(e.target.files)}
-                />
-              </label>
+          {type === "item" && <DeliveryForm value={delivery} onChange={setDelivery} />}
+          {type === "service" && (
+            <p className="text-sm text-muted-foreground">
+              No incluyas direcciones, contactos ni datos confidenciales en el título o descripción
+              pública.
+            </p>
+          )}
+          {type === "item" && (
+            <div>
+              <Label>Fotos desde tu dispositivo</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {images.map((p) => (
+                  <div key={p} className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted">
+                    {previews.data?.[p] && (
+                      <img src={previews.data[p]} alt="" className="h-full w-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Quitar"
+                      className="absolute right-0.5 top-0.5 rounded-full bg-background p-0.5"
+                      onClick={() => setImages((x) => x.filter((y) => y !== p))}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-muted-foreground">
+                  <ImagePlus className="h-6 w-6" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => addFiles(e.target.files)}
+                  />
+                </label>
+              </div>
             </div>
-          </div>
+          )}
           <label className="block space-y-2 text-sm">
             Inicio programado (opcional)
             <Input

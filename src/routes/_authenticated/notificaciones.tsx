@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { listNotifications, markNotificationsRead } from "@/lib/notifications.functions";
 import { safeDestination } from "@/lib/destinations";
 import { useAuth } from "@/lib/auth";
+import { PushPreferences } from "@/components/PushPreferences";
 
 const notificationOptions = (userId: string, page = 0, unreadOnly = false) =>
   queryOptions({
@@ -89,6 +90,7 @@ function NotificationsPage() {
         </Button>
       }
     >
+      <PushPreferences />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm">
           <input

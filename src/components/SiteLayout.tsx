@@ -6,6 +6,7 @@ import logo from "@/assets/nexo-logo.png.asset.json";
 import { useAuth, useRoles, signOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useInstall } from "@/lib/install";
 
 function useUnread(userId: string | undefined) {
   const qc = useQueryClient();
@@ -51,6 +52,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const installation = useInstall();
 
   const links = (
     <>
@@ -149,9 +151,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             onClick={() => setOpen(false)}
           >
             {links}
-            <Link to="/instalar" className={linkCls}>
-              Instalar app
-            </Link>
+            {installation.available && (
+              <Button variant="ghost" onClick={installation.install}>
+                Instalar app
+              </Button>
+            )}
             <Link to="/ayuda" className={linkCls}>
               Ayuda
             </Link>
@@ -175,9 +179,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <Link to="/planes" className="hover:text-foreground">
               Planes
             </Link>
-            <Link to="/instalar" className="hover:text-foreground">
-              Instalar app
-            </Link>
+            {installation.available && (
+              <Button variant="link" onClick={installation.install}>
+                Instalar app
+              </Button>
+            )}
             <Link to="/normas" className="hover:text-foreground">
               Normas
             </Link>

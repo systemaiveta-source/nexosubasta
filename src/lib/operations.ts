@@ -26,3 +26,15 @@ export function nextOperationStage(stage: string, isBuyer: boolean): string | nu
   if (stage === "delivery_pending") return "completion_pending";
   return null;
 }
+export function chatWritable(status: string) {
+  return status === "pending" || status === "disputed";
+}
+export function mutuallyComplete(
+  status: string,
+  stage: string,
+  buyer: boolean,
+  seller: boolean,
+  openDispute: boolean,
+) {
+  return status === "pending" && stage === "completion_pending" && buyer && seller && !openDispute;
+}
