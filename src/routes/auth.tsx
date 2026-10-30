@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { errMsg } from "@/lib/format";
 import { authDestination } from "@/lib/destinations";
+import { claimStoredRef, rememberRef, storedRef } from "@/lib/referral";
 
-const search = z.object({ redirect: z.string().optional() });
+const search = z.object({ redirect: z.string().optional(), ref: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, ref } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
@@ -42,9 +43,17 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const c = rememberRef(ref) ?? storedRef();
+    setRefCode(c);
+    if (ref && c) setMode("up");
+  }, [ref]);
 
   useEffect(() => {
     if (user) {
+      void claimStoredRef();
       const stored = sessionStorage.getItem("nexo_redirect");
       sessionStorage.removeItem("nexo_redirect");
       navigate({ to: authDestination(redirect ?? stored), replace: true });

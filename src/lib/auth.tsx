@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDestination } from "./destinations";
+import { claimStoredRef } from "./referral";
 
 type AuthCtx = { session: Session | null; user: User | null; ready: boolean };
 const Ctx = createContext<AuthCtx>({ session: null, user: null, ready: false });
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setState({ session, user: session?.user ?? null, ready: true });
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_IN") void claimStoredRef();
       if (event === "SIGNED_IN" && router.state.location.pathname !== "/auth") {
         const r = sessionStorage.getItem("nexo_redirect");
         sessionStorage.removeItem("nexo_redirect");
