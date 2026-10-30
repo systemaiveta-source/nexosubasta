@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { auctionPushPath, pushConfigured, registerPush } from "./push";
+import { allowedPushEndpoint } from "./web-push-schema";
 afterEach(() => vi.unstubAllGlobals());
 describe("push contextual seguro", () => {
   it("sin credenciales no solicita permisos ni registra worker", async () => {
-    const config = { apiKey: "", projectId: "", appId: "", vapidKey: "" };
+    const config = { vapidKey: "" };
     expect(pushConfigured(config)).toBe(false);
     await expect(registerPush(config)).rejects.toThrow("pendiente de configuración");
   });
@@ -14,10 +15,9 @@ describe("push contextual seguro", () => {
     expect(auctionPushPath("//evil.test")).toBeNull();
     expect(auctionPushPath("12345678-1234-1234-1234-123456789abc?token=secret")).toBeNull();
   });
-  it("una app sin sender ID no está configurada", () => {
-    expect(
-      pushConfigured({ apiKey: "public", projectId: "nexo", appId: "invalid", vapidKey: "public" }),
-    ).toBe(false);
+  it("requiere una clave pública VAPID válida sin Firebase", () => {
+    expect(pushConfigured({ vapidKey: "public" })).toBe(false);
+    expect(pushConfigured({ vapidKey: "B".repeat(87) })).toBe(true);
   });
   it("en iframe no solicita permiso ni registra dispositivos", async () => {
     const permission = vi.fn();
@@ -27,10 +27,7 @@ describe("push contextual seguro", () => {
     vi.stubGlobal("Notification", { permission: "default", requestPermission: permission });
     await expect(
       registerPush({
-        apiKey: "public",
-        projectId: "nexo",
-        appId: "1:123:web:abc",
-        vapidKey: "public",
+        vapidKey: "B".repeat(87),
       }),
     ).rejects.toThrow("pestaña propia");
     expect(permission).not.toHaveBeenCalled();
@@ -47,12 +44,16 @@ describe("push contextual seguro", () => {
     });
     await expect(
       registerPush({
-        apiKey: "public",
-        projectId: "nexo",
-        appId: "1:123:web:abc",
-        vapidKey: "public",
+        vapidKey: "B".repeat(87),
       }),
     ).rejects.toThrow("bloqueadas");
     expect(worker).not.toHaveBeenCalled();
+  });
+  it("bloquea destinos arbitrarios y permite servicios push de navegadores", () => {
+    expect(allowedPushEndpoint("https://fcm.googleapis.com/fcm/send/device")).toBe(true);
+    expect(allowedPushEndpoint("https://web.push.apple.com/device")).toBe(true);
+    expect(allowedPushEndpoint("http://127.0.0.1/private")).toBe(false);
+    expect(allowedPushEndpoint("https://fcm.googleapis.com.evil.test/device")).toBe(false);
+    expect(allowedPushEndpoint("https://user:secret@fcm.googleapis.com/device")).toBe(false);
   });
 });
