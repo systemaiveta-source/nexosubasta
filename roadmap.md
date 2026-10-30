@@ -1,4 +1,5 @@
 # NEXO roadmap
+- [ ] Ampliación 30 octubre: instalación sin logout/avisos persistentes, chat cerrado, búsqueda ISO, entrega congelada, solicitudes específicas privadas y preparación push sin envíos; configuración de Maps/FCM y verificación real pendientes.
 - [x] Pasada integrada 29 octubre: código y cambios compatibles aplicados para pujas atómicas +60s, servicios con elección, operaciones/chat, métodos declarados, ISO y borradores; 34 pruebas, lint dirigido sin errores y compilación automática OK. Alcance y límites en docs/cierre-integrado.md.
 - [ ] Verificación de negocio completa: requiere cuentas autorizadas con membresía y operación real; no se crearon usuarios, membresías, pujas, mensajes ni pagos artificiales. Pendientes concurrencia, cierre, selección, chat/adjuntos y confirmaciones con ambas partes.
 - [ ] Catálogo administrativo internacional de métodos/categorías/subcategorías y formularios especializados: selector de métodos genéricos/Otro/cripto implementado; administración persistente global y campos especializados pendientes.
