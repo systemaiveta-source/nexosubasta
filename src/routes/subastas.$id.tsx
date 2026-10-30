@@ -379,7 +379,11 @@ function AuctionPage() {
             <h1 className="mt-2 font-display text-2xl font-bold leading-tight sm:text-3xl">
               {a.title}
             </h1>
-            {a.status !== "draft" && <div className="mt-3"><AuctionShare id={id} title={a.title} /></div>}
+            {a.status !== "draft" && (
+              <div className="mt-3">
+                <AuctionShare id={id} title={a.title} />
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-soft">

@@ -12,6 +12,8 @@ describe("enlaces de subasta seguros", () => {
     const links = socialShareLinks(id, "Artículo & url=https://evil.test");
     expect(new URL(links.Facebook).searchParams.get("u")).toBe(auctionShareUrl(id));
     expect(new URL(links.X).searchParams.get("url")).toBe(auctionShareUrl(id));
-    expect(new URL(links.Telegram).searchParams.get("text")).toBe("Artículo & url=https://evil.test");
+    expect(new URL(links.Telegram).searchParams.get("text")).toBe(
+      "Artículo & url=https://evil.test",
+    );
   });
 });
