@@ -1,24 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { auctionPushPath } from "./push";
+import { pushConfigured } from "./push";
+import { webPushSubscriptionSchema } from "./web-push-schema";
 export const getPushSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const config = {
-      apiKey: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_WEB_API_KEY"] ?? "",
-      projectId: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_PROJECT_ID"] ?? "",
-      appId: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_APP_ID"] ?? "",
-      vapidKey: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_VAPID_KEY"] ?? "",
+      vapidKey: process.env["NEXO_VAPID_PUBLIC_KEY"] ?? "",
     };
-    const configured = Boolean(
-      config.apiKey &&
-      config.projectId &&
-      config.appId &&
-      config.vapidKey &&
-      process.env["FIREBASE_MESSAGING_API_KEY"] &&
-      process.env["LOVABLE_API_KEY"],
-    );
+    const configured = Boolean(pushConfigured(config) && process.env["NEXO_VAPID_PRIVATE_KEY"]);
     const [preferences, devices, categories] = await Promise.all([
       context.supabase
         .from("notification_preferences")
@@ -29,6 +20,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
         .from("push_devices")
         .select("id", { count: "exact", head: true })
         .eq("active", true)
+        .eq("transport", "webpush")
         .eq("user_id", context.userId),
       context.supabase.from("categories").select("id,name").neq("slug", "nft-cripto").order("sort"),
     ]);
@@ -36,6 +28,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
       throw new Error("No se pudieron cargar las preferencias");
     return {
       configured,
+      deliveryEnabled: configured && process.env["NEXO_PUSH_DELIVERY_ENABLED"] === "true",
       config,
       preferences: preferences.data ?? { new_auctions: false, categories: [] },
       devices: devices.count ?? 0,
@@ -59,18 +52,21 @@ export const savePushPreferences = createServerFn({ method: "POST" })
   });
 export const registerPushDevice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { token: string }) =>
-    z.object({ token: z.string().min(20).max(4096) }).parse(data),
+  .inputValidator((data: { subscription: unknown }) =>
+    z.object({ subscription: webPushSubscriptionSchema }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    if (!process.env["FIREBASE_MESSAGING_API_KEY"])
-      throw new Error("Push pendiente de configuración");
-    const result = await context.supabase
-      .from("push_devices")
-      .upsert(
-        { user_id: context.userId, token: data.token, active: true },
-        { onConflict: "token" },
-      );
+    if (!process.env["NEXO_VAPID_PRIVATE_KEY"]) throw new Error("Push pendiente de configuración");
+    const result = await context.supabase.from("push_devices").upsert(
+      {
+        user_id: context.userId,
+        token: data.subscription.endpoint,
+        transport: "webpush",
+        subscription: data.subscription,
+        active: true,
+      },
+      { onConflict: "token" },
+    );
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
     return { ok: true };
   });
@@ -84,7 +80,7 @@ export const disablePushDevices = createServerFn({ method: "POST" })
     if (result.error) throw new Error("No se pudieron desactivar los dispositivos");
     return { ok: true };
   });
-/** Deliberately not scheduled or called by the UI: activation requires configured FCM and explicit authorization. */
+/** No UI auto-send: an authenticated administrator may dispatch only after runtime activation. */
 export const dispatchPushBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -93,84 +89,6 @@ export const dispatchPushBatch = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (role.error || !role.data) throw new Error("No autorizado");
-    const key = process.env["FIREBASE_MESSAGING_API_KEY"];
-    const authorization = process.env["LOVABLE_API_KEY"];
-    if (!key || !authorization || process.env["NEXO_PUSH_DELIVERY_ENABLED"] !== "true")
-      throw new Error("Envíos push desactivados: falta configuración y autorización de activación");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const batch = await supabaseAdmin.rpc("claim_push_batch", { _limit: 20 });
-    if (batch.error) throw new Error("No se pudo obtener el lote");
-    let sent = 0;
-    for (const item of batch.data) {
-      const path = auctionPushPath(item.auction_id);
-      if (!path) {
-        await supabaseAdmin
-          .from("push_outbox")
-          .update({ status: "skipped" })
-          .eq("id", item.queue_id);
-        continue;
-      }
-      const data: Record<string, string> = {
-        title: item.title,
-        body: `${item.category_name} · Nueva subasta en NEXO`,
-        path,
-      };
-      if (item.image_path) {
-        const signed = await supabaseAdmin.storage
-          .from("auction-images")
-          .createSignedUrl(item.image_path, 7200);
-        const image = signed.data?.signedUrl;
-        const browserOrigin = process.env["VITE_SUPABASE_URL"];
-        if (browserOrigin && image) {
-          const url = new URL(image);
-          const origin = new URL(browserOrigin);
-          url.host = origin.host;
-          url.protocol = origin.protocol;
-          data["image"] = url.href;
-        }
-      }
-      try {
-        const response = await fetch(
-          "https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${authorization}`,
-              "X-Connection-Api-Key": key,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              message: {
-                token: item.device_token,
-                data,
-                webpush: { headers: { TTL: "3600", Urgency: "normal" } },
-              },
-            }),
-          },
-        );
-        if (!response.ok) {
-          const errorBody = await response.text();
-          // Do not log provider bodies containing device tokens; retain HTTP status and bounded failure category.
-          console.error(`Push provider rejected delivery [${response.status}]`);
-          if (response.status === 404 && errorBody.includes("UNREGISTERED"))
-            await supabaseAdmin
-              .from("push_devices")
-              .update({ active: false })
-              .eq("id", item.device_id);
-          await supabaseAdmin
-            .from("push_outbox")
-            .update({ status: "failed" })
-            .eq("id", item.queue_id);
-          continue;
-        }
-        await supabaseAdmin.from("push_outbox").update({ status: "sent" }).eq("id", item.queue_id);
-        sent++;
-      } catch {
-        await supabaseAdmin
-          .from("push_outbox")
-          .update({ status: "failed" })
-          .eq("id", item.queue_id);
-      }
-    }
-    return { sent, attempted: batch.data.length };
+    const { deliverWebPushBatch } = await import("./web-push.server");
+    return deliverWebPushBatch();
   });

@@ -99,6 +99,13 @@
       "when": 1793319794453,
       "tag": "0013_push_device_retirement_and_service_bid_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793324671474,
+      "tag": "0014_native_pwa_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }

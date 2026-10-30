@@ -29,6 +29,7 @@ import { Route as SubastasIdRouteImport } from './routes/subastas.$id'
 import { Route as UsuariosIdRouteImport } from './routes/usuarios.$id'
 import { Route as AuthenticatedOperacionesIndexRouteImport } from './routes/_authenticated/operaciones.index'
 import { Route as AuthenticatedOperacionesIdRouteImport } from './routes/_authenticated/operaciones.$id'
+import { Route as ApiPublicJobsPushRouteImport } from './routes/api/public/jobs/push'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -132,6 +133,11 @@ const AuthenticatedOperacionesIdRoute =
     path: '/operaciones/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicJobsPushRoute = ApiPublicJobsPushRouteImport.update({
+  id: '/api/public/jobs/push',
+  path: '/api/public/jobs/push',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/subastas/': typeof SubastasIndexRoute
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/operaciones/': typeof AuthenticatedOperacionesIndexRoute
+  '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/subastas': typeof SubastasIndexRoute
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/operaciones': typeof AuthenticatedOperacionesIndexRoute
+  '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/subastas/': typeof SubastasIndexRoute
   '/_authenticated/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/_authenticated/operaciones/': typeof AuthenticatedOperacionesIndexRoute
+  '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/subastas/'
     | '/operaciones/$id'
     | '/operaciones/'
+    | '/api/public/jobs/push'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/subastas'
     | '/operaciones/$id'
     | '/operaciones'
+    | '/api/public/jobs/push'
   id:
     | '__root__'
     | '/'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/subastas/'
     | '/_authenticated/operaciones/$id'
     | '/_authenticated/operaciones/'
+    | '/api/public/jobs/push'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -279,6 +291,7 @@ export interface RootRouteChildren {
   SubastasIdRoute: typeof SubastasIdRoute
   UsuariosIdRoute: typeof UsuariosIdRoute
   SubastasIndexRoute: typeof SubastasIndexRoute
+  ApiPublicJobsPushRoute: typeof ApiPublicJobsPushRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -423,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperacionesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/jobs/push': {
+      id: '/api/public/jobs/push'
+      path: '/api/public/jobs/push'
+      fullPath: '/api/public/jobs/push'
+      preLoaderRoute: typeof ApiPublicJobsPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -463,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   SubastasIdRoute: SubastasIdRoute,
   UsuariosIdRoute: UsuariosIdRoute,
   SubastasIndexRoute: SubastasIndexRoute,
+  ApiPublicJobsPushRoute: ApiPublicJobsPushRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

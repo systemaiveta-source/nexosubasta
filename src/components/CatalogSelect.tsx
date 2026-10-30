@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandItem } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { searchCatalog, currencySymbol, type CatalogOption } from "@/lib/catalog-search";
 import { COUNTRIES, CURRENCIES } from "@/lib/currency";
 const countries: CatalogOption[] = COUNTRIES.map(([code, label]) => ({
@@ -27,38 +30,72 @@ export function CatalogSelect({
   empty?: string;
 }) {
   const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
   const options = kind === "country" ? countries : currencies;
   const filtered = searchCatalog(options, query);
   const selected = options.find((option) => option.value === value);
-  const visible = selected && !filtered.includes(selected) ? [selected, ...filtered] : filtered;
   return (
-    <div className="min-w-0 space-y-2">
-      <Input
-        type="search"
-        aria-label={`Buscar ${label.toLowerCase()}`}
-        placeholder="Nombre, código o símbolo"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm"
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery("");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-label={label}
+          aria-expanded={open}
+          className="h-10 w-full min-w-0 justify-between font-normal"
+        >
+          <span className="truncate">
+            {selected
+              ? `${selected.code} — ${selected.label}${selected.symbol ? ` (${selected.symbol})` : ""}`
+              : value || empty}
+          </span>
+          <ChevronsUpDown className="ml-2 size-4 shrink-0" aria-hidden="true" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0"
       >
-        <option value="">{empty}</option>
-        {visible.map((option) => (
-          <option key={option.code} value={option.value}>
-            {option.code} — {option.label}
-            {option.symbol ? ` (${option.symbol})` : ""}
-          </option>
-        ))}
-      </select>
-      {filtered.length === 0 && (
-        <p role="status" className="text-xs text-muted-foreground">
-          Sin coincidencias.
-        </p>
-      )}
-    </div>
+        <Command shouldFilter={false}>
+          <CommandInput
+            aria-label={`Buscar ${label.toLowerCase()}`}
+            placeholder="Nombre, código o símbolo"
+            value={query}
+            onValueChange={setQuery}
+          />
+          <CommandList>
+            {filtered.length === 0 && (
+              <p role="status" className="p-3 text-sm text-muted-foreground">
+                Sin coincidencias.
+              </p>
+            )}
+            {filtered.map((option) => (
+              <CommandItem
+                key={option.code}
+                value={option.code}
+                onSelect={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                  setQuery("");
+                }}
+              >
+                <span className="min-w-0 flex-1 break-words">
+                  {option.code} — {option.label}
+                  {option.symbol ? ` (${option.symbol})` : ""}
+                </span>
+                {value === option.value && <Check className="size-4 shrink-0" aria-hidden="true" />}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

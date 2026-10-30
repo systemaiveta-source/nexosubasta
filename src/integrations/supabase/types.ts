@@ -874,21 +874,27 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          subscription: Json | null
           token: string
+          transport: string
           user_id: string
         }
         Insert: {
           active?: boolean
           created_at?: string
           id?: string
+          subscription?: Json | null
           token: string
+          transport?: string
           user_id: string
         }
         Update: {
           active?: boolean
           created_at?: string
           id?: string
+          subscription?: Json | null
           token?: string
+          transport?: string
           user_id?: string
         }
         Relationships: [
@@ -1533,6 +1539,18 @@ export type Database = {
           device_token: string
           image_path: string
           queue_id: string
+          title: string
+        }[]
+      }
+      claim_web_push_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          auction_id: string
+          category_name: string
+          device_id: string
+          image_path: string
+          queue_id: string
+          subscription: Json
           title: string
         }[]
       }

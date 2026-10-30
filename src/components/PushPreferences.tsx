@@ -15,9 +15,10 @@ import { errMsg } from "@/lib/format";
 export function PushPreferences() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const fetchSettings = useServerFn(getPushSettings);
   const query = useQuery({
     queryKey: ["push-settings", user?.id],
-    queryFn: () => getPushSettings(),
+    queryFn: () => fetchSettings(),
     enabled: !!user,
   });
   const save = useServerFn(savePushPreferences);
@@ -26,6 +27,7 @@ export function PushPreferences() {
   const [enabled, setEnabled] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
   useEffect(() => {
     if (query.data) {
       setEnabled(query.data.preferences.new_auctions);
@@ -33,6 +35,7 @@ export function PushPreferences() {
     }
   }, [query.data]);
   async function perform(action: () => Promise<unknown>) {
+    if (busy) return;
     setBusy(true);
     try {
       await action();
@@ -97,13 +100,19 @@ export function PushPreferences() {
               onClick={() =>
                 perform(async () => {
                   if (!query.data) return;
-                  const token = await registerPush(query.data.config);
-                  await register({ data: { token } });
-                  await save({ data: { enabled, categories } });
+                  setPushError(null);
+                  try {
+                    const subscription = await registerPush(query.data.config);
+                    await register({ data: { subscription } });
+                    await save({ data: { enabled, categories } });
+                  } catch (error) {
+                    setPushError(errMsg(error));
+                    throw error;
+                  }
                 })
               }
             >
-              Permitir push en este dispositivo
+              Activar avisos en este dispositivo
             </Button>
             {query.data.devices > 0 && (
               <Button variant="ghost" disabled={busy} onClick={() => perform(() => disable())}>
@@ -111,15 +120,27 @@ export function PushPreferences() {
               </Button>
             )}
           </div>
+          {pushError && (
+            <p role="alert" className="text-sm text-destructive">
+              {pushError}
+            </p>
+          )}
           {!query.data.configured && (
             <p className="text-sm text-muted-foreground">
-              Push fuera de NEXO pendiente de configuración. Los avisos internos sí pueden
-              habilitarse.
+              Los avisos fuera de NEXO están pendientes de configuración segura del envío. No
+              necesitas una cuenta Firebase. Puedes guardar tus preferencias de avisos internos.
+            </p>
+          )}
+          {query.data.configured && !query.data.deliveryEnabled && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Puedes autorizar este dispositivo, pero el envío externo aún no está activado.
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            La entrega depende del permiso del navegador, compatibilidad del dispositivo y
-            restricciones del sistema. La miniatura se muestra solo donde sea compatible.
+            Con los envíos activados, los avisos pueden llegar aunque NEXO esté cerrado. Dependen
+            del permiso, conexión y restricciones del dispositivo. En iPhone o iPad, abre NEXO desde
+            su icono instalado. No se garantiza recepción si el navegador o sistema bloquea la
+            actividad en segundo plano.
           </p>
         </>
       )}
