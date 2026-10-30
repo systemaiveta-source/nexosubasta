@@ -1,9 +1,7 @@
 import { safeDestination } from "./destinations";
-export type PushConfig = { apiKey: string; projectId: string; appId: string; vapidKey: string };
+export type PushConfig = { vapidKey: string };
 export function pushConfigured(config: PushConfig) {
-  return Boolean(
-    config.apiKey && config.projectId && config.appId?.split(":")[1] && config.vapidKey,
-  );
+  return /^[A-Za-z0-9_-]{87}$/.test(config.vapidKey);
 }
 export function auctionPushPath(id: string) {
   const path = `/subastas/${id}`;
@@ -12,7 +10,7 @@ export function auctionPushPath(id: string) {
 export async function registerPush(config: PushConfig) {
   if (!pushConfigured(config))
     throw new Error(
-      "Push pendiente de configuración: conecta Firebase con la opción Include web push; no se solicitó permiso.",
+      "Push pendiente de configuración segura de NEXO; no se solicitó permiso.",
     );
   if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator))
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
@@ -24,25 +22,17 @@ export async function registerPush(config: PushConfig) {
     throw new Error(
       "Notificaciones bloqueadas. Puedes cambiar el permiso en los ajustes del navegador.",
     );
-  const { isSupported, getMessaging, getToken } = await import("firebase/messaging");
-  if (!(await isSupported())) throw new Error("Este navegador no admite push web.");
-  const firebaseConfig = {
-    apiKey: config.apiKey,
-    projectId: config.projectId,
-    appId: config.appId,
-    messagingSenderId: config.appId.split(":")[1] ?? "",
-  };
-  const { initializeApp, getApps } = await import("firebase/app");
-  const app =
-    getApps().find((entry) => entry.name === "nexo-push") ??
-    initializeApp(firebaseConfig, "nexo-push");
+  if (!("PushManager" in window)) throw new Error("Este navegador no admite push web. En iPhone o iPad abre NEXO desde su icono instalado.");
   const registration = await navigator.serviceWorker.register(
-    `/firebase-messaging-sw.js?${new URLSearchParams(firebaseConfig)}`,
+    "/nexo-push-sw.js",
   );
-  const token = await getToken(getMessaging(app), {
-    vapidKey: config.vapidKey,
-    serviceWorkerRegistration: registration,
+  await navigator.serviceWorker.ready;
+  const decoded = atob(config.vapidKey.replace(/-/g, "+").replace(/_/g, "/") + "=");
+  const key = Uint8Array.from(decoded, (char) => char.charCodeAt(0));
+  const existing = await registration.pushManager.getSubscription();
+  const subscription = existing ?? await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: key,
   });
-  if (!token) throw new Error("No se pudo registrar este dispositivo.");
-  return token;
+  return subscription.toJSON();
 }

@@ -102,8 +102,8 @@ export function PushPreferences() {
                   if (!query.data) return;
                   setPushError(null);
                   try {
-                    const token = await registerPush(query.data.config);
-                    await register({ data: { token } });
+                    const subscription = await registerPush(query.data.config);
+                    await register({ data: { subscription } });
                     await save({ data: { enabled, categories } });
                   } catch (error) {
                     setPushError(errMsg(error));
@@ -127,8 +127,8 @@ export function PushPreferences() {
           )}
           {!query.data.configured && (
             <p className="text-sm text-muted-foreground">
-              Los avisos fuera de NEXO todavía no están disponibles. Falta conectar Firebase con la
-              opción «Include web push». Puedes guardar tus preferencias de avisos internos.
+              Los avisos fuera de NEXO están pendientes de configuración segura del envío.
+              No necesitas una cuenta Firebase. Puedes guardar tus preferencias de avisos internos.
             </p>
           )}
           {query.data.configured && !query.data.deliveryEnabled && (

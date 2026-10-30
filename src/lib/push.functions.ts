@@ -2,19 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { auctionPushPath, pushConfigured } from "./push";
+import { webPushSubscriptionSchema } from "./web-push-schema";
 export const getPushSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const config = {
-      apiKey: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_WEB_API_KEY"] ?? "",
-      projectId: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_PROJECT_ID"] ?? "",
-      appId: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_APP_ID"] ?? "",
-      vapidKey: process.env["VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_VAPID_KEY"] ?? "",
+      vapidKey: process.env["NEXO_VAPID_PUBLIC_KEY"] ?? "",
     };
     const configured = Boolean(
       pushConfigured(config) &&
-      process.env["FIREBASE_MESSAGING_API_KEY"] &&
-      process.env["LOVABLE_API_KEY"],
+      process.env["NEXO_VAPID_PRIVATE_KEY"],
     );
     const [preferences, devices, categories] = await Promise.all([
       context.supabase
@@ -26,6 +23,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
         .from("push_devices")
         .select("id", { count: "exact", head: true })
         .eq("active", true)
+        .eq("transport", "webpush")
         .eq("user_id", context.userId),
       context.supabase.from("categories").select("id,name").neq("slug", "nft-cripto").order("sort"),
     ]);
@@ -57,16 +55,16 @@ export const savePushPreferences = createServerFn({ method: "POST" })
   });
 export const registerPushDevice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { token: string }) =>
-    z.object({ token: z.string().min(20).max(4096) }).parse(data),
+  .inputValidator((data: { subscription: unknown }) =>
+    z.object({ subscription: webPushSubscriptionSchema }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    if (!process.env["FIREBASE_MESSAGING_API_KEY"])
+    if (!process.env["NEXO_VAPID_PRIVATE_KEY"])
       throw new Error("Push pendiente de configuración");
     const result = await context.supabase
       .from("push_devices")
       .upsert(
-        { user_id: context.userId, token: data.token, active: true },
+        { user_id: context.userId, token: data.subscription.endpoint, transport: "webpush", subscription: data.subscription, active: true },
         { onConflict: "token" },
       );
     if (result.error) throw new Error("No se pudo registrar este dispositivo para tu cuenta");
