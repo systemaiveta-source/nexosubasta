@@ -112,10 +112,10 @@ export const dispatchPushBatch = createServerFn({ method: "POST" })
         path,
       };
       if (item.image_path) {
-        const image = supabaseAdmin.storage.from("auction-images").getPublicUrl(item.image_path)
-          .data.publicUrl;
+        const signed = await supabaseAdmin.storage.from("auction-images").createSignedUrl(item.image_path, 7200);
+        const image = signed.data?.signedUrl;
         const browserOrigin = process.env["VITE_SUPABASE_URL"];
-        if (browserOrigin) {
+        if (browserOrigin && image) {
           const url = new URL(image);
           const origin = new URL(browserOrigin);
           url.host = origin.host;
@@ -147,7 +147,7 @@ export const dispatchPushBatch = createServerFn({ method: "POST" })
           // Do not log provider bodies containing device tokens; retain HTTP status and bounded failure category.
           console.error(`Push provider rejected delivery [${response.status}]`);
           if (response.status === 404 && errorBody.includes("UNREGISTERED"))
-            await supabaseAdmin.from("push_devices").delete().eq("id", item.device_id);
+            await supabaseAdmin.from("push_devices").update({ active: false }).eq("id", item.device_id);
           await supabaseAdmin
             .from("push_outbox")
             .update({ status: "failed" })

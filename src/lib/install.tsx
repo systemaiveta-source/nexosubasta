@@ -14,7 +14,7 @@ export function InstallProvider({ children }: { children: ReactNode }) {
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   useEffect(() => {
     const mode = window.matchMedia("(display-mode: standalone)");
-    let completed = false;
+    let completed = localStorage.getItem("nexo-installed") === "true";
     const sync = () =>
       setInstalled(
         isInstalled(
@@ -30,6 +30,7 @@ export function InstallProvider({ children }: { children: ReactNode }) {
     };
     const complete = () => {
       completed = true;
+      localStorage.setItem("nexo-installed", "true");
       setInstalled(true);
       setPrompt(null);
     };
@@ -47,7 +48,10 @@ export function InstallProvider({ children }: { children: ReactNode }) {
     await prompt.prompt();
     const choice = await prompt.userChoice;
     setPrompt(null);
-    if (choice.outcome === "accepted") setInstalled(true);
+    if (choice.outcome === "accepted") {
+      localStorage.setItem("nexo-installed", "true");
+      setInstalled(true);
+    }
   };
   return (
     <InstallContext.Provider
