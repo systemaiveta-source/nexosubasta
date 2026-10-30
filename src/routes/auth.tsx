@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { errMsg } from "@/lib/format";
 import { authDestination } from "@/lib/destinations";
+import { claimStoredRef, rememberRef, storedRef } from "@/lib/referral";
 
-const search = z.object({ redirect: z.string().optional() });
+const search = z.object({ redirect: z.string().optional(), ref: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, ref } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
@@ -42,9 +43,17 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const c = rememberRef(ref) ?? storedRef();
+    setRefCode(c);
+    if (ref && c) setMode("up");
+  }, [ref]);
 
   useEffect(() => {
     if (user) {
+      void claimStoredRef();
       const stored = sessionStorage.getItem("nexo_redirect");
       sessionStorage.removeItem("nexo_redirect");
       navigate({ to: authDestination(redirect ?? stored), replace: true });
@@ -66,7 +75,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth?redirect=${encodeURIComponent(authDestination(redirect))}`,
-            data: { display_name: name.trim() },
+            data: { display_name: name.trim(), ...(refCode ? { ref: refCode } : {}) },
           },
         });
         if (error) throw error;
@@ -110,6 +119,11 @@ function AuthPage() {
           <h1 className="font-display text-2xl font-bold">
             {mode === "in" ? "Entrar" : mode === "up" ? "Crear cuenta" : "Recuperar contraseña"}
           </h1>
+          {refCode && mode === "up" && !sent && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Te invitó un miembro de NEXO (código <b>{refCode}</b>).
+            </p>
+          )}
           {sent ? (
             <p className="mt-6 rounded-lg bg-accent p-4 text-sm text-accent-foreground">{sent}</p>
           ) : (

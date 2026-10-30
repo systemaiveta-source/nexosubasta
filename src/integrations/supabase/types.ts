@@ -1542,6 +1542,7 @@ export type Database = {
           title: string
         }[]
       }
+      claim_referral: { Args: { _code: string }; Returns: string }
       claim_web_push_batch: {
         Args: { _limit?: number }
         Returns: {
@@ -1593,6 +1594,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      my_referral_community: {
+        Args: never
+        Returns: {
+          currency: string
+          display_name: string
+          earned: number
+          ends_at: string
+          id: string
+          joined_at: string
+          plan_active: boolean
+          plan_name: string
+        }[]
       }
       new_auction_draft: {
         Args: { _data: Json; _private: Json }

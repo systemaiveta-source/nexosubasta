@@ -66,12 +66,7 @@ function Profile() {
   const referrals = useQuery({
     queryKey: ["refs", user?.id],
     queryFn: async () =>
-      (
-        await supabase
-          .from("profiles")
-          .select("id,display_name,created_at")
-          .eq("referred_by", user?.id ?? "")
-      ).data ?? [],
+      (await supabase.rpc("my_referral_community")).data ?? [],
   });
   const plans = useQuery({
     queryKey: ["plans"],
@@ -232,7 +227,40 @@ function Profile() {
           </div>
           <p className="text-sm">
             Tu código: <b>{profile.data?.referral_code}</b> · Referidos:{" "}
-            <b>{referrals.data?.length ?? 0}</b>
+            <b>{referrals.data?.length ?? 0}</b> · Con plan activo:{" "}
+            <b>{referrals.data?.filter((r) => r.plan_active).length ?? 0}</b>
+          </p>
+          <h3 className="pt-2 font-semibold">Mi comunidad</h3>
+          {referrals.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : referrals.data?.length ? (
+            <ul className="divide-y divide-border rounded-lg border border-border text-sm">
+              {referrals.data.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{r.display_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.plan_active
+                        ? `Plan ${r.plan_name} activo hasta ${new Date(r.ends_at!).toLocaleDateString("es")}`
+                        : "Sin plan activo"}
+                    </p>
+                  </div>
+                  <span className="font-semibold">
+                    Recompensa: {Number(r.earned).toFixed(2)} {r.currency ?? ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Aún no tienes referidos. Comparte tu enlace para empezar tu comunidad.
+            </p>
+          )}
+          <p className="text-sm">
+            Total ganado por referidos:{" "}
+            <b>
+              {(referrals.data ?? []).reduce((a, r) => a + Number(r.earned), 0).toFixed(2)}
+            </b>
           </p>
         </section>
 
