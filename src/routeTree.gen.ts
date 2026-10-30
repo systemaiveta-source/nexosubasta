@@ -30,6 +30,7 @@ import { Route as UsuariosIdRouteImport } from './routes/usuarios.$id'
 import { Route as AuthenticatedOperacionesIndexRouteImport } from './routes/_authenticated/operaciones.index'
 import { Route as AuthenticatedOperacionesIdRouteImport } from './routes/_authenticated/operaciones.$id'
 import { Route as ApiPublicJobsPushRouteImport } from './routes/api/public/jobs/push'
+import { Route as ApiPublicSubastasIdMiniaturaRouteImport } from './routes/api/public/subastas/$id/miniatura'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -138,6 +139,12 @@ const ApiPublicJobsPushRoute = ApiPublicJobsPushRouteImport.update({
   path: '/api/public/jobs/push',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSubastasIdMiniaturaRoute =
+  ApiPublicSubastasIdMiniaturaRouteImport.update({
+    id: '/api/public/subastas/$id/miniatura',
+    path: '/api/public/subastas/$id/miniatura',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/operaciones/': typeof AuthenticatedOperacionesIndexRoute
   '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
+  '/api/public/subastas/$id/miniatura': typeof ApiPublicSubastasIdMiniaturaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
   '/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/operaciones': typeof AuthenticatedOperacionesIndexRoute
   '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
+  '/api/public/subastas/$id/miniatura': typeof ApiPublicSubastasIdMiniaturaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/_authenticated/operaciones/$id': typeof AuthenticatedOperacionesIdRoute
   '/_authenticated/operaciones/': typeof AuthenticatedOperacionesIndexRoute
   '/api/public/jobs/push': typeof ApiPublicJobsPushRoute
+  '/api/public/subastas/$id/miniatura': typeof ApiPublicSubastasIdMiniaturaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/operaciones/$id'
     | '/operaciones/'
     | '/api/public/jobs/push'
+    | '/api/public/subastas/$id/miniatura'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/operaciones/$id'
     | '/operaciones'
     | '/api/public/jobs/push'
+    | '/api/public/subastas/$id/miniatura'
   id:
     | '__root__'
     | '/'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/_authenticated/operaciones/$id'
     | '/_authenticated/operaciones/'
     | '/api/public/jobs/push'
+    | '/api/public/subastas/$id/miniatura'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -292,6 +305,7 @@ export interface RootRouteChildren {
   UsuariosIdRoute: typeof UsuariosIdRoute
   SubastasIndexRoute: typeof SubastasIndexRoute
   ApiPublicJobsPushRoute: typeof ApiPublicJobsPushRoute
+  ApiPublicSubastasIdMiniaturaRoute: typeof ApiPublicSubastasIdMiniaturaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -443,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsPushRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/subastas/$id/miniatura': {
+      id: '/api/public/subastas/$id/miniatura'
+      path: '/api/public/subastas/$id/miniatura'
+      fullPath: '/api/public/subastas/$id/miniatura'
+      preLoaderRoute: typeof ApiPublicSubastasIdMiniaturaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -484,6 +505,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsuariosIdRoute: UsuariosIdRoute,
   SubastasIndexRoute: SubastasIndexRoute,
   ApiPublicJobsPushRoute: ApiPublicJobsPushRoute,
+  ApiPublicSubastasIdMiniaturaRoute: ApiPublicSubastasIdMiniaturaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
