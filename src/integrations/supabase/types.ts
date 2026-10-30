@@ -182,6 +182,7 @@ export type Database = {
           accepted_at: string
           auction_id: string
           bid_id: string
+          delivery_snapshot: Json | null
           id: string
           methods_snapshot: Json
           user_id: string
@@ -190,6 +191,7 @@ export type Database = {
           accepted_at?: string
           auction_id: string
           bid_id: string
+          delivery_snapshot?: Json | null
           id?: string
           methods_snapshot: Json
           user_id: string
@@ -198,6 +200,7 @@ export type Database = {
           accepted_at?: string
           auction_id?: string
           bid_id?: string
+          delivery_snapshot?: Json | null
           id?: string
           methods_snapshot?: Json
           user_id?: string
@@ -280,6 +283,7 @@ export type Database = {
           created_at: string
           currency: string
           current_price: number | null
+          delivery_snapshot: Json | null
           delivery_terms: string
           description: string
           duration_hours: number
@@ -316,6 +320,7 @@ export type Database = {
           created_at?: string
           currency?: string
           current_price?: number | null
+          delivery_snapshot?: Json | null
           delivery_terms?: string
           description?: string
           duration_hours?: number
@@ -352,6 +357,7 @@ export type Database = {
           created_at?: string
           currency?: string
           current_price?: number | null
+          delivery_snapshot?: Json | null
           delivery_terms?: string
           description?: string
           duration_hours?: number
@@ -842,6 +848,42 @@ export type Database = {
           },
         ]
       }
+      service_requests: {
+        Row: {
+          auction_id: string
+          locations_verified: boolean
+          request: Json
+          updated_at: string
+        }
+        Insert: {
+          auction_id: string
+          locations_verified?: boolean
+          request: Json
+          updated_at?: string
+        }
+        Update: {
+          auction_id?: string
+          locations_verified?: boolean
+          request?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_requests: {
         Row: {
           created_at: string
@@ -1123,6 +1165,7 @@ export type Database = {
           created_at: string | null
           currency: string | null
           current_price: number | null
+          delivery_snapshot: Json | null
           delivery_terms: string | null
           description: string | null
           duration_hours: number | null
@@ -1159,6 +1202,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           current_price?: number | null
+          delivery_snapshot?: Json | null
           delivery_terms?: string | null
           description?: string | null
           duration_hours?: number | null
@@ -1168,7 +1212,7 @@ export type Database = {
           flagged?: boolean | null
           has_reserve?: boolean | null
           id?: string | null
-          images?: string[] | null
+          images?: never
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
@@ -1176,8 +1220,8 @@ export type Database = {
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
-          service_from?: string | null
-          service_to?: string | null
+          service_from?: never
+          service_to?: never
           starting_price?: never
           starts_at?: string | null
           status?: string | null
@@ -1195,6 +1239,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           current_price?: number | null
+          delivery_snapshot?: Json | null
           delivery_terms?: string | null
           description?: string | null
           duration_hours?: number | null
@@ -1204,7 +1249,7 @@ export type Database = {
           flagged?: boolean | null
           has_reserve?: boolean | null
           id?: string | null
-          images?: string[] | null
+          images?: never
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
@@ -1212,8 +1257,8 @@ export type Database = {
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
-          service_from?: string | null
-          service_to?: string | null
+          service_from?: never
+          service_to?: never
           starting_price?: never
           starts_at?: string | null
           status?: string | null
@@ -1298,6 +1343,18 @@ export type Database = {
         Returns: undefined
       }
       become_seller: { Args: never; Returns: undefined }
+      bid_with_delivery_acceptance: {
+        Args: {
+          _accept: boolean
+          _amount: number
+          _auction: string
+          _conditions?: string
+          _delivery: Json
+          _key: string
+          _terms: Json
+        }
+        Returns: Json
+      }
       bid_with_payment_acceptance: {
         Args: {
           _accept: boolean
@@ -1319,6 +1376,7 @@ export type Database = {
       }
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
+      get_service_request: { Args: { _auction: string }; Returns: Json }
       has_active_seller_sub: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -1389,6 +1447,7 @@ export type Database = {
           created_at: string
           currency: string
           current_price: number | null
+          delivery_snapshot: Json | null
           delivery_terms: string
           description: string
           duration_hours: number
@@ -1439,6 +1498,16 @@ export type Database = {
         Args: { _data: Json; _id: string; _private: Json }
         Returns: string
       }
+      save_extended_draft: {
+        Args: {
+          _data: Json
+          _delivery: Json
+          _id?: string
+          _private: Json
+          _request: Json
+        }
+        Returns: string
+      }
       send_operation_message: {
         Args: { _attachment?: string; _body: string; _key: string; _tx: string }
         Returns: string
@@ -1451,6 +1520,11 @@ export type Database = {
           _key: string
         }
         Returns: Json
+      }
+      service_details_allowed: { Args: { _auction: string }; Returns: boolean }
+      service_required_fields: {
+        Args: { _category: string }
+        Returns: string[]
       }
       set_auction_start: {
         Args: { _auction_id: string; _starts_at: string }
