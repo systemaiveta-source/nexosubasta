@@ -359,10 +359,7 @@ function AuctionPage() {
                       ))}
                   </dl>
                   {request.category === "transport" && (
-                    <p className="text-sm text-muted-foreground">
-                      Mapa y validación de ruta pendientes de configurar Google Maps. No se admiten
-                      ofertas de transporte sin ubicaciones validadas.
-                    </p>
+                    <ServiceRouteMap origin={request.values["origin"] ?? ""} destination={request.values["destination"] ?? ""} verified={request.locations_verified} />
                   )}
                 </>
               ) : (
