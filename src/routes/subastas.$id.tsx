@@ -359,7 +359,11 @@ function AuctionPage() {
                       ))}
                   </dl>
                   {request.category === "transport" && (
-                    <ServiceRouteMap origin={request.values["origin"] ?? ""} destination={request.values["destination"] ?? ""} verified={request.locations_verified} />
+                    <ServiceRouteMap
+                      origin={request.values["origin"] ?? ""}
+                      destination={request.values["destination"] ?? ""}
+                      verified={request.locations_verified}
+                    />
                   )}
                 </>
               ) : (
