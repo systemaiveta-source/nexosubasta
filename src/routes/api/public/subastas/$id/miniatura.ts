@@ -48,21 +48,22 @@ export const Route = createFileRoute("/api/public/subastas/$id/miniatura")({
             !["jpg", "png", "webp"].includes(dimensions.type || "")
           )
             return new Response(null, { status: 422 });
-          const { PhotonImage, resize, crop, SamplingFilter } = await import("@cf-wasm/photon");
+          const { PhotonImage, resize, watermark, SamplingFilter } = await import("@cf-wasm/photon");
           const input = PhotonImage.new_from_byteslice(bytes);
           try {
-            const scale = Math.max(1200 / dimensions.width, 630 / dimensions.height);
+            const scale = Math.min(1200 / dimensions.width, 630 / dimensions.height);
             const resized = resize(
               input,
-              Math.ceil(dimensions.width * scale),
-              Math.ceil(dimensions.height * scale),
+              Math.max(1, Math.floor(dimensions.width * scale)),
+              Math.max(1, Math.floor(dimensions.height * scale)),
               SamplingFilter.Lanczos3,
             );
             try {
-              const x = Math.floor((resized.get_width() - 1200) / 2),
-                y = Math.floor((resized.get_height() - 630) / 2);
-              const thumbnail = crop(resized, x, y, x + 1200, y + 630);
+              // Neutral opaque canvas preserves the full uploaded photo, including tall products.
+              const canvas = new Uint8Array(1200 * 630 * 4).fill(255);
+              const thumbnail = new PhotonImage(canvas, 1200, 630);
               try {
+                watermark(thumbnail, resized, BigInt(Math.floor((1200 - resized.get_width()) / 2)), BigInt(Math.floor((630 - resized.get_height()) / 2)));
                 const jpg = thumbnail.get_bytes_jpeg(78);
                 return new Response(new Uint8Array(jpg).buffer, {
                   headers: {
