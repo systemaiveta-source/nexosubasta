@@ -47,14 +47,12 @@ export const savePushPreferences = createServerFn({ method: "POST" })
     z.object({ enabled: z.boolean(), categories: z.array(z.string().uuid()).max(100) }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const result = await context.supabase
-      .from("notification_preferences")
-      .upsert({
-        user_id: context.userId,
-        new_auctions: data.enabled,
-        categories: [...new Set(data.categories)],
-        updated_at: new Date().toISOString(),
-      });
+    const result = await context.supabase.from("notification_preferences").upsert({
+      user_id: context.userId,
+      new_auctions: data.enabled,
+      categories: [...new Set(data.categories)],
+      updated_at: new Date().toISOString(),
+    });
     if (result.error) throw new Error("No se pudieron guardar tus preferencias");
     return { ok: true };
   });
