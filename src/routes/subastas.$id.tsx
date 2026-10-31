@@ -28,7 +28,7 @@ export const Route = createFileRoute("/subastas/$id")({
 });
 
 const AUCTION_COLUMNS =
-  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot";
+  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds";
 
 function AuctionPage() {
   const { id } = Route.useParams();
@@ -230,7 +230,11 @@ function AuctionPage() {
       setAmount("");
       setConditions("");
       toast.success(
-        r.extended ? "Oferta aceptada. El cierre se amplió 60 segundos." : "Oferta aceptada",
+        r.extended
+          ? a?.closing_mode === "reserve"
+            ? "Oferta aceptada. Período de cierre reiniciado."
+            : "Oferta aceptada. El cierre se amplió 60 segundos."
+          : "Oferta aceptada",
       );
       qc.invalidateQueries({ queryKey: ["auction", id] });
       qc.invalidateQueries({ queryKey: ["bids", id] });
@@ -438,7 +442,14 @@ function AuctionPage() {
             {a.extensions_count > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Cierre ampliado {a.extensions_count} {a.extensions_count === 1 ? "vez" : "veces"}{" "}
-                por ofertas de último minuto.
+                {a.closing_mode === "reserve"
+                  ? "por ofertas válidas tras alcanzar la reserva."
+                  : "por ofertas de último minuto."}
+              </p>
+            )}
+            {a.closing_mode === "reserve" && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Cierre por objetivos · período sin nuevas pujas: {a.quiet_period_seconds} segundos.
               </p>
             )}
 

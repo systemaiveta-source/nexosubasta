@@ -309,6 +309,7 @@ export type Database = {
           bid_count: number
           category_id: string | null
           city: string | null
+          closing_mode: string
           country: string | null
           created_at: string
           currency: string
@@ -327,6 +328,7 @@ export type Database = {
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
+          quiet_period_seconds: number
           reserve_met: boolean
           scope: string
           selection_pending: boolean
@@ -346,6 +348,7 @@ export type Database = {
           bid_count?: number
           category_id?: string | null
           city?: string | null
+          closing_mode?: string
           country?: string | null
           created_at?: string
           currency?: string
@@ -364,6 +367,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
+          quiet_period_seconds?: number
           reserve_met?: boolean
           scope?: string
           selection_pending?: boolean
@@ -383,6 +387,7 @@ export type Database = {
           bid_count?: number
           category_id?: string | null
           city?: string | null
+          closing_mode?: string
           country?: string | null
           created_at?: string
           currency?: string
@@ -401,6 +406,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
+          quiet_period_seconds?: number
           reserve_met?: boolean
           scope?: string
           selection_pending?: boolean
@@ -619,18 +625,21 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          activity: boolean
           categories: string[]
           new_auctions: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          activity?: boolean
           categories?: string[]
           new_auctions?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          activity?: boolean
           categories?: string[]
           new_auctions?: boolean
           updated_at?: string
@@ -641,6 +650,58 @@ export type Database = {
             foreignKeyName: "notification_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_push_outbox: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          device_id: string
+          id: string
+          notification_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          notification_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          notification_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_push_outbox_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "push_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_push_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_push_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1040,6 +1101,36 @@ export type Database = {
           },
         ]
       }
+      social_links: {
+        Row: {
+          active: boolean
+          id: string
+          label: string
+          network: string
+          sort: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          label: string
+          network: string
+          sort?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          label?: string
+          network?: string
+          sort?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       subscription_requests: {
         Row: {
           created_at: string
@@ -1317,6 +1408,7 @@ export type Database = {
           bid_count: number | null
           category_id: string | null
           city: string | null
+          closing_mode: string | null
           country: string | null
           created_at: string | null
           currency: string | null
@@ -1335,6 +1427,7 @@ export type Database = {
           leader_id: string | null
           min_increment: number | null
           original_ends_at: string | null
+          quiet_period_seconds: number | null
           reserve_met: boolean | null
           scope: string | null
           selection_pending: boolean | null
@@ -1354,6 +1447,7 @@ export type Database = {
           bid_count?: number | null
           category_id?: string | null
           city?: string | null
+          closing_mode?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null
@@ -1372,6 +1466,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_seconds?: number | null
           reserve_met?: boolean | null
           scope?: string | null
           selection_pending?: boolean | null
@@ -1391,6 +1486,7 @@ export type Database = {
           bid_count?: number | null
           category_id?: string | null
           city?: string | null
+          closing_mode?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null
@@ -1409,6 +1505,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_seconds?: number | null
           reserve_met?: boolean | null
           scope?: string | null
           selection_pending?: boolean | null
@@ -1498,6 +1595,16 @@ export type Database = {
         Args: { _buyer: string; _plan: string }
         Returns: undefined
       }
+      auction_bid_deadline: {
+        Args: {
+          _end: string
+          _met: boolean
+          _mode: string
+          _now: string
+          _quiet: number
+        }
+        Returns: string
+      }
       become_seller: { Args: never; Returns: undefined }
       bid_with_delivery_acceptance: {
         Args: {
@@ -1529,6 +1636,23 @@ export type Database = {
       choose_service_provider: {
         Args: { _auction: string; _bid: string }
         Returns: string
+      }
+      claim_notification_push_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          auction_id: string
+          body: string
+          category_name: string
+          currency: string
+          device_id: string
+          image_path: string
+          notification_id: string
+          path: string
+          queue_id: string
+          starting_price: number
+          subscription: Json
+          title: string
+        }[]
       }
       claim_push_batch: {
         Args: { _limit?: number }
@@ -1637,6 +1761,7 @@ export type Database = {
           bid_count: number
           category_id: string | null
           city: string | null
+          closing_mode: string
           country: string | null
           created_at: string
           currency: string
@@ -1655,6 +1780,7 @@ export type Database = {
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
+          quiet_period_seconds: number
           reserve_met: boolean
           scope: string
           selection_pending: boolean

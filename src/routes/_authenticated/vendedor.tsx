@@ -74,6 +74,8 @@ function Seller() {
     service_to: "",
     reserve: "",
     expected: "",
+    closing_mode: "fixed",
+    quiet_period_seconds: "300",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
@@ -189,6 +191,8 @@ function Seller() {
           service_to: null,
           accepted_payment_methods: methods,
           starts_at: startsAt ? new Date(startsAt).toISOString() : null,
+          closing_mode: type === "item" ? f.closing_mode : "fixed",
+          quiet_period_seconds: Number(f.quiet_period_seconds),
         },
         _private: {
           reserve_price: type === "item" && f.reserve ? Number(f.reserve) : null,
@@ -269,6 +273,8 @@ function Seller() {
         service_to: String(a["service_to"] ?? ""),
         reserve: String(p?.["reserve_price"] ?? ""),
         expected: String(p?.["expected_price"] ?? ""),
+        closing_mode: String(a["closing_mode"] ?? "fixed"),
+        quiet_period_seconds: String(a["quiet_period_seconds"] ?? 300),
       });
       setImages(
         Array.isArray(a["images"])
@@ -452,6 +458,32 @@ function Seller() {
             </div>
             {type === "item" && (
               <>
+                <label className="space-y-1.5 text-sm">
+                  Modalidad de cierre
+                  <select
+                    aria-label="Modalidad de cierre"
+                    className={sel}
+                    value={f.closing_mode}
+                    onChange={set("closing_mode")}
+                  >
+                    <option value="fixed">Tiempo fijo</option>
+                    <option value="reserve">Objetivo de reserva privada</option>
+                  </select>
+                </label>
+                {f.closing_mode === "reserve" && (
+                  <label className="space-y-1.5 text-sm">
+                    Período sin nuevas pujas (segundos)
+                    <Input
+                      aria-label="Período sin nuevas pujas"
+                      type="number"
+                      min={60}
+                      max={86400}
+                      step={1}
+                      value={f.quiet_period_seconds}
+                      onChange={set("quiet_period_seconds")}
+                    />
+                  </label>
+                )}
                 <div className="space-y-1.5">
                   <Label>Precio esperado (privado)</Label>
                   <Input type="number" min="0" value={f.expected} onChange={set("expected")} />
