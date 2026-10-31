@@ -8,7 +8,7 @@ import {
   registerPushDevice,
   disablePushDevices,
 } from "@/lib/push.functions";
-import { registerPush } from "@/lib/push";
+import { registerPush, currentPushSubscription, unsubscribePush, devicePushState, type DevicePushState } from "@/lib/push";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { errMsg } from "@/lib/format";
@@ -28,11 +28,27 @@ export function PushPreferences() {
   const [categories, setCategories] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
+  const [deviceState, setDeviceState] = useState<DevicePushState>("inactive");
+  const [activity, setActivity] = useState(true);
   useEffect(() => {
     if (query.data) {
       setEnabled(query.data.preferences.new_auctions);
       setCategories(query.data.preferences.categories);
+      setActivity(query.data.preferences.activity);
     }
+  }, [query.data]);
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const supported = window.isSecureContext && "Notification" in window && "PushManager" in window && "serviceWorker" in navigator;
+        const subscription = supported ? await currentPushSubscription() : null;
+        if (!cancelled) setDeviceState(devicePushState(supported, supported ? Notification.permission : "default", subscription?.endpoint ?? null, query.data?.endpoints ?? []));
+      } catch { if (!cancelled) setDeviceState("failed"); }
+    }
+    void refresh();
+    window.addEventListener("focus", refresh);
+    return () => { cancelled = true; window.removeEventListener("focus", refresh); };
   }, [query.data]);
   async function perform(action: () => Promise<unknown>) {
     if (busy) return;
@@ -64,6 +80,7 @@ export function PushPreferences() {
             />
             Recibir avisos de nuevas subastas
           </label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={activity} onChange={(event) => setActivity(event.target.checked)} />Avisos de mis pujas, cierres y operaciones</label>
           <details>
             <summary className="cursor-pointer text-sm">
               Categorías: {categories.length ? `${categories.length} seleccionadas` : "todas"}
@@ -91,12 +108,12 @@ export function PushPreferences() {
             <Button
               disabled={busy}
               variant="outline"
-              onClick={() => perform(() => save({ data: { enabled, categories } }))}
+              onClick={() => perform(() => save({ data: { enabled, categories, activity } }))}
             >
               Guardar avisos
             </Button>
-            <Button
-              disabled={busy || !enabled || !query.data.configured}
+            {deviceState !== "active" && <Button
+              disabled={busy || (!enabled && !activity) || !query.data.configured || deviceState === "blocked" || deviceState === "unsupported"}
               onClick={() =>
                 perform(async () => {
                   if (!query.data) return;
@@ -104,7 +121,7 @@ export function PushPreferences() {
                   try {
                     const subscription = await registerPush(query.data.config);
                     await register({ data: { subscription } });
-                    await save({ data: { enabled, categories } });
+                    await save({ data: { enabled, categories, activity } });
                   } catch (error) {
                     setPushError(errMsg(error));
                     throw error;
@@ -113,13 +130,18 @@ export function PushPreferences() {
               }
             >
               Activar avisos en este dispositivo
-            </Button>
+            </Button>}
+            {deviceState === "active" && <><p role="status" className="self-center text-sm text-nexo-green">Avisos activos en este dispositivo</p><Button variant="outline" disabled={busy} onClick={() => perform(async () => { const subscription = await currentPushSubscription(); if (!subscription) return; await disable({ data: { endpoint: subscription.endpoint } }); await unsubscribePush(); })}>Desactivar este dispositivo</Button></>}
             {query.data.devices > 0 && (
-              <Button variant="ghost" disabled={busy} onClick={() => perform(() => disable())}>
+              <Button variant="ghost" disabled={busy} onClick={() => perform(async () => { await disable({ data: {} }); await unsubscribePush(); })}>
                 Desactivar push en mis dispositivos
               </Button>
             )}
           </div>
+          {deviceState === "blocked" && <p role="status" className="text-sm text-muted-foreground">Permiso bloqueado en los ajustes del navegador.</p>}
+          {deviceState === "unsupported" && <p role="status" className="text-sm text-muted-foreground">Este navegador no admite avisos en segundo plano.</p>}
+          {deviceState === "unregistered" && <p role="status" className="text-sm text-muted-foreground">Permiso concedido; falta vincular este dispositivo a tu cuenta.</p>}
+          {deviceState === "failed" && <p role="alert">No se pudo comprobar la suscripción de este dispositivo.</p>}
           {pushError && (
             <p role="alert" className="text-sm text-destructive">
               {pushError}

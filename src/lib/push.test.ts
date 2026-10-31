@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auctionPushPath, pushConfigured, registerPush } from "./push";
+import { auctionPushPath, pushConfigured, registerPush, devicePushState } from "./push";
 import { allowedPushEndpoint } from "./web-push-schema";
 afterEach(() => vi.unstubAllGlobals());
 describe("push contextual seguro", () => {
+  it("permiso concedido no equivale a suscripción de esta cuenta", () => {
+    expect(devicePushState(true, "granted", "device-a", ["device-b"])).toBe("unregistered");
+    expect(devicePushState(true, "granted", "device-a", ["device-a"])).toBe("active");
+    expect(devicePushState(true, "denied", null, [])).toBe("blocked");
+    expect(devicePushState(false, "default", null, [])).toBe("unsupported");
+  });
   it("sin credenciales no solicita permisos ni registra worker", async () => {
     const config = { vapidKey: "" };
     expect(pushConfigured(config)).toBe(false);

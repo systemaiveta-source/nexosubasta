@@ -13,12 +13,12 @@ export const getPushSettings = createServerFn({ method: "POST" })
     const [preferences, devices, categories] = await Promise.all([
       context.supabase
         .from("notification_preferences")
-        .select("new_auctions,categories")
+        .select("new_auctions,categories,activity")
         .eq("user_id", context.userId)
         .maybeSingle(),
       context.supabase
         .from("push_devices")
-        .select("id", { count: "exact", head: true })
+        .select("token")
         .eq("active", true)
         .eq("transport", "webpush")
         .eq("user_id", context.userId),
@@ -30,21 +30,23 @@ export const getPushSettings = createServerFn({ method: "POST" })
       configured,
       deliveryEnabled: configured && process.env["NEXO_PUSH_DELIVERY_ENABLED"] === "true",
       config,
-      preferences: preferences.data ?? { new_auctions: false, categories: [] },
-      devices: devices.count ?? 0,
+      preferences: preferences.data ?? { new_auctions: false, categories: [], activity: true },
+      devices: devices.data?.length ?? 0,
+      endpoints: devices.data?.map((device) => device.token) ?? [],
       categories: categories.data,
     };
   });
 export const savePushPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { enabled: boolean; categories: string[] }) =>
-    z.object({ enabled: z.boolean(), categories: z.array(z.string().uuid()).max(100) }).parse(data),
+  .inputValidator((data: { enabled: boolean; categories: string[]; activity?: boolean }) =>
+    z.object({ enabled: z.boolean(), categories: z.array(z.string().uuid()).max(100), activity: z.boolean().optional() }).parse(data),
   )
   .handler(async ({ data, context }) => {
     const result = await context.supabase.from("notification_preferences").upsert({
       user_id: context.userId,
       new_auctions: data.enabled,
       categories: [...new Set(data.categories)],
+      ...(data.activity !== undefined ? { activity: data.activity } : {}),
       updated_at: new Date().toISOString(),
     });
     if (result.error) throw new Error("No se pudieron guardar tus preferencias");
@@ -72,11 +74,14 @@ export const registerPushDevice = createServerFn({ method: "POST" })
   });
 export const disablePushDevices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const result = await context.supabase
+  .inputValidator((data: { endpoint?: string }) => z.object({ endpoint: z.string().max(4096).optional() }).parse(data))
+  .handler(async ({ context, data }) => {
+    let query = context.supabase
       .from("push_devices")
       .update({ active: false })
-      .eq("user_id", context.userId);
+      .eq("user_id", context.userId).eq("transport", "webpush");
+    if (data.endpoint) query = query.eq("token", data.endpoint);
+    const result = await query;
     if (result.error) throw new Error("No se pudieron desactivar los dispositivos");
     return { ok: true };
   });

@@ -1,6 +1,6 @@
 /* Messaging only. No caching, offline bidding or Firebase dependency. */
 function destination(value) {
-  return /^\/subastas\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+  return /^\/(subastas|operaciones)\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
     value || "",
   )
     ? value
@@ -19,7 +19,8 @@ self.addEventListener("push", (event) => {
       body: data.body || "Nueva subasta en NEXO",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-64.png",
-      tag: path,
+      tag: typeof data.tag === "string" ? data.tag : path,
+      ...(typeof data.image === "string" && data.image.startsWith("https://nexosubastas.com/api/public/subastas/") ? { image: data.image } : {}),
       data: { path },
     }),
   );
