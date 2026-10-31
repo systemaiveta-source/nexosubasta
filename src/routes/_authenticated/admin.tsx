@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRoles } from "@/lib/auth";
 import { PaymentMethodsAdmin } from "@/components/PaymentMethodsAdmin";
 import { MembershipRequests } from "@/components/MembershipRequests";
+import { SocialLinksAdmin } from "@/components/SocialLinksAdmin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -27,6 +28,7 @@ const TABS = [
   ["pagos", "Pagos por aprobar"],
   ["planes", "Membresías"],
   ["metodos", "Métodos de pago"],
+  ["redes", "Redes sociales"],
   ["usuarios", "Usuarios"],
   ["subastas", "Subastas"],
   ["ajustes", "Ajustes"],
@@ -80,6 +82,7 @@ function AdminPage() {
           {tab === "pagos" && <MembershipRequests admin />}
           {tab === "planes" && <Planes />}
           {tab === "metodos" && <PaymentMethodsAdmin />}
+          {tab === "redes" && <SocialLinksAdmin />}
           {tab === "usuarios" && <Usuarios />}
           {tab === "subastas" && <Subastas />}
           {tab === "ajustes" && <Ajustes />}

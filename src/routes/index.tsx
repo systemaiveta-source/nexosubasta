@@ -4,8 +4,14 @@ import { SiteLayout } from "@/components/SiteLayout";
 import logo from "@/assets/nexo-logo.png.asset.json";
 import { useInstall } from "@/lib/install";
 import { Button } from "@/components/ui/button";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { listPublicSocialLinks } from "@/lib/social-links.functions";
+import { SocialLinks } from "@/components/SocialLinks";
+
+const socialQuery = queryOptions({ queryKey: ["public-social-links"], queryFn: () => listPublicSocialLinks(), staleTime: 60000 });
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(socialQuery),
   head: () => ({
     meta: [
       { title: "NEXO — Sistema de subastas" },
@@ -55,6 +61,7 @@ const features = [
 
 function Index() {
   const installation = useInstall();
+  const { data: socialLinks } = useSuspenseQuery(socialQuery);
   return (
     <SiteLayout>
       <section className="mx-auto max-w-6xl px-4 pb-12 pt-14 text-center sm:pt-20">
@@ -85,6 +92,7 @@ function Index() {
           </div>
         ))}
       </section>
+      <SocialLinks links={socialLinks} />
     </SiteLayout>
   );
 }
