@@ -1,4 +1,5 @@
-export const NEXO_ORIGIN = "https://nexosubasta.lovable.app";
+import { NEXO_ORIGIN, publicImageUrl } from "./site-url";
+export { NEXO_ORIGIN } from "./site-url";
 export function auctionShareUrl(id: string) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id))
     throw new Error("Subasta no válida");
@@ -11,7 +12,7 @@ export function auctionShareHead(
   const url = auctionShareUrl(id);
   const title = auction ? `${auction.title} — NEXO` : "Subasta no disponible — NEXO";
   const description = auction?.description || "Consulta esta subasta en NEXO.";
-  const image = `${NEXO_ORIGIN}/api/public/subastas/${id}/miniatura`;
+  const image = publicImageUrl(id);
   return {
     meta: [
       { title },
@@ -27,9 +28,6 @@ export function auctionShareHead(
         ? [
             { property: "og:image", content: image },
             { name: "twitter:image", content: image },
-            { property: "og:image:width", content: "1200" },
-            { property: "og:image:height", content: "630" },
-            { property: "og:image:type", content: "image/jpeg" },
             { property: "og:image:alt", content: auction.title },
           ]
         : []),

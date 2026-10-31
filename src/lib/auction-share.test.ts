@@ -4,7 +4,7 @@ import { auctionShareUrl, socialShareLinks } from "./auction-share";
 const id = "12345678-1234-1234-1234-123456789abc";
 describe("enlaces de subasta seguros", () => {
   it("comparte la ficha exacta en el dominio NEXO, no la sesión ni el preview", () => {
-    expect(auctionShareUrl(id)).toBe(`https://nexosubasta.lovable.app/subastas/${id}`);
+    expect(auctionShareUrl(id)).toBe(`https://nexosubastas.com/subastas/${id}`);
     expect(() => auctionShareUrl(`${id}?token=secret`)).toThrow();
     expect(() => auctionShareUrl("https://evil.test")).toThrow();
   });
