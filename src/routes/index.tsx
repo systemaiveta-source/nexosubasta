@@ -8,7 +8,11 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { listPublicSocialLinks } from "@/lib/social-links.functions";
 import { SocialLinks } from "@/components/SocialLinks";
 
-const socialQuery = queryOptions({ queryKey: ["public-social-links"], queryFn: () => listPublicSocialLinks(), staleTime: 60000 });
+const socialQuery = queryOptions({
+  queryKey: ["public-social-links"],
+  queryFn: () => listPublicSocialLinks(),
+  staleTime: 60000,
+});
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(socialQuery),

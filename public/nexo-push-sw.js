@@ -20,7 +20,10 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-64.png",
       tag: typeof data.tag === "string" ? data.tag : path,
-      ...(typeof data.image === "string" && data.image.startsWith("https://nexosubastas.com/api/public/subastas/") ? { image: data.image } : {}),
+      ...(typeof data.image === "string" &&
+      data.image.startsWith("https://nexosubastas.com/api/public/subastas/")
+        ? { image: data.image }
+        : {}),
       data: { path },
     }),
   );

@@ -39,7 +39,13 @@ export const getPushSettings = createServerFn({ method: "POST" })
 export const savePushPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { enabled: boolean; categories: string[]; activity?: boolean }) =>
-    z.object({ enabled: z.boolean(), categories: z.array(z.string().uuid()).max(100), activity: z.boolean().optional() }).parse(data),
+    z
+      .object({
+        enabled: z.boolean(),
+        categories: z.array(z.string().uuid()).max(100),
+        activity: z.boolean().optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const result = await context.supabase.from("notification_preferences").upsert({
@@ -74,12 +80,15 @@ export const registerPushDevice = createServerFn({ method: "POST" })
   });
 export const disablePushDevices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { endpoint?: string }) => z.object({ endpoint: z.string().max(4096).optional() }).parse(data))
+  .inputValidator((data: { endpoint?: string }) =>
+    z.object({ endpoint: z.string().max(4096).optional() }).parse(data),
+  )
   .handler(async ({ context, data }) => {
     let query = context.supabase
       .from("push_devices")
       .update({ active: false })
-      .eq("user_id", context.userId).eq("transport", "webpush");
+      .eq("user_id", context.userId)
+      .eq("transport", "webpush");
     if (data.endpoint) query = query.eq("token", data.endpoint);
     const result = await query;
     if (result.error) throw new Error("No se pudieron desactivar los dispositivos");

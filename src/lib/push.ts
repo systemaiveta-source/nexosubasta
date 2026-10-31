@@ -7,11 +7,18 @@ export function auctionPushPath(id: string) {
   const path = `/subastas/${id}`;
   return safeDestination(path);
 }
-export type DevicePushState = "unsupported" | "blocked" | "inactive" | "active" | "unregistered" | "failed";
-export function devicePushState(supported: boolean, permission: string, endpoint: string | null, registeredEndpoints: string[]): DevicePushState {
+export type DevicePushState =
+  "unsupported" | "blocked" | "inactive" | "active" | "unregistered" | "failed";
+export function devicePushState(
+  supported: boolean,
+  permission: string,
+  endpoint: string | null,
+  registeredEndpoints: string[],
+): DevicePushState {
   if (!supported) return "unsupported";
   if (permission === "denied") return "blocked";
-  if (permission === "granted" && endpoint) return registeredEndpoints.includes(endpoint) ? "active" : "unregistered";
+  if (permission === "granted" && endpoint)
+    return registeredEndpoints.includes(endpoint) ? "active" : "unregistered";
   return "inactive";
 }
 export async function currentPushSubscription() {
@@ -21,7 +28,8 @@ export async function currentPushSubscription() {
 }
 export async function unsubscribePush() {
   const subscription = await currentPushSubscription();
-  if (subscription && !(await subscription.unsubscribe())) throw new Error("No se pudo desactivar el permiso de este dispositivo");
+  if (subscription && !(await subscription.unsubscribe()))
+    throw new Error("No se pudo desactivar el permiso de este dispositivo");
 }
 export async function registerPush(config: PushConfig) {
   if (!pushConfigured(config))

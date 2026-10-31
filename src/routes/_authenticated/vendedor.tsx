@@ -458,14 +458,32 @@ function Seller() {
             </div>
             {type === "item" && (
               <>
-                <label className="space-y-1.5 text-sm">Modalidad de cierre
-                  <select aria-label="Modalidad de cierre" className={sel} value={f.closing_mode} onChange={set("closing_mode")}>
-                    <option value="fixed">Tiempo fijo</option><option value="reserve">Objetivo de reserva privada</option>
+                <label className="space-y-1.5 text-sm">
+                  Modalidad de cierre
+                  <select
+                    aria-label="Modalidad de cierre"
+                    className={sel}
+                    value={f.closing_mode}
+                    onChange={set("closing_mode")}
+                  >
+                    <option value="fixed">Tiempo fijo</option>
+                    <option value="reserve">Objetivo de reserva privada</option>
                   </select>
                 </label>
-                {f.closing_mode === "reserve" && <label className="space-y-1.5 text-sm">Período sin nuevas pujas (segundos)
-                  <Input aria-label="Período sin nuevas pujas" type="number" min={60} max={86400} step={1} value={f.quiet_period_seconds} onChange={set("quiet_period_seconds")} />
-                </label>}
+                {f.closing_mode === "reserve" && (
+                  <label className="space-y-1.5 text-sm">
+                    Período sin nuevas pujas (segundos)
+                    <Input
+                      aria-label="Período sin nuevas pujas"
+                      type="number"
+                      min={60}
+                      max={86400}
+                      step={1}
+                      value={f.quiet_period_seconds}
+                      onChange={set("quiet_period_seconds")}
+                    />
+                  </label>
+                )}
                 <div className="space-y-1.5">
                   <Label>Precio esperado (privado)</Label>
                   <Input type="number" min="0" value={f.expected} onChange={set("expected")} />

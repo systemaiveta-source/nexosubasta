@@ -17,7 +17,10 @@ export async function deliverWebPushBatch() {
     const parsed = webPushSubscriptionSchema.safeParse(item.subscription);
     const path = safeDestination(item.path);
     if (!parsed.success || !path) {
-      await supabaseAdmin.from("notification_push_outbox").update({ status: "skipped" }).eq("id", item.queue_id);
+      await supabaseAdmin
+        .from("notification_push_outbox")
+        .update({ status: "skipped" })
+        .eq("id", item.queue_id);
       continue;
     }
     try {
@@ -57,7 +60,10 @@ export async function deliverWebPushBatch() {
       if (recorded.error) throw new Error("No se pudo registrar la entrega");
       sent++;
     } catch {
-      await supabaseAdmin.from("notification_push_outbox").update({ status: "failed" }).eq("id", item.queue_id);
+      await supabaseAdmin
+        .from("notification_push_outbox")
+        .update({ status: "failed" })
+        .eq("id", item.queue_id);
     }
   }
   return { sent, attempted: batch.data.length };

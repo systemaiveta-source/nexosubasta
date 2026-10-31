@@ -230,7 +230,11 @@ function AuctionPage() {
       setAmount("");
       setConditions("");
       toast.success(
-        r.extended ? (a?.closing_mode === "reserve" ? "Oferta aceptada. Período de cierre reiniciado." : "Oferta aceptada. El cierre se amplió 60 segundos.") : "Oferta aceptada",
+        r.extended
+          ? a?.closing_mode === "reserve"
+            ? "Oferta aceptada. Período de cierre reiniciado."
+            : "Oferta aceptada. El cierre se amplió 60 segundos."
+          : "Oferta aceptada",
       );
       qc.invalidateQueries({ queryKey: ["auction", id] });
       qc.invalidateQueries({ queryKey: ["bids", id] });
@@ -438,10 +442,16 @@ function AuctionPage() {
             {a.extensions_count > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Cierre ampliado {a.extensions_count} {a.extensions_count === 1 ? "vez" : "veces"}{" "}
-                {a.closing_mode === "reserve" ? "por ofertas válidas tras alcanzar la reserva." : "por ofertas de último minuto."}
+                {a.closing_mode === "reserve"
+                  ? "por ofertas válidas tras alcanzar la reserva."
+                  : "por ofertas de último minuto."}
               </p>
             )}
-            {a.closing_mode === "reserve" && <p className="mt-2 text-sm text-muted-foreground">Cierre por objetivos · período sin nuevas pujas: {a.quiet_period_seconds} segundos.</p>}
+            {a.closing_mode === "reserve" && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Cierre por objetivos · período sin nuevas pujas: {a.quiet_period_seconds} segundos.
+              </p>
+            )}
 
             {a.status === "active" && msLeft > 0 && (
               <div className="mt-5">

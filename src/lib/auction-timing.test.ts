@@ -13,7 +13,12 @@ describe("plazos de productos", () => {
     expect(bidDeadline("reserve", 900000, 899000, false, 300)).toBe(900000);
   });
   it("período configurable entre 60 segundos y un día", () => {
-    expect(auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_seconds: 59 }).success).toBe(false);
-    expect(auctionTimingSchema.parse({ closing_mode: "reserve", quiet_period_seconds: 86400 }).quiet_period_seconds).toBe(86400);
+    expect(
+      auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_seconds: 59 }).success,
+    ).toBe(false);
+    expect(
+      auctionTimingSchema.parse({ closing_mode: "reserve", quiet_period_seconds: 86400 })
+        .quiet_period_seconds,
+    ).toBe(86400);
   });
 });
