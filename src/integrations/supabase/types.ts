@@ -1850,6 +1850,10 @@ export type Database = {
         Args: { _auction_id: string; _starts_at: string }
         Returns: undefined
       }
+      set_service_locations_verified: {
+        Args: { _auction: string; _verified: boolean }
+        Returns: undefined
+      }
       submit_manual_membership: {
         Args: {
           _key: string
