@@ -54,9 +54,10 @@ export const saveSocialLink = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (role.error || !role.data) throw new Error("No autorizado");
+    const { id, ...rest } = data;
     const result = await context.supabase
       .from("social_links")
-      .upsert({ ...data, updated_at: new Date().toISOString() });
+      .upsert({ ...rest, ...(id ? { id } : {}), updated_at: new Date().toISOString() });
     if (result.error) throw new Error("No se pudo guardar la red social");
     return { ok: true };
   });
