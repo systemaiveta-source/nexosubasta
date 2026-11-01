@@ -17,6 +17,7 @@ import { parseAuctionMethods } from "@/lib/auction-payments";
 import type { AuctionMethod } from "@/lib/auction-payments";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { DeliveryForm } from "@/components/DeliveryForm";
+import { verifyServiceLocations } from "@/lib/service-locations.functions";
 import { ServiceRequestForm } from "@/components/ServiceRequestForm";
 import { deliverySchema, parseDelivery, type Delivery } from "@/lib/delivery";
 import { emptyServiceRequest, type ServiceRequest } from "@/lib/service-catalog";
@@ -210,6 +211,7 @@ function Seller() {
         },
       });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
+      if (type === "service" && request.category === "transport") await checkLocations(draftId);
       if (publish) {
         const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
         if (e3) {
@@ -302,7 +304,18 @@ function Seller() {
     }
   }
 
+  async function checkLocations(id: string) {
+    try {
+      const r = await verifyServiceLocations({ data: { id } });
+      if (r.status === "not_found")
+        toast.error("Google Maps no encontró el origen o el destino. Escribe direcciones más completas.");
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  }
+
   async function publish(id: string) {
+    await checkLocations(id);
     const { error } = await supabase.rpc("publish_auction", { _auction_id: id });
     if (error) toast.error(errMsg(error));
     else {

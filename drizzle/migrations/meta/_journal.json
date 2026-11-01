@@ -120,6 +120,13 @@
       "when": 1793405254324,
       "tag": "0016_reserve_quiet_period_social_links_event_push",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793492350356,
+      "tag": "0017_service_location_verification",
+      "breakpoints": true
     }
   ]
 }
