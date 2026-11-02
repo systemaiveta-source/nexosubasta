@@ -1367,6 +1367,7 @@ export type Database = {
           kind: string
           note: string
           ref_user_id: string | null
+          source_subscription_id: string | null
           user_id: string
         }
         Insert: {
@@ -1377,6 +1378,7 @@ export type Database = {
           kind: string
           note?: string
           ref_user_id?: string | null
+          source_subscription_id?: string | null
           user_id: string
         }
         Update: {
@@ -1387,6 +1389,7 @@ export type Database = {
           kind?: string
           note?: string
           ref_user_id?: string | null
+          source_subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1595,6 +1598,15 @@ export type Database = {
         Args: { _buyer: string; _plan: string }
         Returns: undefined
       }
+      apply_referral_commission_paid: {
+        Args: {
+          _amount: number
+          _buyer: string
+          _currency: string
+          _subscription: string
+        }
+        Returns: number
+      }
       auction_bid_deadline: {
         Args: {
           _end: string
@@ -1605,6 +1617,7 @@ export type Database = {
         }
         Returns: string
       }
+      auction_image_readable: { Args: { _name: string }; Returns: boolean }
       become_seller: { Args: never; Returns: undefined }
       bid_with_delivery_acceptance: {
         Args: {

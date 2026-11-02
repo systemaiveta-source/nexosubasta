@@ -127,6 +127,13 @@
       "when": 1793492350356,
       "tag": "0017_service_location_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793577759509,
+      "tag": "0018_security_and_referral_fixes",
+      "breakpoints": true
     }
   ]
 }
