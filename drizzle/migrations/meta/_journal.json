@@ -134,6 +134,13 @@
       "when": 1793577759509,
       "tag": "0018_security_and_referral_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793577788186,
+      "tag": "0019_platform_settings_admin_read",
+      "breakpoints": true
     }
   ]
 }
