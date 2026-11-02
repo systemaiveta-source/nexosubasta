@@ -86,3 +86,12 @@
 
 ## Publicación y servicios externos
 No hubo publicación, despliegue, cambio de dominio, compra, contratación, activación de pagos o proveedor externo; ningún rol fue otorgado y ningún usuario/método real fue modificado para probar. Los cambios compatibles de base de datos se aplicaron al backend compartido del proyecto existente, como autorizó el usuario, sin desplegar la actualización de código.
+## 2 nov 2026 — seguridad y referidos
+Migraciones: `0018_security_and_referral_fixes.sql`, `0019_platform_settings_admin_read.sql`.
+- Perfiles: lectura solo de columnas públicas; `phone`, `referred_by`, `account_status` ya no son legibles (curl anónimo: 42501 para `phone`, OK para `display_name`).
+- Documentos de membresía: la excepción QR comparaba el método consigo mismo; ahora se vincula a la ruta del archivo.
+- Imágenes de subastas: solo propietario, admin o imágenes de subastas no borrador.
+- Ajustes de plataforma: solo admin. Extensiones: solo de subastas publicadas.
+- Comisión de referidos: `apply_referral_commission_paid` (base pagada, % del patrocinador, única por suscripción, sin regalos, revocada para clientes). Ejemplo Pro 15 % × Élite US$20 = US$3 (no probado con compra real).
+Pruebas: Vitest 18 archivos / 67 pruebas OK; typecheck OK; escaneo de seguridad sin hallazgos activos.
+Pendiente: requisitos A, B, D, E, G, I, J, M del prompt maestro. No publicado.
