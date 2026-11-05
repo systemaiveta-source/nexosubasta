@@ -320,16 +320,20 @@ export type Database = {
           duration_hours: number
           duration_minutes: number | null
           ends_at: string | null
+          extension_used: boolean
           extensions_count: number
           flagged: boolean
           has_reserve: boolean
           id: string
           images: string[]
+          inactivity_cap_at: string | null
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
           quiet_period_seconds: number
+          republished_from: string | null
           reserve_met: boolean
+          rules_version: number
           scope: string
           selection_pending: boolean
           seller_id: string
@@ -340,6 +344,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          wait_days: number
           winner_id: string | null
         }
         Insert: {
@@ -359,16 +364,20 @@ export type Database = {
           duration_hours?: number
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_used?: boolean
           extensions_count?: number
           flagged?: boolean
           has_reserve?: boolean
           id?: string
           images?: string[]
+          inactivity_cap_at?: string | null
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
           quiet_period_seconds?: number
+          republished_from?: string | null
           reserve_met?: boolean
+          rules_version?: number
           scope?: string
           selection_pending?: boolean
           seller_id: string
@@ -379,6 +388,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          wait_days?: number
           winner_id?: string | null
         }
         Update: {
@@ -398,16 +408,20 @@ export type Database = {
           duration_hours?: number
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_used?: boolean
           extensions_count?: number
           flagged?: boolean
           has_reserve?: boolean
           id?: string
           images?: string[]
+          inactivity_cap_at?: string | null
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
           quiet_period_seconds?: number
+          republished_from?: string | null
           reserve_met?: boolean
+          rules_version?: number
           scope?: string
           selection_pending?: boolean
           seller_id?: string
@@ -418,6 +432,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          wait_days?: number
           winner_id?: string | null
         }
         Relationships: [
@@ -426,6 +441,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_republished_from_fkey"
+            columns: ["republished_from"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auctions_republished_from_fkey"
+            columns: ["republished_from"]
+            isOneToOne: false
+            referencedRelation: "auctions_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1694,6 +1723,7 @@ export type Database = {
       }
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
+      extend_reserve_auction: { Args: { _auction: string }; Returns: string }
       get_service_request: { Args: { _auction: string }; Returns: Json }
       has_active_seller_sub: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -1785,16 +1815,20 @@ export type Database = {
           duration_hours: number
           duration_minutes: number | null
           ends_at: string | null
+          extension_used: boolean
           extensions_count: number
           flagged: boolean
           has_reserve: boolean
           id: string
           images: string[]
+          inactivity_cap_at: string | null
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
           quiet_period_seconds: number
+          republished_from: string | null
           reserve_met: boolean
+          rules_version: number
           scope: string
           selection_pending: boolean
           seller_id: string
@@ -1805,6 +1839,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          wait_days: number
           winner_id: string | null
         }
         SetofOptions: {
@@ -1814,6 +1849,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      republish_auction: { Args: { _auction: string }; Returns: string }
       resolve_dispute: {
         Args: {
           _dispute: string
@@ -1861,6 +1897,10 @@ export type Database = {
       }
       set_auction_start: {
         Args: { _auction_id: string; _starts_at: string }
+        Returns: undefined
+      }
+      set_auction_wait_days: {
+        Args: { _auction: string; _days: number }
         Returns: undefined
       }
       set_service_locations_verified: {
