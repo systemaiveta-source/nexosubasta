@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Clock, MapPin, ShieldCheck, ShieldAlert, Star, Truck, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SiteLayout, Empty } from "@/components/SiteLayout";
+import { SiteLayout, Empty, BackButton } from "@/components/SiteLayout";
 import { StatusBadge, useNow } from "@/components/AuctionCard";
 import { useImageUrls } from "@/lib/images";
 import { useAuth, useRoles } from "@/lib/auth";
@@ -278,7 +278,10 @@ function AuctionPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1.2fr_1fr]">
+      <div className="mx-auto max-w-6xl px-4 pt-4">
+        <BackButton fallback="/subastas" />
+      </div>
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-8 pt-2 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
             {(() => {
