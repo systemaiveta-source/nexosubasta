@@ -9,9 +9,9 @@ export const listSupport = createServerFn({method:"POST"}).middleware([requireSu
   const result=await query;
   if(result.error) throw new Error("No se pudo cargar soporte");
   return Promise.all(result.data.map(async request=>{
-    const benefit=await context.supabase.rpc("membership_benefits",{_user:request.user_id});
-    const parsed=z.object({priority_support:z.boolean().optional()}).safeParse(benefit.data);
-    return {...request,priority:parsed.success && parsed.data.priority_support===true};
+    const benefit=await context.supabase.rpc("support_priority",{_user:request.user_id});
+    if(benefit.error) throw new Error("No se pudo comprobar la prioridad");
+    return {...request,priority:benefit.data===true};
   }));
 });
 export const createSupport=createServerFn({method:"POST"}).middleware([requireSupabaseAuth])

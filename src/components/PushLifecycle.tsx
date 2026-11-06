@@ -46,7 +46,7 @@ export function PushLifecycle() {
     const endpointKey = `nexo-push-endpoint:${account}`;
     const promptKey = "nexo-push-context-seen";
     if (
-      path === "/notificaciones" &&
+      ["/notificaciones", "/perfil", "/panel", "/vendedor"].includes(path) &&
       Notification.permission === "default" &&
       !localStorage.getItem(promptKey)
     ) {

@@ -25,7 +25,7 @@ beforeAll(async () => {
     CREATE TABLE transactions(id uuid,auction_id uuid);
     ALTER TABLE auctions ADD COLUMN starting_price numeric,ADD COLUMN images text[],ADD COLUMN category_id uuid;
     INSERT INTO plans VALUES('${id}','Inicio',1,'seller',3,5);`);
-  for (const file of ["0031_profile_membership_benefits_and_push_recovery", "0032_owner_publication_projection", "0033_membership_calendar_windows_and_public_badges", "0034_membership_support_requests"])
+  for (const file of ["0031_profile_membership_benefits_and_push_recovery", "0032_owner_publication_projection", "0033_membership_calendar_windows_and_public_badges", "0034_membership_support_requests", "0035_private_membership_entitlement_reads"])
     await db.exec(readFileSync(`drizzle/migrations/${file}.sql`, "utf8"));
 }, 30000);
 afterAll(() => db.close());
@@ -82,4 +82,12 @@ it("support reads are owner-scoped and only staff can answer",async()=>{
   expect((await db.query("SELECT id FROM support_requests")).rows).toHaveLength(2);
   await db.query(`SELECT answer_support('${id}','Confirmed response')`);
   expect((await db.query(`SELECT response FROM support_requests WHERE id='${id}'`)).rows).toEqual([{response:"Confirmed response"}]);
+});
+it("private entitlements cannot be read by visitors or other subscribers",async()=>{
+  await db.exec("SET ROLE anon");
+  await expect(db.query(`SELECT membership_benefits('${owner}')`)).rejects.toThrow("permission denied");
+  await db.exec("SET ROLE authenticated");
+  await expect(db.query(`SELECT support_priority('${other}')`)).rejects.toThrow("No autorizado");
+  const result=await db.query<{b:Record<string,unknown>}>("SELECT my_membership_benefits() AS b");
+  expect(result.rows[0]?.b).toHaveProperty("name","Inicio");
 });

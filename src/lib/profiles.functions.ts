@@ -38,7 +38,7 @@ export const getPublicProfile = createServerFn({method: "GET"})
 export const getMyMembership = createServerFn({method: "POST"})
   .middleware([requireSupabaseAuth])
   .handler(async ({context}) => {
-    const result = await context.supabase.rpc("membership_benefits", {_user: context.userId});
+    const result = await context.supabase.rpc("my_membership_benefits");
     if (result.error) throw new Error("No se pudo consultar tu membresía");
     return membershipSchema.parse(result.data);
   });
