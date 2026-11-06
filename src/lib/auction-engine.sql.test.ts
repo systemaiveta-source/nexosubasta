@@ -39,8 +39,10 @@ beforeAll(async () => {
   `);
   for (const fn of migration.matchAll(
     /(CREATE FUNCTION public\.(?:fixed|reserve|flash)_product_clock[\s\S]*?END \$\$;)/g,
-  ))
+  )) {
+    if (!fn[1]) throw new Error("Missing clock SQL");
     await db.exec(fn[1]);
+  }
   const timing = extract(
     old,
     /(CREATE OR REPLACE FUNCTION public.auction_v2_timing\(\)[\s\S]*?END \$\$;)/,
