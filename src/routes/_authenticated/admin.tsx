@@ -480,9 +480,9 @@ function Subastas() {
               {a.title}
             </Link>
             <p className="text-sm text-muted-foreground">
-              {a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {a.profiles?.display_name}{" "}
-              · {a.currency} {a.current_price ?? a.starting_price} · {a.bid_count} ofertas · cierra{" "}
-              {fmtDate(a.ends_at)}
+              {a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} ·{" "}
+              {a.profiles?.display_name} · {a.currency} {a.current_price ?? a.starting_price} ·{" "}
+              {a.bid_count} ofertas · cierra {fmtDate(a.ends_at)}
             </p>
           </div>
           <div className="flex items-center gap-2">

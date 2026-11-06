@@ -413,7 +413,13 @@ function AuctionPage() {
               <div className="text-right">
                 <p className="flex items-center justify-end gap-1 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  {a.status === "scheduled" ? "Empieza en" : a.closing_mode === "flash" && a.closing_phase === "bidding" ? "Prórroga comienza en" : a.bid_count === 0 ? "Sin ofertas, finaliza en" : "Termina en"}
+                  {a.status === "scheduled"
+                    ? "Empieza en"
+                    : a.closing_mode === "flash" && a.closing_phase === "bidding"
+                      ? "Prórroga comienza en"
+                      : a.bid_count === 0
+                        ? "Sin ofertas, finaliza en"
+                        : "Termina en"}
                 </p>
                 <p
                   className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
@@ -448,7 +454,12 @@ function AuctionPage() {
                   : "por ofertas de último minuto."}
               </p>
             )}
-            {a.auction_type === "item" && <p className="mt-3 font-semibold">{modeLabel(a.closing_mode)}{a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}</p>}
+            {a.auction_type === "item" && (
+              <p className="mt-3 font-semibold">
+                {modeLabel(a.closing_mode)}
+                {a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}
+              </p>
+            )}
             {a.auction_type === "item" && Number(a.rules_version ?? 1) >= 3 && (
               <p className="mt-2 text-sm text-muted-foreground">
                 {a.extension_pending

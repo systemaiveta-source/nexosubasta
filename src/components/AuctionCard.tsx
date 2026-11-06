@@ -89,7 +89,12 @@ export function AuctionCard({
           )}
         </div>
         <h3 className="line-clamp-2 font-semibold leading-snug">{a.title}</h3>
-        <p className="text-xs font-medium text-muted-foreground">{a.auction_type === "service" ? "Servicio · ofertas descendentes" : modeLabel(a.closing_mode)}{a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}</p>
+        <p className="text-xs font-medium text-muted-foreground">
+          {a.auction_type === "service"
+            ? "Servicio · ofertas descendentes"
+            : modeLabel(a.closing_mode)}
+          {a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}
+        </p>
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs text-muted-foreground">

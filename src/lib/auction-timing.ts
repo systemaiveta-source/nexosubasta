@@ -3,11 +3,19 @@ export const PRODUCT_DURATIONS = [24, 48, 72, 168, 360, 720] as const;
 export const QUIET_MINUTES = [5, 10, 15, 20, 30] as const;
 export type ProductMode = "fixed" | "reserve" | "flash";
 export function modeLabel(mode: string | null | undefined) {
-  return mode === "flash" ? "Libre / Flash" : mode === "reserve" ? "Reserva + prórrogas" : "Tiempo fijo";
+  return mode === "flash"
+    ? "Libre / Flash"
+    : mode === "reserve"
+      ? "Reserva + prórrogas"
+      : "Tiempo fijo";
 }
 export const auctionTimingSchema = z.object({
   closing_mode: z.enum(["fixed", "reserve", "flash"]),
-  quiet_period_minutes: z.number().int().refine((n) => QUIET_MINUTES.some((m) => m === n), "Elige 5, 10, 15, 20 o 30 minutos").default(5),
+  quiet_period_minutes: z
+    .number()
+    .int()
+    .refine((n) => QUIET_MINUTES.some((m) => m === n), "Elige 5, 10, 15, 20 o 30 minutos")
+    .default(5),
 });
 export function noBidDeadline(publishedAt: number, mode: ProductMode) {
   return publishedAt + (mode === "fixed" ? 8 : 7) * 86400000;

@@ -190,7 +190,9 @@ function Seller() {
           auction_type: type,
           duration_hours:
             type === "item"
-              ? f.closing_mode === "fixed" ? Number(f.duration_hours) : 168
+              ? f.closing_mode === "fixed"
+                ? Number(f.duration_hours)
+                : 168
               : Math.max(1, Math.ceil(Number(f.duration_minutes) / 60)),
           duration_minutes: type === "service" ? Number(f.duration_minutes) : null,
           service_from: null,
@@ -201,8 +203,10 @@ function Seller() {
           quiet_period_minutes: Number(f.quiet_period_minutes),
         },
         _private: {
-          reserve_price: type === "item" && f.closing_mode !== "flash" && f.reserve ? Number(f.reserve) : null,
-          expected_price: type === "item" && f.closing_mode !== "flash" && f.expected ? Number(f.expected) : null,
+          reserve_price:
+            type === "item" && f.closing_mode !== "flash" && f.reserve ? Number(f.reserve) : null,
+          expected_price:
+            type === "item" && f.closing_mode !== "flash" && f.expected ? Number(f.expected) : null,
           service_budget: type === "service" && f.starting_price ? Number(f.starting_price) : null,
         },
       };
@@ -489,31 +493,33 @@ function Seller() {
                 onChange={set("min_increment")}
               />
             </div>
-            {(type === "service" || f.closing_mode === "fixed") && <div className="space-y-1.5">
-              <Label>Duración desde la primera puja válida</Label>
-              {type === "item" ? (
-                <select className={sel} value={f.duration_hours} onChange={set("duration_hours")}>
-                  <option value="24">24 horas</option>
-                  <option value="48">48 horas</option>
-                  <option value="72">72 horas</option>
-                  <option value="168">1 semana</option>
-                  <option value="360">15 días</option>
-                  <option value="720">1 mes</option>
-                </select>
-              ) : (
-                <select
-                  className={sel}
-                  value={f.duration_minutes}
-                  onChange={set("duration_minutes")}
-                >
-                  {SERVICE_MINUTES.map(([m, l]) => (
-                    <option key={m} value={m}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>}
+            {(type === "service" || f.closing_mode === "fixed") && (
+              <div className="space-y-1.5">
+                <Label>Duración desde la primera puja válida</Label>
+                {type === "item" ? (
+                  <select className={sel} value={f.duration_hours} onChange={set("duration_hours")}>
+                    <option value="24">24 horas</option>
+                    <option value="48">48 horas</option>
+                    <option value="72">72 horas</option>
+                    <option value="168">1 semana</option>
+                    <option value="360">15 días</option>
+                    <option value="720">1 mes</option>
+                  </select>
+                ) : (
+                  <select
+                    className={sel}
+                    value={f.duration_minutes}
+                    onChange={set("duration_minutes")}
+                  >
+                    {SERVICE_MINUTES.map(([m, l]) => (
+                      <option key={m} value={m}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
             {type === "item" && (
               <>
                 <label className="space-y-1.5 text-sm">
@@ -522,7 +528,13 @@ function Seller() {
                     aria-label="Modalidad de cierre"
                     className={sel}
                     value={f.closing_mode}
-                    onChange={(e) => setF((p) => ({ ...p, closing_mode: e.target.value, ...(e.target.value === "flash" ? { reserve: "", expected: "" } : {}) }))}
+                    onChange={(e) =>
+                      setF((p) => ({
+                        ...p,
+                        closing_mode: e.target.value,
+                        ...(e.target.value === "flash" ? { reserve: "", expected: "" } : {}),
+                      }))
+                    }
                   >
                     <option value="">Elegir modalidad…</option>
                     <option value="fixed">Tiempo fijo</option>
@@ -538,17 +550,27 @@ function Seller() {
                       className={sel}
                       value={f.quiet_period_minutes}
                       onChange={set("quiet_period_minutes")}
-                    >{QUIET_MINUTES.map((m) => <option key={m} value={m}>{m} minutos</option>)}</select>
+                    >
+                      {QUIET_MINUTES.map((m) => (
+                        <option key={m} value={m}>
+                          {m} minutos
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 )}
-                {f.closing_mode && f.closing_mode !== "flash" && <><div className="space-y-1.5">
-                  <Label>Precio esperado (opcional, privado y orientativo)</Label>
-                  <Input type="number" min="0" value={f.expected} onChange={set("expected")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Precio de reserva (opcional y privado)</Label>
-                  <Input type="number" min="0" value={f.reserve} onChange={set("reserve")} />
-                </div></>}
+                {f.closing_mode && f.closing_mode !== "flash" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Precio esperado (opcional, privado y orientativo)</Label>
+                      <Input type="number" min="0" value={f.expected} onChange={set("expected")} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Precio de reserva (opcional y privado)</Label>
+                      <Input type="number" min="0" value={f.reserve} onChange={set("reserve")} />
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -559,10 +581,12 @@ function Seller() {
                 : f.closing_mode === "flash"
                   ? "Sin reserva ni precio esperado. La primera puja inicia 7 días de ofertas; luego cada puja reinicia la prórroga elegida. Sin primera puja, finaliza a los 7 días desde publicación. Sin extensión manual."
                   : "Al alcanzar la reserva, cada puja reinicia la prórroga completa. Sin reserva, comienza con la primera puja. Si la reserva no se alcanza al límite inicial de 7 días, podrás extender una sola vez otros 7 días o finalizar."}
-              {f.closing_mode !== "flash" && (f.reserve
-                ? " Solo se adjudica si se alcanza tu reserva privada."
-                : " Sin reserva gana el mejor postor válido.")}
-              {f.closing_mode !== "flash" && " El precio esperado es solo orientativo y nunca impide vender."}
+              {f.closing_mode !== "flash" &&
+                (f.reserve
+                  ? " Solo se adjudica si se alcanza tu reserva privada."
+                  : " Sin reserva gana el mejor postor válido.")}
+              {f.closing_mode !== "flash" &&
+                " El precio esperado es solo orientativo y nunca impide vender."}
             </p>
           )}
           {type === "item" && <DeliveryForm value={delivery} onChange={setDelivery} />}
@@ -635,8 +659,10 @@ function Seller() {
                     <b className="block truncate">{a.title}</b>
                     <span className="text-muted-foreground">
                       {a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} ·{" "}
-                      {a.status === "ended_unsold" && a.bid_count === 0 ? "Sin ofertas" : statusLabel[a.status]} · {a.bid_count} ofertas ·{" "}
-                      {money(a.current_price, a.currency)}
+                      {a.status === "ended_unsold" && a.bid_count === 0
+                        ? "Sin ofertas"
+                        : statusLabel[a.status]}{" "}
+                      · {a.bid_count} ofertas · {money(a.current_price, a.currency)}
                     </span>
                   </Link>
                   {a.extension_pending && !a.extension_used && (

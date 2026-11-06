@@ -29,9 +29,17 @@ export const saveExtendedDraft = createServerFn({ method: "POST" })
     const timing = auctionTimingSchema.parse(data.auction);
     if (timing.closing_mode !== "fixed" && data.auction["auction_type"] !== "item")
       throw new Error("El cierre por inactividad solo corresponde a productos");
-    if (timing.closing_mode === "flash" && (data.private["reserve_price"] != null || data.private["expected_price"] != null))
+    if (
+      timing.closing_mode === "flash" &&
+      (data.private["reserve_price"] != null || data.private["expected_price"] != null)
+    )
       throw new Error("Libre / Flash no admite reserva ni precio esperado");
-    if (data.auction["auction_type"] === "item" && (typeof data.auction["starting_price"] !== "number" || !Number.isFinite(data.auction["starting_price"]) || data.auction["starting_price"] < 0))
+    if (
+      data.auction["auction_type"] === "item" &&
+      (typeof data.auction["starting_price"] !== "number" ||
+        !Number.isFinite(data.auction["starting_price"]) ||
+        data.auction["starting_price"] < 0)
+    )
       throw new Error("Indica el precio inicial; puede ser cero");
     if (data.auction["auction_type"] === "item" && !data.delivery)
       throw new Error("Elige modalidad de entrega");
