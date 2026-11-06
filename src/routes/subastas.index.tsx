@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import {
@@ -108,12 +109,25 @@ function Catalog() {
   const promotedImages=useImageUrls(promoted.data?.flatMap(a=>a.images.slice(0,1)));
 
   const sel = "h-10 rounded-md border border-input bg-background px-3 text-sm";
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollCarousel = (dir: 1 | -1) =>
+    carouselRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
 
   return (
     <PageShell title="Subastas">
       {!s.q && !s.cat && !s.tipo && !s.pais && (!s.estado || s.estado==="active") && !!promoted.data?.length && <section className="mb-8 border-b border-border pb-6">
-        <h2 className="mb-4 font-display text-xl font-bold">Destacadas</h2>
-        <div className="flex gap-4 overflow-x-auto pb-3">{promoted.data.map(a=><div key={a.id} className="w-64 shrink-0"><AuctionCard a={a} now={now} img={promotedImages.data?.[a.images[0]??""]}/></div>)}</div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-xl font-bold">Destacadas</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" aria-label="Destacadas anteriores" onClick={() => scrollCarousel(-1)}>
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Destacadas siguientes" onClick={() => scrollCarousel(1)}>
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        <div ref={carouselRef} className="flex gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{promoted.data.map(a=><div key={a.id} className="w-64 shrink-0"><AuctionCard a={a} now={now} img={promotedImages.data?.[a.images[0]??""]}/></div>)}</div>
       </section>}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <form
