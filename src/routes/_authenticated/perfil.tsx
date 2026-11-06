@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
-import { money, errMsg } from "@/lib/format";
+import { money, errMsg, statusLabel, timeLeft } from "@/lib/format";
+import { useNow } from "@/components/AuctionCard";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { getMyMembership, listMyPublications } from "@/lib/profiles.functions";
@@ -158,12 +159,8 @@ function Profile() {
 
   return (
     <PageShell title="Mi perfil" actions={user && <Link to="/usuarios/$id" params={{id: user.id}} className="text-sm underline">Ver perfil público</Link>}>
-      <section className="mb-8 space-y-3 border-b border-border pb-6">
-        <h2 className="font-display text-xl font-bold">Mis publicaciones</h2>
-        {publications.isPending ? <p>Cargando…</p> : publications.error ? <p role="alert">No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => publications.refetch()}>Reintentar</Button></p> : publications.data?.length ?
-          <ul className="divide-y divide-border">{publications.data.map(a => <li key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><Link to={a.status === "draft" ? "/vendedor" : "/subastas/$id"} params={{id: a.id}} className="min-w-0 break-words font-semibold underline">{a.title}</Link><span className="text-sm text-muted-foreground">{a.status} · {a.bid_count} ofertas</span></li>)}</ul> : <p className="text-muted-foreground">Aún no tienes publicaciones.</p>}
-        <Link to="/vendedor" className="inline-block text-sm underline">Subastar o editar borradores</Link>
-      </section>
+      <MyPublications publications={publications} />
+      {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={box}>
