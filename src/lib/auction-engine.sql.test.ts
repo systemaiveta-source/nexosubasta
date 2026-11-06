@@ -72,8 +72,9 @@ async function fixture(mode: string, n = 1) {
   ]);
 }
 async function row(n = 1) {
-  return (await db.query<Record<string, unknown>>("SELECT * FROM auctions WHERE id=$1", [id(n)]))
-    .rows[0];
+  const value = (await db.query<{ ends_at: string; starts_at: string; closing_phase: string; bid_count: number; status: string; extension_pending: boolean; winner_id: string | null }>("SELECT * FROM auctions WHERE id=$1", [id(n)])).rows[0];
+  if (!value) throw new Error("Missing fixture");
+  return value;
 }
 async function bid(n = 1, met = true) {
   await db.query(
