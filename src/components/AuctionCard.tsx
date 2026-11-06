@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { money, statusLabel, timeLeft } from "@/lib/format";
+import { modeLabel } from "@/lib/auction-timing";
 
 export type AuctionListItem = {
   id: string;
@@ -19,6 +20,7 @@ export type AuctionListItem = {
   country: string | null;
   has_reserve: boolean;
   reserve_met: boolean;
+  closing_mode?: string | null;
 };
 
 export function useNow(intervalMs = 1000) {
@@ -87,10 +89,11 @@ export function AuctionCard({
           )}
         </div>
         <h3 className="line-clamp-2 font-semibold leading-snug">{a.title}</h3>
+        <p className="text-xs font-medium text-muted-foreground">{a.auction_type === "service" ? "Servicio · ofertas descendentes" : modeLabel(a.closing_mode)}{a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}</p>
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs text-muted-foreground">
-              {a.current_price
+              {a.current_price !== null
                 ? "Oferta actual"
                 : a.auction_type === "service"
                   ? "Solicitud de servicio"
@@ -115,4 +118,4 @@ export function AuctionCard({
 }
 
 export const AUCTION_LIST_COLUMNS =
-  "id,title,images,auction_type,starting_price,current_price,currency,status,ends_at,starts_at,bid_count,city,country,has_reserve,reserve_met";
+  "id,title,images,auction_type,starting_price,current_price,currency,status,ends_at,starts_at,bid_count,city,country,has_reserve,reserve_met,closing_mode";

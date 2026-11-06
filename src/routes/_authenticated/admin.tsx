@@ -8,6 +8,7 @@ import { useRoles } from "@/lib/auth";
 import { PaymentMethodsAdmin } from "@/components/PaymentMethodsAdmin";
 import { MembershipRequests } from "@/components/MembershipRequests";
 import { SocialLinksAdmin } from "@/components/SocialLinksAdmin";
+import { modeLabel } from "@/lib/auction-timing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -433,7 +434,7 @@ function Subastas() {
       const { data, error } = await supabase
         .from("auctions_safe")
         .select(
-          "id,title,status,current_price,starting_price,currency,bid_count,ends_at,auction_type,profiles!auctions_seller_id_fkey(display_name)",
+          "id,title,status,current_price,starting_price,currency,bid_count,ends_at,auction_type,closing_mode,profiles!auctions_seller_id_fkey(display_name)",
         )
         .neq("status", "draft")
         .order("created_at", { ascending: false })
@@ -479,7 +480,7 @@ function Subastas() {
               {a.title}
             </Link>
             <p className="text-sm text-muted-foreground">
-              {a.auction_type === "service" ? "Servicio" : "Artículo"} · {a.profiles?.display_name}{" "}
+              {a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {a.profiles?.display_name}{" "}
               · {a.currency} {a.current_price ?? a.starting_price} · {a.bid_count} ofertas · cierra{" "}
               {fmtDate(a.ends_at)}
             </p>

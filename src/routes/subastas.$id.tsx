@@ -20,6 +20,7 @@ import { ServiceRouteMap } from "@/components/ServiceRouteMap";
 import { AuctionShare } from "@/components/AuctionShare";
 import { getAuctionShare } from "@/lib/auction-share.functions";
 import { auctionShareHead } from "@/lib/auction-share";
+import { modeLabel } from "@/lib/auction-timing";
 
 export const Route = createFileRoute("/subastas/$id")({
   loader: ({ params }) => getAuctionShare({ data: { id: params.id } }),
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/subastas/$id")({
 });
 
 const AUCTION_COLUMNS =
-  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds,quiet_period_minutes,rules_version,extension_pending";
+  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds,quiet_period_minutes,rules_version,extension_pending,closing_phase";
 
 function AuctionPage() {
   const { id } = Route.useParams();
@@ -412,7 +413,7 @@ function AuctionPage() {
               <div className="text-right">
                 <p className="flex items-center justify-end gap-1 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  {a.status === "scheduled" ? "Empieza en" : "Termina en"}
+                  {a.status === "scheduled" ? "Empieza en" : a.closing_mode === "flash" && a.closing_phase === "bidding" ? "Prórroga comienza en" : a.bid_count === 0 ? "Sin ofertas, finaliza en" : "Termina en"}
                 </p>
                 <p
                   className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
@@ -439,7 +440,7 @@ function AuctionPage() {
                   : "Precio de reserva aún no alcanzado"}
               </p>
             )}
-            {a.extensions_count > 0 && (
+            {a.extensions_count > 0 && Number(a.rules_version ?? 1) < 4 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Cierre ampliado {a.extensions_count} {a.extensions_count === 1 ? "vez" : "veces"}{" "}
                 {a.closing_mode === "reserve"
@@ -447,6 +448,7 @@ function AuctionPage() {
                   : "por ofertas de último minuto."}
               </p>
             )}
+            {a.auction_type === "item" && <p className="mt-3 font-semibold">{modeLabel(a.closing_mode)}{a.status === "ended_unsold" && a.bid_count === 0 ? " · Sin ofertas" : ""}</p>}
             {a.auction_type === "item" && Number(a.rules_version ?? 1) >= 3 && (
               <p className="mt-2 text-sm text-muted-foreground">
                 {a.extension_pending
@@ -455,13 +457,17 @@ function AuctionPage() {
                     ? "Esperando la primera puja válida: entonces comienza la duración elegida. Sin ofertas, finaliza a los 8 días."
                     : a.closing_mode === "fixed"
                       ? "El plazo desde la primera puja válida no se amplía."
-                      : "Las pujas válidas reinician la espera cuando se cumplen las condiciones de venta, sin superar el límite vigente."}
+                      : a.closing_mode === "flash"
+                        ? "La primera puja inicia 7 días de ofertas; después, cada puja reinicia la prórroga completa. Sin primera puja, termina sin ofertas a los 7 días de publicación. No hay extensión manual."
+                        : Number(a.rules_version ?? 1) >= 4
+                          ? "Al alcanzar la reserva, cada puja reinicia la prórroga completa. Sin reserva, comienza con la primera puja. Si la reserva no se alcanza en 7 días, el subastador puede extender una sola vez 7 días o finalizar sin ganador."
+                          : "Las pujas válidas reinician la espera cuando se cumplen las condiciones de venta, sin superar el límite vigente."}
                 {!a.has_reserve && " Sin reserva gana el mejor postor válido."}
               </p>
             )}
-            {a.closing_mode === "reserve" && (
+            {(a.closing_mode === "reserve" || a.closing_mode === "flash") && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Cierre por objetivos · período sin nuevas pujas:{" "}
+                Prórroga sin nuevas pujas:{" "}
                 {a.quiet_period_minutes ?? Math.ceil(Number(a.quiet_period_seconds) / 60)} minutos.
               </p>
             )}
