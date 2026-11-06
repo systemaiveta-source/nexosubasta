@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { listPublicSocialLinks } from "@/lib/social-links.functions";
 import { SocialLinks } from "@/components/SocialLinks";
+import { InstallCard } from "@/components/InstallCard";
 
 const socialQuery = queryOptions({
   queryKey: ["public-social-links"],
