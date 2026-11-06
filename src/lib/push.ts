@@ -38,6 +38,8 @@ export async function registerPush(config: PushConfig) {
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
   if (window.top !== window.self)
     throw new Error("Abre NEXO en una pestaña propia para permitir notificaciones.");
+  if (Notification.permission === "denied")
+    throw new Error("Notificaciones bloqueadas. Cambia el permiso en los ajustes del navegador.");
   const permission =
     Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted")
