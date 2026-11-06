@@ -33,3 +33,4 @@
 - [ ] Fase 7: notificaciones, IA supervisora y recomendaciones
 - [ ] Fase 8: pruebas + modo sin conexión
 - [ ] Fase 9: documentación y lanzamiento
+- [x] 6 nov · Flash rápida (v5): primera puja inicia prórroga elegida, cada puja la reinicia, sin fase de 7 días ni extensión manual; legacy v4 intacto. Push: entrega real verificada (sent:1) y registro sanitizado de fallos. Chat: verificado server-side sin cambios. 112/112 pruebas.

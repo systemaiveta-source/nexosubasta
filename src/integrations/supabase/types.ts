@@ -699,6 +699,7 @@ export type Database = {
           created_at: string
           device_id: string
           id: string
+          last_error: string | null
           notification_id: string
           status: string
           user_id: string
@@ -708,6 +709,7 @@ export type Database = {
           created_at?: string
           device_id: string
           id?: string
+          last_error?: string | null
           notification_id: string
           status?: string
           user_id: string
@@ -717,6 +719,7 @@ export type Database = {
           created_at?: string
           device_id?: string
           id?: string
+          last_error?: string | null
           notification_id?: string
           status?: string
           user_id?: string

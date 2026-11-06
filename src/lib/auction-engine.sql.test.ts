@@ -100,6 +100,20 @@ beforeAll(async () => {
     /(SELECT pg_get_functiondef\('public.process_auctions\(\)'::regprocedure\)[\s\S]*?EXECUTE d;)/,
   );
   await db.exec(`DO $$ DECLARE d text; BEGIN ${timingPatch} ${closePatch} END $$;`);
+  const v5 = readFileSync("drizzle/migrations/0028_flash_quick_auction_v5.sql", "utf8");
+  const v5Timing = extract(
+    v5,
+    /(SELECT pg_get_functiondef\('public\.auction_v2_timing\(\)'::regprocedure\)[\s\S]*?EXECUTE d;)/,
+  );
+  const v5Process = extract(
+    v5,
+    /(SELECT pg_get_functiondef\('public\.process_auctions\(\)'::regprocedure\)[\s\S]*?EXECUTE d;)/,
+  );
+  const v5Bid = extract(
+    v5,
+    /(SELECT pg_get_functiondef\('public\.place_bid\(uuid,numeric,text\)'::regprocedure\)[\s\S]*?EXECUTE d;)/,
+  );
+  await db.exec(`DO $$ DECLARE d text; BEGIN ${v5Timing} ${v5Process} ${v5Bid} END $$;`);
 }, 30000);
 afterAll(() => db.close());
 beforeEach(async () => {
@@ -110,12 +124,11 @@ beforeEach(async () => {
   await db.query("INSERT INTO profiles VALUES($1,'active')", [id(8)]);
 });
 const id = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
-async function fixture(mode: string, n = 1) {
-  await db.query("INSERT INTO auctions(id,seller_id,closing_mode) VALUES($1,$2,$3)", [
-    id(n),
-    id(9),
-    mode,
-  ]);
+async function fixture(mode: string, n = 1, version = 4) {
+  await db.query(
+    "INSERT INTO auctions(id,seller_id,closing_mode,rules_version) VALUES($1,$2,$3,$4)",
+    [id(n), id(9), mode, version],
+  );
   await db.query("UPDATE auctions SET status='active',starts_at=clock_timestamp() WHERE id=$1", [
     id(n),
   ]);
@@ -130,6 +143,7 @@ async function row(n = 1) {
       status: string;
       extension_pending: boolean;
       winner_id: string | null;
+      inactivity_cap_at: string | null;
     }>("SELECT * FROM auctions WHERE id=$1", [id(n)])
   ).rows[0];
   if (!value) throw new Error("Missing fixture");
@@ -284,5 +298,53 @@ describe("actual PostgreSQL product transitions", () => {
     const first = await row();
     await bid();
     expect((await row()).ends_at).toEqual(first.ends_at);
+  });
+  it("flash v5 first bid starts the chosen quiet period, with no seven-day phase", async () => {
+    await fixture("flash", 1, 5);
+    const published = await row();
+    expect(published.inactivity_cap_at).toBeNull();
+    await bid();
+    const a = await row();
+    expect(a.closing_phase).toBe("quiet");
+    const ms = Number(new Date(String(a.ends_at))) - Date.now();
+    expect(ms).toBeGreaterThan(290000);
+    expect(ms).toBeLessThanOrEqual(300000);
+  });
+  it("flash v5 every valid bid resets the full quiet clock", async () => {
+    await fixture("flash", 1, 5);
+    await bid();
+    await db.exec("UPDATE auctions SET ends_at=clock_timestamp()+interval '30 seconds'");
+    await bid();
+    const a = await row();
+    const ms = Number(new Date(String(a.ends_at))) - Date.now();
+    expect(ms).toBeGreaterThan(290000);
+    expect(ms).toBeLessThanOrEqual(300000);
+    expect(a.closing_phase).toBe("quiet");
+  });
+  it("flash v5 without bids closes unsold, never creates an operation", async () => {
+    await fixture("flash", 1, 5);
+    await db.exec(
+      "UPDATE auctions SET ends_at=clock_timestamp()-interval '1 second'; SELECT process_auctions()",
+    );
+    expect((await row()).status).toBe("ended_unsold");
+    expect((await db.query("SELECT * FROM transactions")).rows).toHaveLength(0);
+  });
+  it("flash v5 expiry adjudicates the highest bid exactly once", async () => {
+    await fixture("flash", 1, 5);
+    await bid();
+    await db.exec("UPDATE auctions SET ends_at=clock_timestamp()-interval '1 second'");
+    await Promise.all([db.exec("SELECT process_auctions()"), db.exec("SELECT process_auctions()")]);
+    expect((await row()).status).toBe("ended_sold");
+    expect((await db.query("SELECT * FROM transactions")).rows).toHaveLength(1);
+  });
+  it("flash v5 rejects late bids after the quiet deadline", async () => {
+    await fixture("flash", 1, 5);
+    await bid();
+    await db.exec(
+      "UPDATE auctions SET leader_id=NULL,ends_at=clock_timestamp()-interval '1 second'",
+    );
+    await expect(db.query("SELECT place_bid($1,3,$2)", [id(1), "flash-v5-key-01"])).rejects.toThrow(
+      "ha cerrado",
+    );
   });
 });

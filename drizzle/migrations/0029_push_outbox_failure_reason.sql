@@ -1,0 +1,2 @@
+ALTER TABLE public.notification_push_outbox ADD COLUMN last_error text;
+COMMENT ON COLUMN public.notification_push_outbox.last_error IS 'Sanitized delivery failure (HTTP status or stage only; never endpoint or provider body).';

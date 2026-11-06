@@ -468,8 +468,10 @@ function AuctionPage() {
                     ? "Esperando la primera puja válida: entonces comienza la duración elegida. Sin ofertas, finaliza a los 8 días."
                     : a.closing_mode === "fixed"
                       ? "El plazo desde la primera puja válida no se amplía."
-                      : a.closing_mode === "flash"
-                        ? "La primera puja inicia 7 días de ofertas; después, cada puja reinicia la prórroga completa. Sin primera puja, termina sin ofertas a los 7 días de publicación. No hay extensión manual."
+                      : a.closing_mode === "flash" && Number(a.rules_version ?? 1) >= 5
+                        ? "La primera puja válida inicia la prórroga elegida y cada nueva puja la reinicia completa; al vencer sin otra puja, gana la mejor oferta. Sin ofertas, termina a los 7 días de publicación. No hay extensión manual."
+                        : a.closing_mode === "flash"
+                          ? "La primera puja inicia 7 días de ofertas; después, cada puja reinicia la prórroga completa. Sin primera puja, termina sin ofertas a los 7 días de publicación. No hay extensión manual."
                         : Number(a.rules_version ?? 1) >= 4
                           ? "Al alcanzar la reserva, cada puja reinicia la prórroga completa. Sin reserva, comienza con la primera puja. Si la reserva no se alcanza en 7 días, el subastador puede extender una sola vez 7 días o finalizar sin ganador."
                           : "Las pujas válidas reinician la espera cuando se cumplen las condiciones de venta, sin superar el límite vigente."}
