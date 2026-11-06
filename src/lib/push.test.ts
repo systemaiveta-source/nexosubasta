@@ -68,9 +68,22 @@ describe("push contextual seguro", () => {
     const json = { endpoint: "https://web.push.apple.com/device" };
     const subscribe = vi.fn();
     const existing = { toJSON: () => json };
-    const registration = { pushManager: { getSubscription: vi.fn().mockResolvedValue(existing), subscribe } };
-    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, PushManager: {}, top: frame, self: frame });
-    vi.stubGlobal("navigator", { serviceWorker: { register: vi.fn().mockResolvedValue(registration), ready: Promise.resolve(registration) } });
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(existing), subscribe },
+    };
+    vi.stubGlobal("window", {
+      isSecureContext: true,
+      Notification: {},
+      PushManager: {},
+      top: frame,
+      self: frame,
+    });
+    vi.stubGlobal("navigator", {
+      serviceWorker: {
+        register: vi.fn().mockResolvedValue(registration),
+        ready: Promise.resolve(registration),
+      },
+    });
     vi.stubGlobal("Notification", { permission: "granted", requestPermission: vi.fn() });
     expect(await registerPush({ vapidKey: "B".repeat(87) })).toEqual(json);
     expect(Notification.requestPermission).not.toHaveBeenCalled();
@@ -96,7 +109,9 @@ describe("push contextual seguro", () => {
     vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
     vi.stubGlobal("navigator", { serviceWorker: {} });
     vi.stubGlobal("Notification", { permission: "default", requestPermission: request });
-    await expect(registerPush({ vapidKey: "B".repeat(87) }, false)).rejects.toThrow("aún no concedido");
+    await expect(registerPush({ vapidKey: "B".repeat(87) }, false)).rejects.toThrow(
+      "aún no concedido",
+    );
     expect(request).not.toHaveBeenCalled();
   });
 });

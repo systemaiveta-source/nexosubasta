@@ -6,8 +6,21 @@ import { ArrowRight, CheckCheck, ChevronLeft, ChevronRight, RefreshCw, Trash2 } 
 import { toast } from "sonner";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { listNotifications, markNotificationsRead, deleteReadNotifications } from "@/lib/notifications.functions";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import {
+  listNotifications,
+  markNotificationsRead,
+  deleteReadNotifications,
+} from "@/lib/notifications.functions";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { safeDestination } from "@/lib/destinations";
 import { useAuth } from "@/lib/auth";
 import { PushPreferences } from "@/components/PushPreferences";
@@ -65,8 +78,12 @@ function NotificationsPage() {
         qc.invalidateQueries({ queryKey: ["unread", userId] }),
       ]);
       toast.success(`${result.removed} notificaciones leídas borradas`);
-    } catch { toast.error("No se pudieron borrar las notificaciones"); }
-    finally { setBusy(false); setConfirmDelete(false); }
+    } catch {
+      toast.error("No se pudieron borrar las notificaciones");
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
+    }
   }
 
   async function read(id?: string, link?: string | null) {
@@ -98,25 +115,41 @@ function NotificationsPage() {
       title="Notificaciones"
       actions={
         <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          disabled={busy || !data?.rows.some((row) => !row.read)}
-          onClick={() => read()}
-        >
-          <CheckCheck className="size-4" />
-          Marcar todas como leídas
-        </Button>
-        <Button variant="outline" disabled={busy || !data?.readTotal} onClick={() => setConfirmDelete(true)}>
-          <Trash2 className="size-4" />Borrar leídas
-        </Button>
+          <Button
+            variant="outline"
+            disabled={busy || !data?.rows.some((row) => !row.read)}
+            onClick={() => read()}
+          >
+            <CheckCheck className="size-4" />
+            Marcar todas como leídas
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy || !data?.readTotal}
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="size-4" />
+            Borrar leídas
+          </Button>
         </div>
       }
     >
       <PushPreferences />
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>¿Borrar todas las leídas?</AlertDialogTitle><AlertDialogDescription>Se borrarán todas tus notificaciones leídas, incluidas las de otras páginas. Las no leídas se conservarán.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={() => remove()}>Borrar todas las leídas</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Borrar todas las leídas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borrarán todas tus notificaciones leídas, incluidas las de otras páginas. Las no
+              leídas se conservarán.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={() => remove()}>
+              Borrar todas las leídas
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -202,7 +235,19 @@ function NotificationsPage() {
                     <ArrowRight className="size-4" />
                   </Button>
                 )}
-                {row.read && <Button variant="ghost" size="icon" className="shrink-0" aria-label={`Borrar ${row.title}`} title="Borrar notificación leída" disabled={busy} onClick={() => remove(row.id)}><Trash2 className="size-4" /></Button>}
+                {row.read && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0"
+                    aria-label={`Borrar ${row.title}`}
+                    title="Borrar notificación leída"
+                    disabled={busy}
+                    onClick={() => remove(row.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
               </article>
             ))}
           </div>

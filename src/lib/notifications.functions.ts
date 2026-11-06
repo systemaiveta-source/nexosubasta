@@ -18,7 +18,11 @@ export const listNotifications = createServerFn({ method: "POST" })
       .order("id")
       .range(data.page * 20, data.page * 20 + 19);
     if (result.error) throw new Error("No se pudieron cargar tus notificaciones");
-    const readCount = await context.supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", context.userId).eq("read", true);
+    const readCount = await context.supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .eq("read", true);
     if (readCount.error) throw new Error("No se pudo contar las notificaciones leídas");
     return { rows: result.data, total: result.count ?? 0, readTotal: readCount.count ?? 0 };
   });
@@ -42,9 +46,14 @@ export const markNotificationsRead = createServerFn({ method: "POST" })
 
 export const deleteReadNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((value: { id?: string }) => z.object({ id: z.string().uuid().optional() }).parse(value))
+  .inputValidator((value: { id?: string }) =>
+    z.object({ id: z.string().uuid().optional() }).parse(value),
+  )
   .handler(async ({ data, context }) => {
-    const result = await context.supabase.rpc("delete_read_notifications", data.id ? { _id: data.id } : {});
+    const result = await context.supabase.rpc(
+      "delete_read_notifications",
+      data.id ? { _id: data.id } : {},
+    );
     if (result.error) throw new Error("No se pudieron borrar las notificaciones leídas");
     return { removed: result.data };
   });
