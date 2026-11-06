@@ -1819,6 +1819,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_publications: { Args: never; Returns: Json }
       my_referral_community: {
         Args: never
         Returns: {

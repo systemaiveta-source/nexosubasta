@@ -225,6 +225,13 @@
       "when": 1793944905383,
       "tag": "0031_profile_membership_benefits_and_push_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793944924373,
+      "tag": "0032_owner_publication_projection",
+      "breakpoints": true
     }
   ]
 }
