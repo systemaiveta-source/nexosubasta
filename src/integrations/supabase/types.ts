@@ -1842,6 +1842,7 @@ export type Database = {
       }
       membership_benefits: { Args: { _user: string }; Returns: Json }
       my_auction_draft: { Args: { _id: string }; Returns: Json }
+      my_membership_benefits: { Args: never; Returns: Json }
       my_profile: {
         Args: never
         Returns: {
@@ -2033,6 +2034,7 @@ export type Database = {
         }
         Returns: string
       }
+      support_priority: { Args: { _user: string }; Returns: boolean }
       transfer_credit: {
         Args: { _amount: number; _to_code: string }
         Returns: undefined

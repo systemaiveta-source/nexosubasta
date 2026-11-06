@@ -246,6 +246,13 @@
       "when": 1793945123934,
       "tag": "0034_membership_support_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793945216893,
+      "tag": "0035_private_membership_entitlement_reads",
+      "breakpoints": true
     }
   ]
 }
