@@ -9,6 +9,7 @@ import { PaymentMethodsAdmin } from "@/components/PaymentMethodsAdmin";
 import { MembershipRequests } from "@/components/MembershipRequests";
 import { SocialLinksAdmin } from "@/components/SocialLinksAdmin";
 import { modeLabel } from "@/lib/auction-timing";
+import { MembershipSupport } from "@/components/MembershipSupport";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   staticData: { sitemap: false },
@@ -35,6 +36,7 @@ const TABS = [
   ["subastas", "Subastas"],
   ["ajustes", "Ajustes"],
   ["registro", "Registro"],
+  ["soporte", "Soporte"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -89,6 +91,7 @@ function AdminPage() {
           {tab === "subastas" && <Subastas />}
           {tab === "ajustes" && <Ajustes />}
           {tab === "registro" && <Registro />}
+          {tab === "soporte" && <MembershipSupport admin />}
         </>
       )}
     </PageShell>

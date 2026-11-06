@@ -218,6 +218,41 @@
       "when": 1793938512148,
       "tag": "0030_notification_consent_publication_read_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793944905383,
+      "tag": "0031_profile_membership_benefits_and_push_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793944924373,
+      "tag": "0032_owner_publication_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793945021747,
+      "tag": "0033_membership_calendar_windows_and_public_badges",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793945123934,
+      "tag": "0034_membership_support_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793945216893,
+      "tag": "0035_private_membership_entitlement_reads",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,9 @@ function Catalog() {
   const list = useQuery({
     queryKey: ["catalog", s],
     queryFn: async () => {
+      const featured = await supabase.rpc("featured_auction_ids");
+      if (featured.error) throw featured.error;
+      const featuredIds = new Set(featured.data ?? []);
       let q = supabase
         .from("auctions_safe")
         .select(AUCTION_LIST_COLUMNS)
@@ -89,15 +92,29 @@ function Catalog() {
         q = q.order("current_price", { ascending: false, nullsFirst: false });
       const { data, error } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
       if (error) throw error;
-      return data as unknown as AuctionListItem[];
+      const items = (data as unknown as AuctionListItem[]).map(a => ({...a, featured: featuredIds.has(a.id)}));
+      return items.sort((a,b) => Number(b.featured) - Number(a.featured));
     },
   });
   const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter((x): x is string => !!x));
+  const promoted = useQuery({queryKey:["featured-auctions"],refetchInterval:60000,queryFn:async()=>{
+    const ids=await supabase.rpc("featured_auction_ids");
+    if(ids.error) throw ids.error;
+    if(!ids.data?.length) return [];
+    const result=await supabase.from("auctions_safe").select(AUCTION_LIST_COLUMNS).in("id",ids.data).eq("status","active").order("created_at",{ascending:false});
+    if(result.error) throw result.error;
+    return (result.data as unknown as AuctionListItem[]).map(a=>({...a,featured:true}));
+  }});
+  const promotedImages=useImageUrls(promoted.data?.flatMap(a=>a.images.slice(0,1)));
 
   const sel = "h-10 rounded-md border border-input bg-background px-3 text-sm";
 
   return (
     <PageShell title="Subastas">
+      {!s.q && !s.cat && !s.tipo && !s.pais && (!s.estado || s.estado==="active") && !!promoted.data?.length && <section className="mb-8 border-b border-border pb-6">
+        <h2 className="mb-4 font-display text-xl font-bold">Destacadas</h2>
+        <div className="flex gap-4 overflow-x-auto pb-3">{promoted.data.map(a=><div key={a.id} className="w-64 shrink-0"><AuctionCard a={a} now={now} img={promotedImages.data?.[a.images[0]??""]}/></div>)}</div>
+      </section>}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <form
           className="relative sm:col-span-2"

@@ -30,3 +30,7 @@
 - Delivery snapshots are validated on drafts and frozen by deferred bid constraints; closed operations reject new messages at the database boundary.
 - Service requests use a client-safe category schema and a private RLS table; exact locations never belong to the public auction projection, and unverified transport cannot publish.
 - Native Web Push uses owner-scoped subscriptions, a messaging-only worker and WebCrypto encryption; dispatch is admin-authorized and bounded, endpoints are allowlisted, and delivery stays disabled until explicit runtime activation. Legacy FCM storage/worker remains untouched for compatibility, but current UI does not use Firebase.
+- Public profiles expose only an explicit non-contact projection; own publication lists use an authenticated RPC based on auctions_safe to preserve drafts and server-only administrative flags.
+- Membership advertising and badges derive from the effective subscription and structured plan entitlements in the database; advertising windows are anchored to subscription start, never client claims.
+- Support requests are private owner/staff records; priority is derived server-side from the effective membership and responses require a staff-checked transactional RPC.
+- Notification delivery retries only transient failures with bounded attempts and recovers stale claims; worker thumbnails accept only known origins and public auction image paths.
