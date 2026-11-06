@@ -2,11 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, CheckCheck, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ArrowRight, CheckCheck, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { listNotifications, markNotificationsRead } from "@/lib/notifications.functions";
+import { listNotifications, markNotificationsRead, deleteReadNotifications } from "@/lib/notifications.functions";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { safeDestination } from "@/lib/destinations";
 import { useAuth } from "@/lib/auth";
 import { PushPreferences } from "@/components/PushPreferences";
@@ -46,11 +47,27 @@ function NotificationsPage() {
   const [page, setPage] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const q = useQuery(notificationOptions(userId, page, unreadOnly));
   const qc = useQueryClient();
   const markRead = useServerFn(markNotificationsRead);
+  const removeRead = useServerFn(deleteReadNotifications);
   const navigate = useNavigate();
   const data = q.data ?? (page === 0 && !unreadOnly ? initial.data : undefined);
+  async function remove(id?: string) {
+    if (busy || user?.id !== userId) return;
+    setBusy(true);
+    try {
+      const result = await removeRead({ data: id ? { id } : {} });
+      setPage(0);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["notifications", userId] }),
+        qc.invalidateQueries({ queryKey: ["unread", userId] }),
+      ]);
+      toast.success(`${result.removed} notificaciones leídas borradas`);
+    } catch { toast.error("No se pudieron borrar las notificaciones"); }
+    finally { setBusy(false); setConfirmDelete(false); }
+  }
 
   async function read(id?: string, link?: string | null) {
     if (busy || user?.id !== userId) return;
@@ -80,6 +97,7 @@ function NotificationsPage() {
     <PageShell
       title="Notificaciones"
       actions={
+        <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
           disabled={busy || !data?.rows.some((row) => !row.read)}
@@ -88,9 +106,19 @@ function NotificationsPage() {
           <CheckCheck className="size-4" />
           Marcar todas como leídas
         </Button>
+        <Button variant="outline" disabled={busy || !data?.readTotal} onClick={() => setConfirmDelete(true)}>
+          <Trash2 className="size-4" />Borrar leídas
+        </Button>
+        </div>
       }
     >
       <PushPreferences />
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>¿Borrar todas las leídas?</AlertDialogTitle><AlertDialogDescription>Se borrarán todas tus notificaciones leídas, incluidas las de otras páginas. Las no leídas se conservarán.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={() => remove()}>Borrar todas las leídas</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -174,6 +202,7 @@ function NotificationsPage() {
                     <ArrowRight className="size-4" />
                   </Button>
                 )}
+                {row.read && <Button variant="ghost" size="icon" className="shrink-0" aria-label={`Borrar ${row.title}`} title="Borrar notificación leída" disabled={busy} onClick={() => remove(row.id)}><Trash2 className="size-4" /></Button>}
               </article>
             ))}
           </div>
