@@ -169,6 +169,13 @@
       "when": 1793932236189,
       "tag": "0023_public_auction_clock_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793932843994,
+      "tag": "0024_restore_safe_catalog_read_boundary",
+      "breakpoints": true
     }
   ]
 }
