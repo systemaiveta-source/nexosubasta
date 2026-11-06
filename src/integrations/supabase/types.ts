@@ -310,6 +310,7 @@ export type Database = {
           category_id: string | null
           city: string | null
           closing_mode: string
+          closing_phase: string
           country: string | null
           created_at: string
           currency: string
@@ -356,6 +357,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string
+          closing_phase?: string
           country?: string | null
           created_at?: string
           currency?: string
@@ -402,6 +404,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string
+          closing_phase?: string
           country?: string | null
           created_at?: string
           currency?: string
@@ -1447,6 +1450,7 @@ export type Database = {
           category_id: string | null
           city: string | null
           closing_mode: string | null
+          closing_phase: string | null
           country: string | null
           created_at: string | null
           currency: string | null
@@ -1489,6 +1493,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string | null
+          closing_phase?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null
@@ -1531,6 +1536,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string | null
+          closing_phase?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null
@@ -1740,6 +1746,14 @@ export type Database = {
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
       extend_reserve_auction: { Args: { _auction: string }; Returns: string }
       finish_reserve_auction: { Args: { _auction: string }; Returns: undefined }
+      fixed_product_clock: {
+        Args: { _end: string; _first: boolean; _hours: number; _now: string }
+        Returns: string
+      }
+      flash_product_clock: {
+        Args: { _cap: string; _first: boolean; _minutes: number; _now: string }
+        Returns: string
+      }
       get_service_request: { Args: { _auction: string }; Returns: Json }
       has_active_seller_sub: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -1821,6 +1835,7 @@ export type Database = {
           category_id: string | null
           city: string | null
           closing_mode: string
+          closing_phase: string
           country: string | null
           created_at: string
           currency: string
@@ -1868,6 +1883,15 @@ export type Database = {
         }
       }
       republish_auction: { Args: { _auction: string }; Returns: string }
+      reserve_product_clock: {
+        Args: {
+          _cap: string
+          _eligible: boolean
+          _minutes: number
+          _now: string
+        }
+        Returns: string
+      }
       resolve_dispute: {
         Args: {
           _dispute: string
