@@ -69,7 +69,7 @@ describe("push contextual seguro", () => {
     const subscribe = vi.fn();
     const existing = { toJSON: () => json };
     const registration = { pushManager: { getSubscription: vi.fn().mockResolvedValue(existing), subscribe } };
-    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
+    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, PushManager: {}, top: frame, self: frame });
     vi.stubGlobal("navigator", { serviceWorker: { register: vi.fn().mockResolvedValue(registration), ready: Promise.resolve(registration) } });
     vi.stubGlobal("Notification", { permission: "granted", requestPermission: vi.fn() });
     expect(await registerPush({ vapidKey: "B".repeat(87) })).toEqual(json);
@@ -89,5 +89,14 @@ describe("push contextual seguro", () => {
     await expect(registerPush({ vapidKey: "B".repeat(87) })).rejects.toThrow();
     expect(request).toHaveBeenCalledOnce();
     expect(worker).not.toHaveBeenCalled();
+  });
+  it("passive synchronization never prompts even if permission changes to default", async () => {
+    const frame = {};
+    const request = vi.fn();
+    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
+    vi.stubGlobal("navigator", { serviceWorker: {} });
+    vi.stubGlobal("Notification", { permission: "default", requestPermission: request });
+    await expect(registerPush({ vapidKey: "B".repeat(87) }, false)).rejects.toThrow("aún no concedido");
+    expect(request).not.toHaveBeenCalled();
   });
 });

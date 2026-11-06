@@ -48,8 +48,9 @@ export function PushLifecycle() {
           localStorage.removeItem(endpointKey);
           if (Notification.permission === "denied") setOffer(false);
         } else if (query.data && !cancelled) {
-          const json = await registerPush(query.data.config);
+          const json = await registerPush(query.data.config, false);
           if (cancelled) return;
+          if (endpoint && endpoint !== json.endpoint) await disable({ data: { endpoint } });
           await register({ data: { subscription: json } });
           if (json.endpoint) localStorage.setItem(endpointKey, json.endpoint);
         }
