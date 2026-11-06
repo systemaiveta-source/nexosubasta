@@ -306,3 +306,90 @@ function Operation() {
     </PageShell>
   );
 }
+
+function ReviewSection({ txId, userId }: { txId: string; userId: string }) {
+  const qc = useQueryClient();
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const mine = useQuery({
+    queryKey: ["my-review", txId, userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("rating,comment")
+        .eq("transaction_id", txId)
+        .eq("reviewer_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  async function submit() {
+    if (rating < 1) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("leave_review", {
+        _tx: txId,
+        _rating: rating,
+        _comment: comment,
+      });
+      if (error) throw error;
+      toast.success("Gracias por tu calificación");
+      qc.invalidateQueries({ queryKey: ["my-review", txId, userId] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const stars = (value: number, onPick?: (n: number) => void) => (
+    <div className="flex gap-1" role={onPick ? "radiogroup" : undefined} aria-label="Calificación de 1 a 5 estrellas">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={!onPick}
+          onClick={() => onPick?.(n)}
+          aria-label={`${n} estrella${n === 1 ? "" : "s"}`}
+          className={onPick ? "transition hover:scale-110" : "cursor-default"}
+        >
+          <Star
+            className={`h-6 w-6 ${n <= value ? "fill-nexo-yellow text-nexo-yellow" : "text-muted-foreground"}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+      <h2 className="font-semibold">Califica a tu contraparte</h2>
+      {mine.data ? (
+        <div className="space-y-1">
+          {stars(mine.data.rating)}
+          {mine.data.comment && (
+            <p className="text-sm text-muted-foreground">Tu comentario: {mine.data.comment}</p>
+          )}
+          <p className="text-xs text-muted-foreground">Ya enviaste tu calificación.</p>
+        </div>
+      ) : (
+        <>
+          {stars(rating, setRating)}
+          <Textarea
+            aria-label="Comentario (opcional)"
+            placeholder="Comentario opcional sobre la operación"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            maxLength={1000}
+          />
+          <Button disabled={busy || rating < 1} onClick={submit}>
+            Enviar calificación
+          </Button>
+        </>
+      )}
+    </section>
+  );
+}
