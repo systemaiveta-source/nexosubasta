@@ -208,6 +208,25 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   );
 }
 
+export function BackButton({ fallback = "/" }: { fallback?: string }) {
+  const router = useRouter();
+  const navigate = useNavigate();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-2 gap-1 text-muted-foreground"
+      aria-label="Volver a la pantalla anterior"
+      onClick={() => {
+        if (window.history.length > 1) router.history.back();
+        else navigate({ to: fallback });
+      }}
+    >
+      <ArrowLeft className="h-4 w-4" /> Volver
+    </Button>
+  );
+}
+
 export function PageShell({
   title,
   actions,
@@ -221,7 +240,10 @@ export function PageShell({
     <SiteLayout>
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
+          <div className="flex items-center gap-2">
+            <BackButton />
+            <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
+          </div>
           {actions}
         </div>
         {children}
