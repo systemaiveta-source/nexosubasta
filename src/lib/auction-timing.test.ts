@@ -25,8 +25,13 @@ describe("plazos de productos", () => {
     expect(
       auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_minutes: 0 }).success,
     ).toBe(false);
-    expect(auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_minutes: 1.5 }).success).toBe(false);
-    expect(auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_minutes: 1440 }).success).toBe(false);
+    expect(
+      auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_minutes: 1.5 }).success,
+    ).toBe(false);
+    expect(
+      auctionTimingSchema.safeParse({ closing_mode: "reserve", quiet_period_minutes: 1440 })
+        .success,
+    ).toBe(false);
     expect(auctionTimingSchema.safeParse({ quiet_period_minutes: 5 }).success).toBe(false);
   });
   it.each(PRODUCT_DURATIONS)("primera puja conserva íntegramente %i horas", (hours) => {
@@ -46,11 +51,14 @@ describe("plazos de productos", () => {
     const first = noBidDeadline(0, "fixed") - 1;
     expect(firstBidDeadline(first, 720)).toBe(first + 30 * 86400000);
   });
-  it.each(QUIET_MINUTES)("reserva elegible reinicia %i minutos completos sin recorte al límite", (m) => {
-    const cap = 7 * 86400000;
-    expect(reserveDeadline(cap, cap - 1, true, m)).toBe(cap - 1 + m * 60000);
-    expect(reserveDeadline(cap, cap - 1, false, m)).toBe(cap);
-  });
+  it.each(QUIET_MINUTES)(
+    "reserva elegible reinicia %i minutos completos sin recorte al límite",
+    (m) => {
+      const cap = 7 * 86400000;
+      expect(reserveDeadline(cap, cap - 1, true, m)).toBe(cap - 1 + m * 60000);
+      expect(reserveDeadline(cap, cap - 1, false, m)).toBe(cap);
+    },
+  );
   it("reserva sin condición comienza su prórroga con primera puja", () => {
     expect(reserveDeadline(7 * 86400000, 1000, true, 5)).toBe(301000);
   });
