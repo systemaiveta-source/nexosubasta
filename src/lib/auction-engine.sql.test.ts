@@ -87,6 +87,10 @@ beforeAll(async () => {
   );
   bidSql = bidSql.replace("IF a.id IS NULL OR a.status", flashBid);
   await db.exec(bidSql);
+  const latest = readFileSync("drizzle/migrations/0027_mode_edit_and_fixed_publication_guard.sql", "utf8");
+  const timingPatch = extract(latest, /(SELECT pg_get_functiondef\('public.auction_v2_timing\(\)'::regprocedure\)[\s\S]*?EXECUTE d;)/);
+  const closePatch = extract(latest, /(SELECT pg_get_functiondef\('public.process_auctions\(\)'::regprocedure\)[\s\S]*?EXECUTE d;)/);
+  await db.exec(`DO $$ DECLARE d text; BEGIN ${timingPatch} ${closePatch} END $$;`);
 }, 30000);
 afterAll(() => db.close());
 beforeEach(async () => {
@@ -167,6 +171,14 @@ describe("actual PostgreSQL product transitions", () => {
     expect(Number(new Date(String(a.ends_at))) - Number(new Date(String(a.starts_at)))).toBe(
       8 * 86400000,
     );
+  });
+  it("scheduled fixed auction still expires eight days from publication, not future start", async () => {
+    await db.query("INSERT INTO auctions(id,seller_id,closing_mode) VALUES($1,$2,'fixed')",[id(1),id(9)]);
+    await db.exec("UPDATE auctions SET status='scheduled',starts_at=clock_timestamp()+interval '30 days'");
+    const a=await row();
+    expect(Number(new Date(a.ends_at))-Date.now()).toBeLessThanOrEqual(8*86400000);
+    await db.exec("UPDATE auctions SET ends_at=clock_timestamp()-interval '1 second'; SELECT process_auctions()");
+    expect((await row()).status).toBe('ended_unsold');
   });
   it("fixed first bid starts full duration and queued subsequent bids never reset it", async () => {
     await fixture("fixed");
