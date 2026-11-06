@@ -1,7 +1,7 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Menu, X } from "lucide-react";
+import { ArrowLeft, Bell, Menu, X } from "lucide-react";
 import logo from "@/assets/nexo-logo.png.asset.json";
 import { useAuth, useRoles, signOut } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
