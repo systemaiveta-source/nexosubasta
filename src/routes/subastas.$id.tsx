@@ -28,7 +28,7 @@ export const Route = createFileRoute("/subastas/$id")({
 });
 
 const AUCTION_COLUMNS =
-  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds";
+  "id,seller_id,title,description,category_id,country,city,scope,delivery_terms,images,starting_price,min_increment,currency,status,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,auction_type,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds,quiet_period_minutes,rules_version,extension_pending";
 
 function AuctionPage() {
   const { id } = Route.useParams();
@@ -230,7 +230,7 @@ function AuctionPage() {
       setAmount("");
       setConditions("");
       toast.success(
-        r.extended
+        r.extended && Number(a?.rules_version ?? 1) < 3
           ? a?.closing_mode === "reserve"
             ? "Oferta aceptada. Período de cierre reiniciado."
             : "Oferta aceptada. El cierre se amplió 60 segundos."
@@ -447,9 +447,22 @@ function AuctionPage() {
                   : "por ofertas de último minuto."}
               </p>
             )}
+            {a.auction_type === "item" && Number(a.rules_version ?? 1) >= 3 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {a.extension_pending
+                  ? "Plazo cumplido. El subastador debe decidir si extiende 7 días o finaliza sin ganador. No se aceptan ofertas mientras decide."
+                  : a.closing_mode === "fixed" && a.bid_count === 0
+                    ? "Esperando la primera puja válida: entonces comienza la duración elegida. Sin ofertas, finaliza a los 8 días."
+                    : a.closing_mode === "fixed"
+                      ? "El plazo desde la primera puja válida no se amplía."
+                      : "Las pujas válidas reinician la espera cuando se cumplen las condiciones de venta, sin superar el límite vigente."}
+                {!a.has_reserve && " Sin reserva gana el mejor postor válido."}
+              </p>
+            )}
             {a.closing_mode === "reserve" && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Cierre por objetivos · período sin nuevas pujas: {a.quiet_period_seconds} segundos.
+                Cierre por objetivos · período sin nuevas pujas:{" "}
+                {a.quiet_period_minutes ?? Math.ceil(Number(a.quiet_period_seconds) / 60)} minutos.
               </p>
             )}
 

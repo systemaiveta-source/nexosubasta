@@ -76,7 +76,7 @@ function Seller() {
     reserve: "",
     expected: "",
     closing_mode: "fixed",
-    quiet_period_seconds: "300",
+    quiet_period_minutes: "5",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
@@ -119,7 +119,9 @@ function Seller() {
       (
         await supabase
           .from("auctions")
-          .select("id,title,status,current_price,currency,bid_count,ends_at,auction_type")
+          .select(
+            "id,title,status,current_price,currency,bid_count,ends_at,auction_type,winner_id,selection_pending,extension_pending,extension_used,republished_from",
+          )
           .eq("seller_id", user?.id ?? "")
           .order("created_at", { ascending: false })
       ).data ?? [],
@@ -193,7 +195,7 @@ function Seller() {
           accepted_payment_methods: methods,
           starts_at: startsAt ? new Date(startsAt).toISOString() : null,
           closing_mode: type === "item" ? f.closing_mode : "fixed",
-          quiet_period_seconds: Number(f.quiet_period_seconds),
+          quiet_period_minutes: Number(f.quiet_period_minutes),
         },
         _private: {
           reserve_price: type === "item" && f.reserve ? Number(f.reserve) : null,
@@ -276,7 +278,9 @@ function Seller() {
         reserve: String(p?.["reserve_price"] ?? ""),
         expected: String(p?.["expected_price"] ?? ""),
         closing_mode: String(a["closing_mode"] ?? "fixed"),
-        quiet_period_seconds: String(a["quiet_period_seconds"] ?? 300),
+        quiet_period_minutes: String(
+          a["quiet_period_minutes"] ?? Math.ceil(Number(a["quiet_period_seconds"] ?? 300) / 60),
+        ),
       });
       setImages(
         Array.isArray(a["images"])
@@ -308,7 +312,9 @@ function Seller() {
     try {
       const r = await verifyServiceLocations({ data: { id } });
       if (r.status === "not_found")
-        toast.error("Google Maps no encontró el origen o el destino. Escribe direcciones más completas.");
+        toast.error(
+          "Google Maps no encontró el origen o el destino. Escribe direcciones más completas.",
+        );
     } catch (e) {
       toast.error(errMsg(e));
     }
@@ -321,6 +327,38 @@ function Seller() {
     else {
       toast.success("Publicada");
       qc.invalidateQueries({ queryKey: ["mine"] });
+    }
+  }
+
+  async function reserveDecision(id: string, extend: boolean) {
+    setBusy(true);
+    try {
+      const result = extend
+        ? await supabase.rpc("extend_reserve_auction", { _auction: id })
+        : await supabase.rpc("finish_reserve_auction", { _auction: id });
+      if (result.error) throw result.error;
+      toast.success(extend ? "Extensión única de 7 días aplicada" : "Finalizada sin ganador");
+      await qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function repeat(id: string) {
+    setBusy(true);
+    try {
+      const result = await supabase.rpc("republish_auction", { _auction: id });
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error("No se pudo crear la republicación");
+      await editDraft(result.data);
+      await qc.invalidateQueries({ queryKey: ["mine"] });
+      toast.success("Nueva subasta en borrador; revisa los datos y publica cuando quieras");
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -454,6 +492,9 @@ function Seller() {
                   <option value="24">24 horas</option>
                   <option value="48">48 horas</option>
                   <option value="72">72 horas</option>
+                  <option value="168">1 semana</option>
+                  <option value="360">15 días</option>
+                  <option value="720">1 mes</option>
                 </select>
               ) : (
                 <select
@@ -480,34 +521,45 @@ function Seller() {
                     onChange={set("closing_mode")}
                   >
                     <option value="fixed">Tiempo fijo</option>
-                    <option value="reserve">Objetivo de reserva privada</option>
+                    <option value="reserve">Cierre por inactividad</option>
                   </select>
                 </label>
                 {f.closing_mode === "reserve" && (
                   <label className="space-y-1.5 text-sm">
-                    Período sin nuevas pujas (segundos)
+                    Período sin nuevas pujas (minutos)
                     <Input
                       aria-label="Período sin nuevas pujas"
                       type="number"
-                      min={60}
-                      max={86400}
+                      min={1}
+                      max={1440}
                       step={1}
-                      value={f.quiet_period_seconds}
-                      onChange={set("quiet_period_seconds")}
+                      value={f.quiet_period_minutes}
+                      onChange={set("quiet_period_minutes")}
                     />
                   </label>
                 )}
                 <div className="space-y-1.5">
-                  <Label>Precio esperado (privado)</Label>
+                  <Label>Precio esperado (opcional, privado y orientativo)</Label>
                   <Input type="number" min="0" value={f.expected} onChange={set("expected")} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Precio de reserva (privado)</Label>
+                  <Label>Precio de reserva (opcional y privado)</Label>
                   <Input type="number" min="0" value={f.reserve} onChange={set("reserve")} />
                 </div>
               </>
             )}
           </div>
+          {type === "item" && (
+            <p className="text-sm text-muted-foreground">
+              {f.closing_mode === "fixed"
+                ? "El tiempo comienza con la primera puja válida y no se amplía. Sin ofertas, finaliza a los 8 días."
+                : "Cada puja válida reinicia los minutos sin ofertas cuando se cumplen las condiciones de venta. El límite inicial es de 7 días; si no se alcanza la reserva, podrás extender una sola vez otros 7 días o finalizar."}
+              {f.reserve
+                ? " Solo se adjudica si se alcanza tu reserva privada."
+                : " Sin reserva gana el mejor postor válido."}
+              {" El precio esperado es solo orientativo y nunca impide vender."}
+            </p>
+          )}
           {type === "item" && <DeliveryForm value={delivery} onChange={setDelivery} />}
           {type === "service" && (
             <p className="text-sm text-muted-foreground">
@@ -572,7 +624,7 @@ function Seller() {
               {mine.data.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm"
                 >
                   <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
                     <b className="block truncate">{a.title}</b>
@@ -582,6 +634,31 @@ function Seller() {
                       {money(a.current_price, a.currency)}
                     </span>
                   </Link>
+                  {a.extension_pending && !a.extension_used && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" disabled={busy} onClick={() => reserveDecision(a.id, true)}>
+                        Extender 7 días
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => reserveDecision(a.id, false)}
+                      >
+                        Finalizar sin ganador
+                      </Button>
+                    </div>
+                  )}
+                  {a.status === "ended_unsold" && !a.winner_id && !a.selection_pending && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => repeat(a.id)}
+                    >
+                      Repetir o editar
+                    </Button>
+                  )}
                   {a.status === "draft" && (
                     <>
                       <Button

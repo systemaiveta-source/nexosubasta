@@ -1,0 +1,5 @@
+CREATE OR REPLACE VIEW public.auctions_safe WITH (security_invoker=true) AS SELECT id,seller_id,title,description,category_id,country,city,scope,delivery_terms,CASE WHEN auction_type='service' THEN ARRAY[]::text[] ELSE images END AS images,CASE WHEN auction_type='item' THEN starting_price ELSE NULL::numeric END AS starting_price,min_increment,currency,status,duration_hours,starts_at,ends_at,original_ends_at,current_price,bid_count,leader_id,winner_id,has_reserve,reserve_met,extensions_count,flagged,created_at,updated_at,auction_type,NULL::text AS service_from,NULL::text AS service_to,duration_minutes,selection_pending,accepted_payment_methods,delivery_snapshot,closing_mode,quiet_period_seconds,quiet_period_minutes,rules_version,extension_pending FROM public.auctions a WHERE status<>'draft' OR seller_id=auth.uid() OR public.is_staff(auth.uid());
+DO $$ DECLARE d text; BEGIN
+ SELECT pg_get_functiondef('public.place_bid(uuid,numeric,text)'::regprocedure) INTO d;
+ d:=replace(d,'IF a.auction_type=''service'' THEN','IF a.auction_type=''service'' THEN'||chr(10)||'  IF _amount<=0 THEN RAISE EXCEPTION ''Importe no válido''; END IF;'); EXECUTE d;
+END $$;

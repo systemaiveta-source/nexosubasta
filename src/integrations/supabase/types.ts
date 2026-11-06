@@ -320,6 +320,7 @@ export type Database = {
           duration_hours: number
           duration_minutes: number | null
           ends_at: string | null
+          extension_pending: boolean
           extension_used: boolean
           extensions_count: number
           flagged: boolean
@@ -330,6 +331,7 @@ export type Database = {
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
+          quiet_period_minutes: number
           quiet_period_seconds: number
           republished_from: string | null
           reserve_met: boolean
@@ -364,6 +366,7 @@ export type Database = {
           duration_hours?: number
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean
           extension_used?: boolean
           extensions_count?: number
           flagged?: boolean
@@ -374,6 +377,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
+          quiet_period_minutes?: number
           quiet_period_seconds?: number
           republished_from?: string | null
           reserve_met?: boolean
@@ -408,6 +412,7 @@ export type Database = {
           duration_hours?: number
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean
           extension_used?: boolean
           extensions_count?: number
           flagged?: boolean
@@ -418,6 +423,7 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number
           original_ends_at?: string | null
+          quiet_period_minutes?: number
           quiet_period_seconds?: number
           republished_from?: string | null
           reserve_met?: boolean
@@ -1451,6 +1457,7 @@ export type Database = {
           duration_hours: number | null
           duration_minutes: number | null
           ends_at: string | null
+          extension_pending: boolean | null
           extensions_count: number | null
           flagged: boolean | null
           has_reserve: boolean | null
@@ -1459,8 +1466,10 @@ export type Database = {
           leader_id: string | null
           min_increment: number | null
           original_ends_at: string | null
+          quiet_period_minutes: number | null
           quiet_period_seconds: number | null
           reserve_met: boolean | null
+          rules_version: number | null
           scope: string | null
           selection_pending: boolean | null
           seller_id: string | null
@@ -1490,6 +1499,7 @@ export type Database = {
           duration_hours?: number | null
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean | null
           extensions_count?: number | null
           flagged?: boolean | null
           has_reserve?: boolean | null
@@ -1498,8 +1508,10 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_minutes?: number | null
           quiet_period_seconds?: number | null
           reserve_met?: boolean | null
+          rules_version?: number | null
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
@@ -1529,6 +1541,7 @@ export type Database = {
           duration_hours?: number | null
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean | null
           extensions_count?: number | null
           flagged?: boolean | null
           has_reserve?: boolean | null
@@ -1537,8 +1550,10 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_minutes?: number | null
           quiet_period_seconds?: number | null
           reserve_met?: boolean | null
+          rules_version?: number | null
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
@@ -1724,6 +1739,7 @@ export type Database = {
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
       extend_reserve_auction: { Args: { _auction: string }; Returns: string }
+      finish_reserve_auction: { Args: { _auction: string }; Returns: undefined }
       get_service_request: { Args: { _auction: string }; Returns: Json }
       has_active_seller_sub: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -1815,6 +1831,7 @@ export type Database = {
           duration_hours: number
           duration_minutes: number | null
           ends_at: string | null
+          extension_pending: boolean
           extension_used: boolean
           extensions_count: number
           flagged: boolean
@@ -1825,6 +1842,7 @@ export type Database = {
           leader_id: string | null
           min_increment: number
           original_ends_at: string | null
+          quiet_period_minutes: number
           quiet_period_seconds: number
           republished_from: string | null
           reserve_met: boolean

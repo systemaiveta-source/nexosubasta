@@ -17,6 +17,7 @@
 - Public auction screens read auctions_safe, never legacy starting_price directly; the projection suppresses service budgets and explicitly scopes draft visibility.
 - Auction social metadata is loaded anonymously from auctions_safe; share-image endpoints resolve only public item images and generate bounded JPEG renditions, never expose drafts, service attachments or signed storage URLs in head tags.
 - Draft saves and publication limits use transactional RPCs; publication locks per owner to enforce membership limits under concurrency.
+- Auction timing changes are versioned for new drafts; retain legacy published clocks, store inactivity in minutes, and return the trigger-computed deadline from the atomic bid RPC.
 - Service close only opens client selection; a row-locked selection RPC creates one operation with client as buyer and provider as seller.
 - Operations use authenticated server functions and transactional RPCs for messages, payment stages, disputes and independent confirmations; private attachments use storage RLS and expiring signed links.
 - Auction payment declarations are separate from membership methods; each bid freezes accepted terms, and a deferred database constraint prevents bypassing acceptance.

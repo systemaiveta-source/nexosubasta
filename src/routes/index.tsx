@@ -47,7 +47,7 @@ const features = [
     icon: Timer,
     color: "text-nexo-blue",
     title: "Cierre justo",
-    text: "Una oferta en el último minuto amplía el cierre 60 segundos, para que nadie gane por sorpresa.",
+    text: "Cada publicación muestra su modalidad de cierre. Las nuevas subastas por tiempo respetan su duración sin ampliaciones automáticas.",
   },
   {
     icon: ShieldCheck,
