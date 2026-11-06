@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/SiteLayout";
 
 export const Route = createFileRoute("/ayuda")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Ayuda — NEXO" },

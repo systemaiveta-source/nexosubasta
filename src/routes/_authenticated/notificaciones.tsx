@@ -33,6 +33,7 @@ const notificationOptions = (userId: string, page = 0, unreadOnly = false) =>
   });
 
 export const Route = createFileRoute("/_authenticated/notificaciones")({
+  staticData: { sitemap: false },
   loader: async ({ context }) => {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data, error } = await supabase.auth.getUser();

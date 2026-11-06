@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { errMsg } from "@/lib/format";
 
 export const Route = createFileRoute("/reset-password")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Nueva contraseña — NEXO" },

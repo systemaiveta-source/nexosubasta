@@ -26,6 +26,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Subastar en NEXO — Publica tu subasta" },

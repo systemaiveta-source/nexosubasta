@@ -15,6 +15,7 @@ const socialQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   loader: ({ context }) => context.queryClient.ensureQueryData(socialQuery),
   head: () => ({
     meta: [

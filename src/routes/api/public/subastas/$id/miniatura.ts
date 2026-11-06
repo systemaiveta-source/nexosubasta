@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
 
 export const Route = createFileRoute("/api/public/subastas/$id/miniatura")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ params }) => {

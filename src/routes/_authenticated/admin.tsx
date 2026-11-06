@@ -11,6 +11,7 @@ import { SocialLinksAdmin } from "@/components/SocialLinksAdmin";
 import { modeLabel } from "@/lib/auction-timing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Administración — NEXO" },
