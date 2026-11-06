@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { listPublicSocialLinks } from "@/lib/social-links.functions";
 import { SocialLinks } from "@/components/SocialLinks";
+import { InstallCard } from "@/components/InstallCard";
 
 const socialQuery = queryOptions({
   queryKey: ["public-social-links"],
@@ -86,6 +87,9 @@ function Index() {
             Explorar subastas
           </Link>
           {installation.available && <Button onClick={installation.install}>Instalar NEXO</Button>}
+        </div>
+        <div className="mt-10">
+          <InstallCard />
         </div>
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-4 pb-20 sm:grid-cols-2 lg:grid-cols-4">
