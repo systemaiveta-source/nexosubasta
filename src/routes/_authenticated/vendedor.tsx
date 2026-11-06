@@ -24,6 +24,7 @@ import { emptyServiceRequest, type ServiceRequest } from "@/lib/service-catalog"
 import { saveExtendedDraft } from "@/lib/auction-details.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
+import { listMyPublications } from "@/lib/profiles.functions";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   staticData: { sitemap: false },
@@ -107,8 +108,13 @@ function Seller() {
       ).data ?? [],
   });
   const profile = useQuery({
-    queryKey: ["myprofile"],
-    queryFn: async () => (await supabase.rpc("my_profile")).data,
+    queryKey: ["myprofile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const {data, error} = await supabase.rpc("my_profile");
+      if (error) throw error;
+      return data;
+    },
   });
   const sub = useQuery({
     queryKey: ["sub", user?.id],
@@ -117,16 +123,8 @@ function Seller() {
   });
   const mine = useQuery({
     queryKey: ["mine", user?.id],
-    queryFn: async () =>
-      (
-        await supabase
-          .from("auctions")
-          .select(
-            "id,title,status,current_price,currency,bid_count,ends_at,auction_type,closing_mode,winner_id,selection_pending,extension_pending,extension_used,republished_from",
-          )
-          .eq("seller_id", user?.id ?? "")
-          .order("created_at", { ascending: false })
-      ).data ?? [],
+    enabled: !!user,
+    queryFn: () => listMyPublications(),
   });
   const previews = useImageUrls(images);
 
@@ -649,7 +647,7 @@ function Seller() {
         </section>
         <section>
           <h2 className="mb-3 font-display text-lg font-bold">Mis publicaciones</h2>
-          {mine.data?.length ? (
+          {mine.isPending ? <p>Cargando publicaciones…</p> : mine.error ? <Empty>No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => mine.refetch()}>Reintentar</Button></Empty> : mine.data?.length ? (
             <ul className="space-y-2">
               {mine.data.map((a) => (
                 <li

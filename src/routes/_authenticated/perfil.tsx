@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { money, errMsg } from "@/lib/format";
 import { CatalogSelect } from "@/components/CatalogSelect";
+import { Textarea } from "@/components/ui/textarea";
+import { getMyMembership, listMyPublications } from "@/lib/profiles.functions";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   staticData: { sitemap: false },
@@ -33,9 +35,16 @@ function Profile() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const profile = useQuery({
-    queryKey: ["myprofile"],
-    queryFn: async () => (await supabase.rpc("my_profile")).data,
+    queryKey: ["myprofile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const {data, error} = await supabase.rpc("my_profile");
+      if (error) throw error;
+      return data;
+    },
   });
+  const publications = useQuery({queryKey: ["mine", user?.id], enabled: !!user, queryFn: () => listMyPublications()});
+  const membership = useQuery({queryKey: ["membership-benefits", user?.id], enabled: !!user, queryFn: () => getMyMembership()});
   const balance = useQuery({
     queryKey: ["wallet", user?.id],
     queryFn: async () =>
@@ -147,7 +156,14 @@ function Profile() {
   const box = "space-y-3 rounded-2xl border border-border bg-card p-6";
 
   return (
-    <PageShell title="Mi perfil">
+    <PageShell title="Mi perfil" actions={user && <Link to="/usuarios/$id" params={{id: user.id}} className="text-sm underline">Ver perfil público</Link>}>
+      <section className="mb-8 space-y-3 border-b border-border pb-6">
+        <h2 className="font-display text-xl font-bold">Mis publicaciones</h2>
+        {publications.isPending ? <p>Cargando…</p> : publications.error ? <p role="alert">No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => publications.refetch()}>Reintentar</Button></p> : publications.data?.length ?
+          <ul className="divide-y divide-border">{publications.data.map(a => <li key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><Link to={a.status === "draft" ? "/vendedor" : "/subastas/$id"} params={{id: a.id}} className="min-w-0 break-words font-semibold underline">{a.title}</Link><span className="text-sm text-muted-foreground">{a.status} · {a.bid_count} ofertas</span></li>)}</ul> : <p className="text-muted-foreground">Aún no tienes publicaciones.</p>}
+        <Link to="/vendedor" className="inline-block text-sm underline">Subastar o editar borradores</Link>
+      </section>
+      {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={box}>
           <h2 className="font-display text-lg font-bold">Datos</h2>
@@ -192,11 +208,19 @@ function Profile() {
               />
             </div>
           </div>
-          <Button onClick={save}>Guardar</Button>
+          <Label>Biografía pública</Label>
+          <Textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} maxLength={1000}/>
+          <Button onClick={save} disabled={!profile.data || profile.isPending}>Guardar</Button>
         </section>
 
         <section className={box}>
           <h2 className="font-display text-lg font-bold">Membresía</h2>
+          {membership.data?.name && <div className="space-y-2 text-sm">
+            <p className="font-semibold">{membership.data.name}{membership.data.badge ? ` · Insignia ${membership.data.badge}` : ""}</p>
+            <p>Hasta {membership.data.max_active_auctions ?? "ilimitadas"} subastas activas · Comisión: {membership.data.referral_pct}%</p>
+            {membership.data.featured_interval !== "none" && <p>Publicidad destacada: {membership.data.featured_interval === "always" ? "permanente" : `${membership.data.featured_interval === "weekly" ? "semanal" : "mensual"}, 24 horas por aparición`}{membership.data.featured ? " · Activa ahora" : ""}</p>}
+            {membership.data.priority_support && <p>Atención prioritaria</p>}
+          </div>}
           {subs.data?.length ? (
             subs.data.map((s) => (
               <p key={s.id} className="text-sm">
@@ -242,7 +266,7 @@ function Profile() {
                     <p className="truncate font-medium">{r.display_name}</p>
                     <p className="text-xs text-muted-foreground">
                       {r.plan_active
-                        ? `Plan ${r.plan_name} activo hasta ${new Date(r.ends_at!).toLocaleDateString("es")}`
+                        ? `Plan ${r.plan_name} activo${r.ends_at ? ` hasta ${new Date(r.ends_at).toLocaleDateString("es")}` : ""}`
                         : "Sin plan activo"}
                     </p>
                   </div>

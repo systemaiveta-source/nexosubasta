@@ -65,6 +65,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </Link>
       )}
       {user && (
+        <Link to="/perfil" className={linkCls} activeProps={{ className: "text-foreground" }}>
+          Mis publicaciones
+        </Link>
+      )}
+      {user && (
         <Link to="/vendedor" className={linkCls} activeProps={{ className: "text-foreground" }}>
           Subastar
         </Link>

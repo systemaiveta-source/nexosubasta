@@ -21,6 +21,7 @@ export type AuctionListItem = {
   has_reserve: boolean;
   reserve_met: boolean;
   closing_mode?: string | null;
+  featured?: boolean;
 };
 
 export function useNow(intervalMs = 1000) {
@@ -80,6 +81,7 @@ export function AuctionCard({
         )}
       </div>
       <div className="space-y-2 p-4">
+        {a.featured && <p className="text-xs font-semibold text-nexo-blue">Destacada</p>}
         <div className="flex items-center justify-between gap-2">
           <StatusBadge status={a.status} />
           {a.status === "active" && (

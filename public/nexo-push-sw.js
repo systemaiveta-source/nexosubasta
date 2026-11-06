@@ -6,6 +6,13 @@ function destination(value) {
     ? value
     : "/notificaciones";
 }
+function thumbnail(value) {
+  try {
+    const url = new URL(value);
+    const allowed = [self.location.origin, "https://nexosubastas.com", "https://www.nexosubastas.com", "https://nexosubasta.lovable.app"];
+    return allowed.includes(url.origin) && !url.search && !url.hash && /^\/api\/public\/subastas\/[a-f0-9-]{36}\/miniatura$/i.test(url.pathname) ? url.href : undefined;
+  } catch { return undefined; }
+}
 self.addEventListener("push", (event) => {
   let data;
   try {
@@ -14,16 +21,14 @@ self.addEventListener("push", (event) => {
     data = {};
   }
   const path = destination(data.path);
+  const image = thumbnail(data.image);
   event.waitUntil(
     self.registration.showNotification(data.title || "NEXO", {
       body: data.body || "Nueva subasta en NEXO",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-64.png",
       tag: typeof data.tag === "string" ? data.tag : path,
-      ...(typeof data.image === "string" &&
-      data.image.startsWith("https://nexosubastas.com/api/public/subastas/")
-        ? { image: data.image }
-        : {}),
+      ...(image ? { image } : {}),
       data: { path },
     }),
   );

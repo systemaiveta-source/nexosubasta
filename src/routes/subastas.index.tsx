@@ -67,6 +67,9 @@ function Catalog() {
   const list = useQuery({
     queryKey: ["catalog", s],
     queryFn: async () => {
+      const featured = await supabase.rpc("featured_auction_ids");
+      if (featured.error) throw featured.error;
+      const featuredIds = new Set(featured.data ?? []);
       let q = supabase
         .from("auctions_safe")
         .select(AUCTION_LIST_COLUMNS)
@@ -89,7 +92,8 @@ function Catalog() {
         q = q.order("current_price", { ascending: false, nullsFirst: false });
       const { data, error } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
       if (error) throw error;
-      return data as unknown as AuctionListItem[];
+      const items = (data as unknown as AuctionListItem[]).map(a => ({...a, featured: featuredIds.has(a.id)}));
+      return items.sort((a,b) => Number(b.featured) - Number(a.featured));
     },
   });
   const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter((x): x is string => !!x));
