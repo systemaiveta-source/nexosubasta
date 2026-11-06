@@ -10,10 +10,10 @@ export const getPushSettings = createServerFn({ method: "POST" })
       vapidKey: process.env["NEXO_VAPID_PUBLIC_KEY"] ?? "",
     };
     const configured = Boolean(pushConfigured(config) && process.env["NEXO_VAPID_PRIVATE_KEY"]);
-    const [preferences, devices, categories] = await Promise.all([
+    const [preferences, devices] = await Promise.all([
       context.supabase
         .from("notification_preferences")
-        .select("new_auctions,categories,activity")
+        .select("new_auctions,activity")
         .eq("user_id", context.userId)
         .maybeSingle(),
       context.supabase
@@ -22,27 +22,24 @@ export const getPushSettings = createServerFn({ method: "POST" })
         .eq("active", true)
         .eq("transport", "webpush")
         .eq("user_id", context.userId),
-      context.supabase.from("categories").select("id,name").neq("slug", "nft-cripto").order("sort"),
     ]);
-    if (preferences.error || devices.error || categories.error)
+    if (preferences.error || devices.error)
       throw new Error("No se pudieron cargar las preferencias");
     return {
       configured,
       deliveryEnabled: configured && process.env["NEXO_PUSH_DELIVERY_ENABLED"] === "true",
       config,
-      preferences: preferences.data ?? { new_auctions: false, categories: [], activity: true },
+      preferences: preferences.data ?? { new_auctions: true, activity: true },
       devices: devices.data?.length ?? 0,
       endpoints: devices.data?.map((device) => device.token) ?? [],
-      categories: categories.data,
     };
   });
 export const savePushPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { enabled: boolean; categories: string[]; activity?: boolean }) =>
+  .inputValidator((data: { enabled: boolean; activity?: boolean }) =>
     z
       .object({
         enabled: z.boolean(),
-        categories: z.array(z.string().uuid()).max(100),
         activity: z.boolean().optional(),
       })
       .parse(data),
@@ -51,7 +48,7 @@ export const savePushPreferences = createServerFn({ method: "POST" })
     const result = await context.supabase.from("notification_preferences").upsert({
       user_id: context.userId,
       new_auctions: data.enabled,
-      categories: [...new Set(data.categories)],
+      push_consent_initialized: true,
       ...(data.activity !== undefined ? { activity: data.activity } : {}),
       updated_at: new Date().toISOString(),
     });
@@ -65,6 +62,23 @@ export const registerPushDevice = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (!process.env["NEXO_VAPID_PRIVATE_KEY"]) throw new Error("Push pendiente de configuración");
+    if (data.subscription.expirationTime && data.subscription.expirationTime <= Date.now())
+      throw new Error("La suscripción ha caducado");
+    const preferences = await context.supabase
+      .from("notification_preferences")
+      .select("push_consent_initialized")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (preferences.error) throw new Error("No se pudo comprobar el consentimiento");
+    if (!preferences.data?.push_consent_initialized) {
+      const initialized = await context.supabase.from("notification_preferences").upsert({
+        user_id: context.userId,
+        new_auctions: true,
+        activity: true,
+        push_consent_initialized: true,
+      });
+      if (initialized.error) throw new Error("No se pudo guardar el consentimiento");
+    }
     const result = await context.supabase.from("push_devices").upsert(
       {
         user_id: context.userId,

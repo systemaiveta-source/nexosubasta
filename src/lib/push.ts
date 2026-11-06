@@ -31,13 +31,17 @@ export async function unsubscribePush() {
   if (subscription && !(await subscription.unsubscribe()))
     throw new Error("No se pudo desactivar el permiso de este dispositivo");
 }
-export async function registerPush(config: PushConfig) {
+export async function registerPush(config: PushConfig, requestPermission = true) {
   if (!pushConfigured(config))
     throw new Error("Push pendiente de configuración segura de NEXO; no se solicitó permiso.");
   if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator))
     throw new Error("Este navegador o dispositivo no admite notificaciones push.");
   if (window.top !== window.self)
     throw new Error("Abre NEXO en una pestaña propia para permitir notificaciones.");
+  if (Notification.permission === "denied")
+    throw new Error("Notificaciones bloqueadas. Cambia el permiso en los ajustes del navegador.");
+  if (!requestPermission && Notification.permission !== "granted")
+    throw new Error("Permiso aún no concedido");
   const permission =
     Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted")
@@ -52,7 +56,11 @@ export async function registerPush(config: PushConfig) {
   await navigator.serviceWorker.ready;
   const decoded = atob(config.vapidKey.replace(/-/g, "+").replace(/_/g, "/") + "=");
   const key = Uint8Array.from(decoded, (char) => char.charCodeAt(0));
-  const existing = await registration.pushManager.getSubscription();
+  let existing = await registration.pushManager.getSubscription();
+  if (existing?.expirationTime && existing.expirationTime <= Date.now()) {
+    await existing.unsubscribe();
+    existing = null;
+  }
   const subscription =
     existing ??
     (await registration.pushManager.subscribe({
