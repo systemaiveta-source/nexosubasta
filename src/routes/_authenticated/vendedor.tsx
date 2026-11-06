@@ -156,8 +156,6 @@ function Seller() {
     if (!files || !user) return;
     setBusy(true);
     try {
-      if (type === "item" && (!f.closing_mode || f.starting_price.trim() === ""))
-        throw new Error("Elige una modalidad e indica el precio inicial; puede ser cero");
       for (const file of Array.from(files).slice(0, 10 - images.length)) {
         const p = await uploadAuctionImage(user.id, file);
         setImages((x) => [...x, p]);
@@ -173,6 +171,8 @@ function Seller() {
     if (!user) return;
     setBusy(true);
     try {
+      if (type === "item" && (!f.closing_mode || f.starting_price.trim() === ""))
+        throw new Error("Elige una modalidad e indica el precio inicial; puede ser cero");
       const cur = f.currency || profile.data?.currency || "USD";
       const draftArgs = {
         _data: {
@@ -544,11 +544,11 @@ function Seller() {
                 {f.closing_mode && f.closing_mode !== "flash" && <><div className="space-y-1.5">
                   <Label>Precio esperado (opcional, privado y orientativo)</Label>
                   <Input type="number" min="0" value={f.expected} onChange={set("expected")} />
-                </div></>}
+                </div>
                 <div className="space-y-1.5">
                   <Label>Precio de reserva (opcional y privado)</Label>
                   <Input type="number" min="0" value={f.reserve} onChange={set("reserve")} />
-                </div>
+                </div></>}
               </>
             )}
           </div>
