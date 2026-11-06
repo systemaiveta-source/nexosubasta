@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
-import { money, errMsg } from "@/lib/format";
+import { money, errMsg, statusLabel, timeLeft } from "@/lib/format";
+import { useNow } from "@/components/AuctionCard";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { getMyMembership, listMyPublications } from "@/lib/profiles.functions";
@@ -158,12 +159,7 @@ function Profile() {
 
   return (
     <PageShell title="Mi perfil" actions={user && <Link to="/usuarios/$id" params={{id: user.id}} className="text-sm underline">Ver perfil público</Link>}>
-      <section className="mb-8 space-y-3 border-b border-border pb-6">
-        <h2 className="font-display text-xl font-bold">Mis publicaciones</h2>
-        {publications.isPending ? <p>Cargando…</p> : publications.error ? <p role="alert">No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => publications.refetch()}>Reintentar</Button></p> : publications.data?.length ?
-          <ul className="divide-y divide-border">{publications.data.map(a => <li key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><Link to={a.status === "draft" ? "/vendedor" : "/subastas/$id"} params={{id: a.id}} className="min-w-0 break-words font-semibold underline">{a.title}</Link><span className="text-sm text-muted-foreground">{a.status} · {a.bid_count} ofertas</span></li>)}</ul> : <p className="text-muted-foreground">Aún no tienes publicaciones.</p>}
-        <Link to="/vendedor" className="inline-block text-sm underline">Subastar o editar borradores</Link>
-      </section>
+      <MyPublications publications={publications} />
       {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={box}>
@@ -355,5 +351,146 @@ function Profile() {
       </div>
       <MembershipSupport />
     </PageShell>
+  );
+}
+
+type Publication = {
+  id: string;
+  title: string;
+  status: string;
+  bid_count: number;
+  ends_at: string | null;
+};
+
+function MyPublications({
+  publications,
+}: {
+  publications: {
+    isPending: boolean;
+    error: unknown;
+    refetch: () => void;
+    data?: Publication[] | undefined;
+  };
+}) {
+  const qc = useQueryClient();
+  const now = useNow();
+  const [busy, setBusy] = useState<string | null>(null);
+  const all = publications.data ?? [];
+  const active = all.filter((a) => a.status === "active" || a.status === "scheduled");
+  const expiredNoBids = all.filter(
+    (a) => a.status === "ended_unsold" && a.bid_count === 0,
+  );
+
+  async function renew(a: Publication) {
+    setBusy(a.id);
+    try {
+      const { error } = await supabase.rpc("republish_auction", { _auction: a.id });
+      if (error) throw error;
+      toast.success("Se creó un borrador para renovarla. Publícala desde Subastar.");
+      qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove(a: Publication) {
+    if (!confirm(`¿Eliminar "${a.title}" del sistema? Esta acción no se puede deshacer.`))
+      return;
+    setBusy(a.id);
+    try {
+      const { error } = await supabase.rpc("delete_unsold_auction", { _auction_id: a.id });
+      if (error) throw error;
+      toast.success("Publicación eliminada");
+      qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="mb-8 space-y-3 border-b border-border pb-6">
+      <h2 className="font-display text-xl font-bold">Mis publicaciones</h2>
+      {publications.isPending ? (
+        <p>Cargando…</p>
+      ) : publications.error ? (
+        <p role="alert">
+          No se pudieron cargar tus publicaciones.{" "}
+          <Button variant="outline" onClick={() => publications.refetch()}>
+            Reintentar
+          </Button>
+        </p>
+      ) : (
+        <>
+          {active.length ? (
+            <ul className="divide-y divide-border">
+              {active.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                  <Link
+                    to="/subastas/$id"
+                    params={{ id: a.id }}
+                    className="min-w-0 break-words font-semibold underline"
+                  >
+                    {a.title}
+                  </Link>
+                  <span className="text-sm text-muted-foreground">
+                    {statusLabel[a.status] ?? a.status} · {a.bid_count} ofertas
+                    {a.status === "active" && a.bid_count > 0 && a.ends_at
+                      ? ` · Termina en ${timeLeft(a.ends_at, now)}`
+                      : a.status === "active"
+                        ? " · Esperando la 1.ª puja"
+                        : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">No tienes subastas activas.</p>
+          )}
+          {expiredNoBids.length > 0 && (
+            <div className="space-y-2 pt-3">
+              <h3 className="font-semibold">Vencidas sin ofertas</h3>
+              <p className="text-sm text-muted-foreground">
+                Puedes renovarlas como borrador o eliminarlas del sistema.
+              </p>
+              <ul className="divide-y divide-border">
+                {expiredNoBids.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-3"
+                  >
+                    <span className="min-w-0 break-words font-medium">{a.title}</span>
+                    <span className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={busy === a.id}
+                        onClick={() => renew(a)}
+                      >
+                        Renovar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={busy === a.id}
+                        onClick={() => remove(a)}
+                      >
+                        Eliminar
+                      </Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
+      <Link to="/vendedor" className="inline-block text-sm underline">
+        Subastar o editar borradores
+      </Link>
+    </section>
   );
 }

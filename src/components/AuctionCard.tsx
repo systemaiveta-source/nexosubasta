@@ -84,11 +84,16 @@ export function AuctionCard({
         {a.featured && <p className="text-xs font-semibold text-nexo-blue">Destacada</p>}
         <div className="flex items-center justify-between gap-2">
           <StatusBadge status={a.status} />
-          {a.status === "active" && (
-            <span className="text-xs font-medium tabular-nums text-nexo-red">
-              {timeLeft(a.ends_at, now)}
-            </span>
-          )}
+          {a.status === "active" &&
+            (a.bid_count === 0 ? (
+              <span className="text-xs font-medium text-muted-foreground">
+                Inicia con la 1.ª puja
+              </span>
+            ) : (
+              <span className="text-xs font-medium tabular-nums text-nexo-red">
+                {timeLeft(a.ends_at, now)}
+              </span>
+            ))}
         </div>
         <h3 className="line-clamp-2 font-semibold leading-snug">{a.title}</h3>
         <p className="text-xs font-medium text-muted-foreground">

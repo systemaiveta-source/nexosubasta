@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Clock, MapPin, ShieldCheck, ShieldAlert, Star, Truck, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { SiteLayout, Empty } from "@/components/SiteLayout";
+import { SiteLayout, Empty, BackButton } from "@/components/SiteLayout";
 import { StatusBadge, useNow } from "@/components/AuctionCard";
 import { useImageUrls } from "@/lib/images";
 import { useAuth, useRoles } from "@/lib/auth";
@@ -278,7 +278,10 @@ function AuctionPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1.2fr_1fr]">
+      <div className="mx-auto max-w-6xl px-4 pt-4">
+        <BackButton fallback="/subastas" />
+      </div>
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-8 pt-2 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
             {(() => {
@@ -416,21 +419,30 @@ function AuctionPage() {
                   <Clock className="h-4 w-4" />
                   {a.status === "scheduled"
                     ? "Empieza en"
-                    : a.closing_mode === "flash" && a.closing_phase === "bidding"
-                      ? "Prórroga comienza en"
-                      : a.bid_count === 0
-                        ? "Sin ofertas, finaliza en"
-                        : "Termina en"}
+                    : a.bid_count === 0 && !ended
+                      ? "Sin ofertas"
+                      : "Termina en"}
                 </p>
-                <p
-                  className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
-                >
-                  {a.status === "scheduled"
-                    ? timeLeft(a.starts_at, now)
-                    : ended
-                      ? "Finalizada"
-                      : timeLeft(a.ends_at, now)}
-                </p>
+                {a.status === "active" && a.bid_count === 0 ? (
+                  <>
+                    <p className="font-display text-lg font-bold">
+                      La cuenta regresiva inicia con la 1.ª puja
+                    </p>
+                    <p className="text-xs tabular-nums text-muted-foreground">
+                      Sin ofertas, finaliza en {timeLeft(a.ends_at, now)}
+                    </p>
+                  </>
+                ) : (
+                  <p
+                    className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
+                  >
+                    {a.status === "scheduled"
+                      ? timeLeft(a.starts_at, now)
+                      : ended
+                        ? "Finalizada"
+                        : timeLeft(a.ends_at, now)}
+                  </p>
+                )}
               </div>
             </div>
             {a.has_reserve && (

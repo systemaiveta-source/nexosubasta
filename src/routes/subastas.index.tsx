@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import {
@@ -72,7 +73,7 @@ function Catalog() {
       const featuredIds = new Set(featured.data ?? []);
       let q = supabase
         .from("auctions_safe")
-        .select(AUCTION_LIST_COLUMNS)
+        .select(AUCTION_LIST_COLUMNS, { count: "exact" })
         .neq("status", "draft")
         .neq("status", "cancelled");
       if (s.tipo) q = q.eq("auction_type", s.tipo);
@@ -90,13 +91,13 @@ function Catalog() {
         q = q.order("current_price", { ascending: true, nullsFirst: true });
       if (orden === "price_desc")
         q = q.order("current_price", { ascending: false, nullsFirst: false });
-      const { data, error } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
+      const { data, error, count } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
       if (error) throw error;
       const items = (data as unknown as AuctionListItem[]).map(a => ({...a, featured: featuredIds.has(a.id)}));
-      return items.sort((a,b) => Number(b.featured) - Number(a.featured));
+      return { items: items.sort((a,b) => Number(b.featured) - Number(a.featured)), total: count ?? 0 };
     },
   });
-  const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter((x): x is string => !!x));
+  const imgs = useImageUrls(list.data?.items.map((a) => a.images[0]).filter((x): x is string => !!x));
   const promoted = useQuery({queryKey:["featured-auctions"],refetchInterval:60000,queryFn:async()=>{
     const ids=await supabase.rpc("featured_auction_ids");
     if(ids.error) throw ids.error;
@@ -108,12 +109,25 @@ function Catalog() {
   const promotedImages=useImageUrls(promoted.data?.flatMap(a=>a.images.slice(0,1)));
 
   const sel = "h-10 rounded-md border border-input bg-background px-3 text-sm";
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollCarousel = (dir: 1 | -1) =>
+    carouselRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
 
   return (
     <PageShell title="Subastas">
       {!s.q && !s.cat && !s.tipo && !s.pais && (!s.estado || s.estado==="active") && !!promoted.data?.length && <section className="mb-8 border-b border-border pb-6">
-        <h2 className="mb-4 font-display text-xl font-bold">Destacadas</h2>
-        <div className="flex gap-4 overflow-x-auto pb-3">{promoted.data.map(a=><div key={a.id} className="w-64 shrink-0"><AuctionCard a={a} now={now} img={promotedImages.data?.[a.images[0]??""]}/></div>)}</div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-xl font-bold">Destacadas</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" aria-label="Destacadas anteriores" onClick={() => scrollCarousel(-1)}>
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Destacadas siguientes" onClick={() => scrollCarousel(1)}>
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        <div ref={carouselRef} className="flex gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{promoted.data.map(a=><div key={a.id} className="w-64 shrink-0"><AuctionCard a={a} now={now} img={promotedImages.data?.[a.images[0]??""]}/></div>)}</div>
       </section>}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <form
@@ -197,9 +211,9 @@ function Catalog() {
         </div>
       ) : list.error ? (
         <Empty>No se pudo cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.</Empty>
-      ) : list.data?.length ? (
+      ) : list.data?.items.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {list.data.map((a) => (
+          {list.data.items.map((a) => (
             <AuctionCard
               key={a.id}
               a={a}
@@ -215,17 +229,26 @@ function Catalog() {
         <Button
           variant="outline"
           disabled={!s.page}
-          onClick={() => set({ page: (s.page ?? 0) - 1 })}
+          onClick={() => {
+            set({ page: (s.page ?? 0) - 1 });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         >
-          Anterior
+          ← Anterior
         </Button>
-        <span className="text-sm">Página {(s.page ?? 0) + 1}</span>
+        <span className="text-sm">
+          Página {(s.page ?? 0) + 1} de {Math.max(1, Math.ceil((list.data?.total ?? 0) / 24))} ·{" "}
+          {list.data?.total ?? 0} resultados
+        </span>
         <Button
           variant="outline"
-          disabled={(list.data?.length ?? 0) < 24}
-          onClick={() => set({ page: (s.page ?? 0) + 1 })}
+          disabled={((s.page ?? 0) + 1) * 24 >= (list.data?.total ?? 0)}
+          onClick={() => {
+            set({ page: (s.page ?? 0) + 1 });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         >
-          Siguiente
+          Siguiente →
         </Button>
       </div>
     </PageShell>
