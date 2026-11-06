@@ -8,6 +8,8 @@ const id = "33333333-3333-4333-8333-333333333333";
 beforeAll(async () => {
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.uid',true),'')::uuid $$;
+    CREATE FUNCTION public.is_staff(_user_id uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT current_setting('test.staff',true)='true' $$;
+    CREATE FUNCTION public.notify(_user uuid,_title text,_body text,_link text) RETURNS void LANGUAGE sql AS $$ SELECT $$;
     CREATE TABLE plans(id uuid PRIMARY KEY,name text,months int,audience text,max_active_auctions int,referral_pct numeric);
     CREATE TABLE subscriptions(id uuid PRIMARY KEY,user_id uuid,plan_id uuid,status text,starts_at timestamptz,ends_at timestamptz);
     CREATE TABLE profiles(id uuid PRIMARY KEY,display_name text,country text,city text,bio text,phone text,referral_code text,created_at timestamptz DEFAULT now(),account_status text DEFAULT 'active',referred_by uuid);
@@ -23,12 +25,12 @@ beforeAll(async () => {
     CREATE TABLE transactions(id uuid,auction_id uuid);
     ALTER TABLE auctions ADD COLUMN starting_price numeric,ADD COLUMN images text[],ADD COLUMN category_id uuid;
     INSERT INTO plans VALUES('${id}','Inicio',1,'seller',3,5);`);
-  for (const file of ["0031_profile_membership_benefits_and_push_recovery", "0032_owner_publication_projection", "0033_membership_calendar_windows_and_public_badges"])
+  for (const file of ["0031_profile_membership_benefits_and_push_recovery", "0032_owner_publication_projection", "0033_membership_calendar_windows_and_public_badges", "0034_membership_support_requests"])
     await db.exec(readFileSync(`drizzle/migrations/${file}.sql`, "utf8"));
 }, 30000);
 afterAll(() => db.close());
 beforeEach(async () => {
-  await db.exec(`TRUNCATE subscriptions,profiles,auctions,reviews; SELECT set_config('test.uid','${owner}',false);
+  await db.exec(`RESET ROLE; TRUNCATE support_requests,subscriptions,profiles,auctions,reviews; SELECT set_config('test.uid','${owner}',false); SELECT set_config('test.staff','false',false);
     INSERT INTO profiles(id,display_name,phone,referral_code) VALUES('${owner}','Owner','PRIVATE','PRIVATE');
     UPDATE plans SET featured_interval='none',profile_badge=null,max_active_auctions=3,referral_pct=5;
     INSERT INTO subscriptions VALUES('${id}','${owner}','${id}','active',now()-interval '1 hour',now()+interval '1 month');`);
@@ -71,4 +73,13 @@ it("own publication RPC includes own drafts but never other users' publications"
 it("only active auctions from eligible plans are featured", async () => {
   await db.exec(`UPDATE plans SET featured_interval='always'; INSERT INTO auctions(id,seller_id,status) VALUES('${id}','${owner}','active'),('${other}','${owner}','draft')`);
   expect((await db.query("SELECT * FROM featured_auction_ids()")).rows).toEqual([{featured_auction_ids:id}]);
+});
+it("support reads are owner-scoped and only staff can answer",async()=>{
+  await db.exec(`INSERT INTO profiles(id,display_name) VALUES('${other}','Other'); INSERT INTO support_requests(id,user_id,subject,body) VALUES('${id}','${owner}','Own issue','Details of issue'),('${other}','${other}','Other issue','Private details'); SET ROLE authenticated;`);
+  expect((await db.query("SELECT subject FROM support_requests")).rows).toEqual([{subject:"Own issue"}]);
+  await expect(db.query(`SELECT answer_support('${id}','Response')`)).rejects.toThrow("No autorizado");
+  await db.exec("SELECT set_config('test.staff','true',false)");
+  expect((await db.query("SELECT id FROM support_requests")).rows).toHaveLength(2);
+  await db.query(`SELECT answer_support('${id}','Confirmed response')`);
+  expect((await db.query(`SELECT response FROM support_requests WHERE id='${id}'`)).rows).toEqual([{response:"Confirmed response"}]);
 });
