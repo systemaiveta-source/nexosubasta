@@ -162,6 +162,13 @@
       "when": 1793932139703,
       "tag": "0022_auction_minutes_and_safe_transitions",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793932236189,
+      "tag": "0023_public_auction_clock_metadata",
+      "breakpoints": true
     }
   ]
 }

@@ -1457,6 +1457,7 @@ export type Database = {
           duration_hours: number | null
           duration_minutes: number | null
           ends_at: string | null
+          extension_pending: boolean | null
           extensions_count: number | null
           flagged: boolean | null
           has_reserve: boolean | null
@@ -1465,8 +1466,10 @@ export type Database = {
           leader_id: string | null
           min_increment: number | null
           original_ends_at: string | null
+          quiet_period_minutes: number | null
           quiet_period_seconds: number | null
           reserve_met: boolean | null
+          rules_version: number | null
           scope: string | null
           selection_pending: boolean | null
           seller_id: string | null
@@ -1496,6 +1499,7 @@ export type Database = {
           duration_hours?: number | null
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean | null
           extensions_count?: number | null
           flagged?: boolean | null
           has_reserve?: boolean | null
@@ -1504,8 +1508,10 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_minutes?: number | null
           quiet_period_seconds?: number | null
           reserve_met?: boolean | null
+          rules_version?: number | null
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
@@ -1535,6 +1541,7 @@ export type Database = {
           duration_hours?: number | null
           duration_minutes?: number | null
           ends_at?: string | null
+          extension_pending?: boolean | null
           extensions_count?: number | null
           flagged?: boolean | null
           has_reserve?: boolean | null
@@ -1543,8 +1550,10 @@ export type Database = {
           leader_id?: string | null
           min_increment?: number | null
           original_ends_at?: string | null
+          quiet_period_minutes?: number | null
           quiet_period_seconds?: number | null
           reserve_met?: boolean | null
+          rules_version?: number | null
           scope?: string | null
           selection_pending?: boolean | null
           seller_id?: string | null
