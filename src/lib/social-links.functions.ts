@@ -6,8 +6,8 @@ import { socialLinkSchema } from "./social-links";
 import { z } from "zod";
 export const listPublicSocialLinks = createServerFn({ method: "GET" }).handler(async () => {
   const key =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  const url = process.env["SUPABASE_URL"] ?? import.meta.env.VITE_SUPABASE_URL;
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  const url = process.env["SUPABASE_URL"] ?? import.meta.env["VITE_SUPABASE_URL"];
   if (!key || !url) {
     console.error("social links: missing backend configuration");
     return [];
