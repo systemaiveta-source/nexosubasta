@@ -313,14 +313,13 @@ describe("actual PostgreSQL product transitions", () => {
   it("flash v5 every valid bid resets the full quiet clock", async () => {
     await fixture("flash", 1, 5);
     await bid();
-    const first = await row();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await db.exec("UPDATE auctions SET ends_at=clock_timestamp()+interval '30 seconds'");
     await bid();
-    const last = await row();
-    expect(Number(new Date(String(last.ends_at)))).toBeGreaterThan(
-      Number(new Date(String(first.ends_at))),
-    );
-    expect(last.closing_phase).toBe("quiet");
+    const a = await row();
+    const ms = Number(new Date(String(a.ends_at))) - Date.now();
+    expect(ms).toBeGreaterThan(290000);
+    expect(ms).toBeLessThanOrEqual(300000);
+    expect(a.closing_phase).toBe("quiet");
   });
   it("flash v5 without bids closes unsold, never creates an operation", async () => {
     await fixture("flash", 1, 5);
