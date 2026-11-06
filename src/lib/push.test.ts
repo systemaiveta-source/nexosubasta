@@ -53,6 +53,7 @@ describe("push contextual seguro", () => {
         vapidKey: "B".repeat(87),
       }),
     ).rejects.toThrow("bloqueadas");
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
     expect(worker).not.toHaveBeenCalled();
   });
   it("bloquea destinos arbitrarios y permite servicios push de navegadores", () => {
@@ -61,5 +62,32 @@ describe("push contextual seguro", () => {
     expect(allowedPushEndpoint("http://127.0.0.1/private")).toBe(false);
     expect(allowedPushEndpoint("https://fcm.googleapis.com.evil.test/device")).toBe(false);
     expect(allowedPushEndpoint("https://user:secret@fcm.googleapis.com/device")).toBe(false);
+  });
+  it("granted auto-registers without prompting and reuses existing subscription", async () => {
+    const frame = {};
+    const json = { endpoint: "https://web.push.apple.com/device" };
+    const subscribe = vi.fn();
+    const existing = { toJSON: () => json };
+    const registration = { pushManager: { getSubscription: vi.fn().mockResolvedValue(existing), subscribe } };
+    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
+    vi.stubGlobal("navigator", { serviceWorker: { register: vi.fn().mockResolvedValue(registration), ready: Promise.resolve(registration) } });
+    vi.stubGlobal("Notification", { permission: "granted", requestPermission: vi.fn() });
+    expect(await registerPush({ vapidKey: "B".repeat(87) })).toEqual(json);
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+  it("default permission uses native prompt before worker subscription", async () => {
+    const frame = {};
+    const worker = vi.fn();
+    const request = vi.fn().mockImplementation(() => {
+      expect(worker).not.toHaveBeenCalled();
+      return Promise.resolve("default");
+    });
+    vi.stubGlobal("window", { isSecureContext: true, Notification: {}, top: frame, self: frame });
+    vi.stubGlobal("navigator", { serviceWorker: { register: worker } });
+    vi.stubGlobal("Notification", { permission: "default", requestPermission: request });
+    await expect(registerPush({ vapidKey: "B".repeat(87) })).rejects.toThrow();
+    expect(request).toHaveBeenCalledOnce();
+    expect(worker).not.toHaveBeenCalled();
   });
 });

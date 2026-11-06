@@ -44,7 +44,7 @@ export const deleteReadNotifications = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((value: { id?: string }) => z.object({ id: z.string().uuid().optional() }).parse(value))
   .handler(async ({ data, context }) => {
-    const result = await context.supabase.rpc("delete_read_notifications", { _id: data.id });
+    const result = await context.supabase.rpc("delete_read_notifications", data.id ? { _id: data.id } : {});
     if (result.error) throw new Error("No se pudieron borrar las notificaciones leídas");
     return { removed: result.data };
   });
