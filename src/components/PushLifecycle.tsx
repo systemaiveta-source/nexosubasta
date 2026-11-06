@@ -11,6 +11,7 @@ import { toast } from "sonner";
 /** One mounted lifecycle: passive synchronization never invokes a permission prompt. */
 export function PushLifecycle() {
   const { user } = useAuth();
+  const userId = user?.id;
   const path = useRouterState({ select: (s) => s.location.pathname });
   const qc = useQueryClient();
   const fetchSettings = useServerFn(getPushSettings);
@@ -33,7 +34,7 @@ export function PushLifecycle() {
   }, [user?.id]);
   useEffect(() => {
     if (
-      !user ||
+      !userId ||
       !query.data?.configured ||
       !("Notification" in window) ||
       !("PushManager" in window) ||
@@ -41,7 +42,7 @@ export function PushLifecycle() {
       window.top !== window.self
     )
       return;
-    const account = user.id;
+    const account = userId;
     const endpointKey = `nexo-push-endpoint:${account}`;
     const promptKey = "nexo-push-context-seen";
     if (
@@ -100,7 +101,7 @@ export function PushLifecycle() {
       document.removeEventListener("visibilitychange", visibility);
       permissionStatus?.removeEventListener("change", sync);
     };
-  }, [user?.id, query.data, path, disable, register]);
+  }, [userId, query.data, path, disable, register]);
   async function allow() {
     if (!query.data || !user || busy) return;
     setBusy(true);
