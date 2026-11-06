@@ -1450,6 +1450,7 @@ export type Database = {
           category_id: string | null
           city: string | null
           closing_mode: string | null
+          closing_phase: string | null
           country: string | null
           created_at: string | null
           currency: string | null
@@ -1492,6 +1493,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string | null
+          closing_phase?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null
@@ -1534,6 +1536,7 @@ export type Database = {
           category_id?: string | null
           city?: string | null
           closing_mode?: string | null
+          closing_phase?: string | null
           country?: string | null
           created_at?: string | null
           currency?: string | null

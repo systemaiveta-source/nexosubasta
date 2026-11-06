@@ -183,6 +183,13 @@
       "when": 1793935161885,
       "tag": "0025_independent_product_modalities",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793935196990,
+      "tag": "0026_expose_public_mode_phase",
+      "breakpoints": true
     }
   ]
 }
