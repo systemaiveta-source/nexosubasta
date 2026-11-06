@@ -176,6 +176,13 @@
       "when": 1793932843994,
       "tag": "0024_restore_safe_catalog_read_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793935161885,
+      "tag": "0025_independent_product_modalities",
+      "breakpoints": true
     }
   ]
 }
