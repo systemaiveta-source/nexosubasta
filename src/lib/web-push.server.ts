@@ -49,20 +49,20 @@ export async function deliverWebPushBatch() {
         console.error(`Web Push rejected [${response.status}]`);
         await supabaseAdmin
           .from("notification_push_outbox")
-          .update({ status: "failed" })
+          .update({ status: "failed", last_error: `http ${response.status}` })
           .eq("id", item.queue_id);
         continue;
       }
       const recorded = await supabaseAdmin
         .from("notification_push_outbox")
-        .update({ status: "sent" })
+        .update({ status: "sent", last_error: null })
         .eq("id", item.queue_id);
       if (recorded.error) throw new Error("No se pudo registrar la entrega");
       sent++;
     } catch {
       await supabaseAdmin
         .from("notification_push_outbox")
-        .update({ status: "failed" })
+        .update({ status: "failed", last_error: "send error" })
         .eq("id", item.queue_id);
     }
   }
