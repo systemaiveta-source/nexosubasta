@@ -161,7 +161,6 @@ function Profile() {
     <PageShell title="Mi perfil" actions={user && <Link to="/usuarios/$id" params={{id: user.id}} className="text-sm underline">Ver perfil público</Link>}>
       <MyPublications publications={publications} />
       {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
-      {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={box}>
           <h2 className="font-display text-lg font-bold">Datos</h2>
