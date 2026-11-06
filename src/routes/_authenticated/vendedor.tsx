@@ -579,7 +579,7 @@ function Seller() {
               {f.closing_mode === "fixed"
                 ? "El tiempo comienza con la primera puja válida y no se amplía. Sin ofertas, finaliza a los 8 días."
                 : f.closing_mode === "flash"
-                  ? "Sin reserva ni precio esperado. La primera puja inicia 7 días de ofertas; luego cada puja reinicia la prórroga elegida. Sin primera puja, finaliza a los 7 días desde publicación. Sin extensión manual."
+                  ? "Sin reserva ni precio esperado. La primera puja válida inicia la prórroga elegida y cada nueva puja la reinicia completa; al vencer sin otra puja, gana la mejor oferta. Sin ofertas, finaliza a los 7 días desde publicación. Sin extensión manual."
                   : "Al alcanzar la reserva, cada puja reinicia la prórroga completa. Sin reserva, comienza con la primera puja. Si la reserva no se alcanza al límite inicial de 7 días, podrás extender una sola vez otros 7 días o finalizar."}
               {f.closing_mode !== "flash" &&
                 (f.reserve

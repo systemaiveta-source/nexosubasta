@@ -39,7 +39,6 @@ export function firstBidDeadline(now: number, durationHours: number) {
 export function reserveDeadline(cap: number, now: number, eligible: boolean, minutes: number) {
   return eligible ? now + minutes * 60000 : cap;
 }
-export function flashDeadline(cap: number, now: number, first: boolean, minutes: number) {
-  if (first) return now + 7 * 86400000;
-  return now >= cap ? now + minutes * 60000 : cap;
+export function flashDeadline(now: number, minutes: number) {
+  return now + minutes * 60000;
 }

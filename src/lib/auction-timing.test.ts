@@ -65,25 +65,25 @@ describe("plazos de productos", () => {
   it("flash sin pujas finaliza en siete días desde publicación", () => {
     expect(noBidDeadline(123000, "flash")).toBe(123000 + 7 * 86400000);
   });
-  it("flash primera puja inicia siete días completos sin prórroga anticipada", () => {
-    const end = flashDeadline(7 * 86400000, 60000, true, 10);
-    expect(end).toBe(60000 + 7 * 86400000);
-    expect(flashDeadline(end, end - 1, false, 10)).toBe(end);
+  it.each(QUIET_MINUTES)("flash primera puja inicia la prórroga de %i minutos", (m) => {
+    expect(flashDeadline(60000, m)).toBe(60000 + m * 60000);
   });
-  it.each(QUIET_MINUTES)("flash reinicia %i minutos solo al terminar fase de pujas", (m) => {
-    const cap = 7 * 86400000;
-    expect(flashDeadline(cap, cap, false, m)).toBe(cap + m * 60000);
-    expect(flashDeadline(cap, cap + 1000, false, m)).toBe(cap + 1000 + m * 60000);
+  it("flash reinicia el reloj completo con cada puja válida", () => {
+    const first = flashDeadline(60000, 10);
+    const later = flashDeadline(120000, 10);
+    expect(first).toBe(660000);
+    expect(later).toBe(720000);
+    expect(later).toBeGreaterThan(first);
   });
   it("modalidades simultáneas no modifican el reloj de otra", () => {
     const fixed = firstBidDeadline(1000, 24);
     const reserve = reserveDeadline(7 * 86400000, 2000, true, 5);
-    const flash = flashDeadline(7 * 86400000, 3000, true, 30);
+    const flash = flashDeadline(3000, 30);
     expect(fixed).toBe(86401000);
     expect(reserve).toBe(302000);
-    expect(flash).toBe(604803000);
+    expect(flash).toBe(1803000);
     reserveDeadline(7 * 86400000, 4000, true, 30);
     expect(fixed).toBe(86401000);
-    expect(flash).toBe(604803000);
+    expect(flash).toBe(1803000);
   });
 });
