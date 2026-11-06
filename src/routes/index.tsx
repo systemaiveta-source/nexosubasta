@@ -10,7 +10,7 @@ import { SocialLinks } from "@/components/SocialLinks";
 
 const socialQuery = queryOptions({
   queryKey: ["public-social-links"],
-  queryFn: () => listPublicSocialLinks(),
+  queryFn: () => listPublicSocialLinks().catch(() => []),
   staleTime: 60000,
 });
 
