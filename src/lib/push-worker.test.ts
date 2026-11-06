@@ -7,7 +7,7 @@ it("background worker shows notification and public thumbnail without an open cl
   const show = vi.fn().mockResolvedValue(undefined);
   runInNewContext(readFileSync("public/nexo-push-sw.js","utf8"), {URL,self:{location:{origin:"https://www.nexosubastas.com"},registration:{showNotification:show},addEventListener:(name:string,handler:(event:unknown)=>void)=>handlers[name]=handler}});
   let done: Promise<unknown> = Promise.resolve();
-  handlers.push?.({data:{json:()=>({title:"NEXO",body:"Mensaje",path:"/operaciones/11111111-1111-4111-8111-111111111111",image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura"})},waitUntil:(p:Promise<unknown>)=>done=p});
+  handlers["push"]?.({data:{json:()=>({title:"NEXO",body:"Mensaje",path:"/operaciones/11111111-1111-4111-8111-111111111111",image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura"})},waitUntil:(p:Promise<unknown>)=>done=p});
   await done;
   expect(show).toHaveBeenCalledWith("NEXO",expect.objectContaining({image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura",icon:"/icons/icon-192.png"}));
 });

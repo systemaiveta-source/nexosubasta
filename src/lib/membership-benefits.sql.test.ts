@@ -36,15 +36,15 @@ beforeEach(async () => {
 const benefits = async () => (await db.query<{b: Record<string,unknown>}>(`SELECT membership_benefits('${owner}') AS b`)).rows[0]?.b;
 it("monthly advertising lasts 24 hours, not 25", async () => {
   await db.exec("UPDATE plans SET featured_interval='monthly'; UPDATE subscriptions SET starts_at=now()-interval '1 month'-interval '23 hours'");
-  expect((await benefits())?.featured).toBe(true);
+  expect((await benefits())?.["featured"]).toBe(true);
   await db.exec("UPDATE subscriptions SET starts_at=now()-interval '1 month'-interval '25 hours'");
-  expect((await benefits())?.featured).toBe(false);
+  expect((await benefits())?.["featured"]).toBe(false);
 });
 it("weekly advertising lasts 24 hours and repeats after 7 days", async () => {
   await db.exec("UPDATE plans SET featured_interval='weekly'; UPDATE subscriptions SET starts_at=now()-interval '7 days'-interval '23 hours'");
-  expect((await benefits())?.featured).toBe(true);
+  expect((await benefits())?.["featured"]).toBe(true);
   await db.exec("UPDATE subscriptions SET starts_at=now()-interval '7 days'-interval '25 hours'");
-  expect((await benefits())?.featured).toBe(false);
+  expect((await benefits())?.["featured"]).toBe(false);
 });
 it("elite is permanently featured only during an effective subscription", async () => {
   await db.exec("UPDATE plans SET featured_interval='always',profile_badge='Élite',max_active_auctions=null,referral_pct=20,priority_support=true");
@@ -59,7 +59,7 @@ it("public profile never exposes contact, referral code or subscription dates", 
   expect(result.rows[0]?.p).toHaveProperty("display_name","Owner");
   expect(result.rows[0]?.p).not.toHaveProperty("phone");
   expect(result.rows[0]?.p).not.toHaveProperty("referral_code");
-  expect(result.rows[0]?.p.membership).toEqual({badge:null});
+  expect(result.rows[0]?.p["membership"]).toEqual({badge:null});
 });
 it("own publication RPC includes own drafts but never other users' publications", async () => {
   await db.exec(`INSERT INTO auctions(id,seller_id,title,status) VALUES('${id}','${owner}','Own draft','draft'),('${other}','${other}','Foreign','active')`);
