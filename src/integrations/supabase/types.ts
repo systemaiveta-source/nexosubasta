@@ -666,6 +666,7 @@ export type Database = {
           activity: boolean
           categories: string[]
           new_auctions: boolean
+          push_consent_initialized: boolean
           updated_at: string
           user_id: string
         }
@@ -673,6 +674,7 @@ export type Database = {
           activity?: boolean
           categories?: string[]
           new_auctions?: boolean
+          push_consent_initialized?: boolean
           updated_at?: string
           user_id: string
         }
@@ -680,6 +682,7 @@ export type Database = {
           activity?: boolean
           categories?: string[]
           new_auctions?: boolean
+          push_consent_initialized?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -752,6 +755,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          event_kind: string
           id: string
           link: string | null
           read: boolean
@@ -761,6 +765,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          event_kind?: string
           id?: string
           link?: string | null
           read?: boolean
@@ -770,6 +775,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          event_kind?: string
           id?: string
           link?: string | null
           read?: boolean
@@ -1747,6 +1753,7 @@ export type Database = {
       }
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
+      delete_read_notifications: { Args: { _id?: string }; Returns: number }
       extend_reserve_auction: { Args: { _auction: string }; Returns: string }
       finish_reserve_auction: { Args: { _auction: string }; Returns: undefined }
       fixed_product_clock: {
