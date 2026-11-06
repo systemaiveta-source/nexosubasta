@@ -97,7 +97,7 @@ function Catalog() {
       return { items: items.sort((a,b) => Number(b.featured) - Number(a.featured)), total: count ?? 0 };
     },
   });
-  const imgs = useImageUrls(list.data?.map((a) => a.images[0]).filter((x): x is string => !!x));
+  const imgs = useImageUrls(list.data?.items.map((a) => a.images[0]).filter((x): x is string => !!x));
   const promoted = useQuery({queryKey:["featured-auctions"],refetchInterval:60000,queryFn:async()=>{
     const ids=await supabase.rpc("featured_auction_ids");
     if(ids.error) throw ids.error;
@@ -211,9 +211,9 @@ function Catalog() {
         </div>
       ) : list.error ? (
         <Empty>No se pudo cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.</Empty>
-      ) : list.data?.length ? (
+      ) : list.data?.items.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {list.data.map((a) => (
+          {list.data.items.map((a) => (
             <AuctionCard
               key={a.id}
               a={a}
@@ -229,17 +229,26 @@ function Catalog() {
         <Button
           variant="outline"
           disabled={!s.page}
-          onClick={() => set({ page: (s.page ?? 0) - 1 })}
+          onClick={() => {
+            set({ page: (s.page ?? 0) - 1 });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         >
-          Anterior
+          ← Anterior
         </Button>
-        <span className="text-sm">Página {(s.page ?? 0) + 1}</span>
+        <span className="text-sm">
+          Página {(s.page ?? 0) + 1} de {Math.max(1, Math.ceil((list.data?.total ?? 0) / 24))} ·{" "}
+          {list.data?.total ?? 0} resultados
+        </span>
         <Button
           variant="outline"
-          disabled={(list.data?.length ?? 0) < 24}
-          onClick={() => set({ page: (s.page ?? 0) + 1 })}
+          disabled={((s.page ?? 0) + 1) * 24 >= (list.data?.total ?? 0)}
+          onClick={() => {
+            set({ page: (s.page ?? 0) + 1 });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         >
-          Siguiente
+          Siguiente →
         </Button>
       </div>
     </PageShell>
