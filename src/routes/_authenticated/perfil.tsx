@@ -369,7 +369,7 @@ function MyPublications({
     isPending: boolean;
     error: unknown;
     refetch: () => void;
-    data?: Publication[];
+    data?: Publication[] | undefined;
   };
 }) {
   const qc = useQueryClient();
