@@ -5,9 +5,13 @@ import type { Database } from "@/integrations/supabase/types";
 import { socialLinkSchema } from "./social-links";
 import { z } from "zod";
 export const listPublicSocialLinks = createServerFn({ method: "GET" }).handler(async () => {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  const url = process.env["SUPABASE_URL"];
-  if (!key || !url) throw new Error("No se pudieron cargar las redes de NEXO");
+  const key =
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env["SUPABASE_URL"] ?? import.meta.env.VITE_SUPABASE_URL;
+  if (!key || !url) {
+    console.error("social links: missing backend configuration");
+    return [];
+  }
   const client = createClient<Database>(url, key, {
     auth: { persistSession: false },
     global: {
@@ -26,8 +30,11 @@ export const listPublicSocialLinks = createServerFn({ method: "GET" }).handler(a
     .eq("active", true)
     .order("sort")
     .order("id");
-  if (result.error) throw new Error("No se pudieron cargar las redes de NEXO");
-  return result.data;
+  if (result.error) {
+    console.error("social links:", result.error.message);
+    return [];
+  }
+  return result.data ?? [];
 });
 export const listAdminSocialLinks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
