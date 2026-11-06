@@ -239,6 +239,13 @@
       "when": 1793945021747,
       "tag": "0033_membership_calendar_windows_and_public_badges",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793945123934,
+      "tag": "0034_membership_support_requests",
+      "breakpoints": true
     }
   ]
 }

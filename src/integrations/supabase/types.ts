@@ -1316,6 +1316,47 @@ export type Database = {
           },
         ]
       }
+      support_requests: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          response: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           agreed_method: string | null
@@ -1666,6 +1707,10 @@ export type Database = {
       }
       advance_operation: {
         Args: { _method?: string; _stage: string; _tx: string }
+        Returns: undefined
+      }
+      answer_support: {
+        Args: { _id: string; _response: string }
         Returns: undefined
       }
       apply_referral_commission: {
