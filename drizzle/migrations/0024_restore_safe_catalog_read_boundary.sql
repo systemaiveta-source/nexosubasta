@@ -1,0 +1,2 @@
+ALTER VIEW public.auctions_safe SET (security_invoker=false, security_barrier=true);
+COMMENT ON VIEW public.auctions_safe IS 'Controlled public projection with explicit owner/staff draft filtering. Uses view owner access because starting_price is deliberately revoked on the base table to protect legacy service budgets. Never grant base starting_price to anon/authenticated; reserve/expected remain in auction_private.';
