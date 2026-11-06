@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bidDeadline, auctionTimingSchema, firstBidDeadline, PRODUCT_DURATIONS } from "./auction-timing";
+import {
+  bidDeadline,
+  auctionTimingSchema,
+  firstBidDeadline,
+  PRODUCT_DURATIONS,
+} from "./auction-timing";
 describe("plazos de productos", () => {
   it("tiempo fijo no se extiende ni en el último instante", () => {
     expect(bidDeadline("fixed", 100000, 40000, false, 5)).toBe(100000);

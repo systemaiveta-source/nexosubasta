@@ -27,10 +27,7 @@ export const saveExtendedDraft = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const timing = auctionTimingSchema.parse(data.auction);
-    if (
-      timing.closing_mode === "reserve" &&
-      data.auction["auction_type"] !== "item"
-    )
+    if (timing.closing_mode === "reserve" && data.auction["auction_type"] !== "item")
       throw new Error("El cierre por inactividad solo corresponde a productos");
     if (data.auction["auction_type"] === "item" && !data.delivery)
       throw new Error("Elige modalidad de entrega");

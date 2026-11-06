@@ -449,7 +449,8 @@ function AuctionPage() {
             )}
             {a.closing_mode === "reserve" && (
               <p className="mt-2 text-sm text-muted-foreground">
-                Cierre por objetivos · período sin nuevas pujas: {a.quiet_period_seconds} segundos.
+                Cierre por objetivos · período sin nuevas pujas:{" "}
+                {Math.ceil(Number(a.quiet_period_seconds) / 60)} minutos.
               </p>
             )}
 
