@@ -419,21 +419,30 @@ function AuctionPage() {
                   <Clock className="h-4 w-4" />
                   {a.status === "scheduled"
                     ? "Empieza en"
-                    : a.closing_mode === "flash" && a.closing_phase === "bidding"
-                      ? "Prórroga comienza en"
-                      : a.bid_count === 0
-                        ? "Sin ofertas, finaliza en"
-                        : "Termina en"}
+                    : a.bid_count === 0 && !ended
+                      ? "Sin ofertas"
+                      : "Termina en"}
                 </p>
-                <p
-                  className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
-                >
-                  {a.status === "scheduled"
-                    ? timeLeft(a.starts_at, now)
-                    : ended
-                      ? "Finalizada"
-                      : timeLeft(a.ends_at, now)}
-                </p>
+                {a.status === "active" && a.bid_count === 0 ? (
+                  <>
+                    <p className="font-display text-lg font-bold">
+                      La cuenta regresiva inicia con la 1.ª puja
+                    </p>
+                    <p className="text-xs tabular-nums text-muted-foreground">
+                      Sin ofertas, finaliza en {timeLeft(a.ends_at, now)}
+                    </p>
+                  </>
+                ) : (
+                  <p
+                    className={`font-display text-xl font-bold tabular-nums ${msLeft < 60000 && a.status === "active" ? "text-nexo-red" : ""}`}
+                  >
+                    {a.status === "scheduled"
+                      ? timeLeft(a.starts_at, now)
+                      : ended
+                        ? "Finalizada"
+                        : timeLeft(a.ends_at, now)}
+                  </p>
+                )}
               </div>
             </div>
             {a.has_reserve && (
