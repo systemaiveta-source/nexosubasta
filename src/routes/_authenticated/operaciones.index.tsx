@@ -6,6 +6,7 @@ import { money, txStatusLabel } from "@/lib/format";
 import { operationStages } from "@/lib/operations";
 const options = queryOptions({ queryKey: ["operations"], queryFn: () => listOperations() });
 export const Route = createFileRoute("/_authenticated/operaciones/")({
+  staticData: { sitemap: false },
   loader: ({ context }) => context.queryClient.ensureQueryData(options),
   head: () => ({
     meta: [

@@ -23,6 +23,7 @@ const options = (id: string) =>
     refetchInterval: 5000,
   });
 export const Route = createFileRoute("/_authenticated/operaciones/$id")({
+  staticData: { sitemap: false },
   loader: ({ context, params }) => context.queryClient.ensureQueryData(options(params.id)),
   head: () => ({
     meta: [

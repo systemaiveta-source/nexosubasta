@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell, Empty } from "@/components/SiteLayout";
 
 export const Route = createFileRoute("/usuarios/$id")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Perfil de usuario — NEXO" },

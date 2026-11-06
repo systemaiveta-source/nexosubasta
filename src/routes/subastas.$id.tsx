@@ -23,6 +23,7 @@ import { auctionShareHead } from "@/lib/auction-share";
 import { modeLabel } from "@/lib/auction-timing";
 
 export const Route = createFileRoute("/subastas/$id")({
+  staticData: { sitemap: true },
   loader: ({ params }) => getAuctionShare({ data: { id: params.id } }),
   head: ({ params, loaderData }) => auctionShareHead(params.id, loaderData ?? null),
   component: AuctionPage,

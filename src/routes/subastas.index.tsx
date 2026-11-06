@@ -27,6 +27,7 @@ const search = z.object({
 });
 
 export const Route = createFileRoute("/subastas/")({
+  staticData: { sitemap: true },
   validateSearch: search,
   head: () => ({
     meta: [

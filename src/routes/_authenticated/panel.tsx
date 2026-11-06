@@ -9,6 +9,7 @@ const options = queryOptions({
   refetchInterval: 15000,
 });
 export const Route = createFileRoute("/_authenticated/panel")({
+  staticData: { sitemap: false },
   loader: ({ context }) => context.queryClient.ensureQueryData(options),
   head: () => ({
     meta: [

@@ -12,6 +12,7 @@ import { money, errMsg } from "@/lib/format";
 import { CatalogSelect } from "@/components/CatalogSelect";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Mi perfil, saldo y referidos — NEXO" },

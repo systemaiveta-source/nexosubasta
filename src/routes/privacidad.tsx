@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/SiteLayout";
 
 export const Route = createFileRoute("/privacidad")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Política de privacidad — NEXO" },

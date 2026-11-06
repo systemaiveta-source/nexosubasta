@@ -16,6 +16,7 @@ import { claimStoredRef, rememberRef, storedRef } from "@/lib/referral";
 const search = z.object({ redirect: z.string().optional(), ref: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   validateSearch: search,
   head: () => ({
     meta: [

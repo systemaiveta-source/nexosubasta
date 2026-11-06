@@ -6,6 +6,7 @@ import { useInstall } from "@/lib/install";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/instalar")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Instalar NEXO en tu dispositivo" },

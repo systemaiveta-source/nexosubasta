@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/SiteLayout";
 
 export const Route = createFileRoute("/condiciones")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Condiciones de uso — NEXO" },

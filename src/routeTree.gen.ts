@@ -19,6 +19,7 @@ import { Route as NormasRouteImport } from './routes/normas'
 import { Route as PlanesRouteImport } from './routes/planes'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedNotificacionesRouteImport } from './routes/_authenticated/notificaciones'
 import { Route as AuthenticatedPanelRouteImport } from './routes/_authenticated/panel'
@@ -79,6 +80,11 @@ const PrivacidadRoute = PrivacidadRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
   '/panel': typeof AuthenticatedPanelRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/notificaciones': typeof AuthenticatedNotificacionesRoute
   '/panel': typeof AuthenticatedPanelRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/planes': typeof PlanesRoute
   '/privacidad': typeof PrivacidadRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/notificaciones': typeof AuthenticatedNotificacionesRoute
   '/_authenticated/panel': typeof AuthenticatedPanelRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/admin'
     | '/notificaciones'
     | '/panel'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/admin'
     | '/notificaciones'
     | '/panel'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/planes'
     | '/privacidad'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/notificaciones'
     | '/_authenticated/panel'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   PlanesRoute: typeof PlanesRoute
   PrivacidadRoute: typeof PrivacidadRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubastasIdRoute: typeof SubastasIdRoute
   UsuariosIdRoute: typeof UsuariosIdRoute
   SubastasIndexRoute: typeof SubastasIndexRoute
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -501,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanesRoute: PlanesRoute,
   PrivacidadRoute: PrivacidadRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubastasIdRoute: SubastasIdRoute,
   UsuariosIdRoute: UsuariosIdRoute,
   SubastasIndexRoute: SubastasIndexRoute,

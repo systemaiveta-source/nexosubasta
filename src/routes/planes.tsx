@@ -14,6 +14,7 @@ import { QueryFailure } from "@/components/ManualPaymentShared";
 import { money } from "@/lib/format";
 
 export const Route = createFileRoute("/planes")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Membresías NEXO — Inicio, Impulso, Pro y Élite" },
