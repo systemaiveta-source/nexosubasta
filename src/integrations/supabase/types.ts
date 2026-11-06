@@ -1814,6 +1814,10 @@ export type Database = {
       close_if_due: { Args: { _auction_id: string }; Returns: undefined }
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
       delete_read_notifications: { Args: { _id?: string }; Returns: number }
+      delete_unsold_auction: {
+        Args: { _auction_id: string }
+        Returns: undefined
+      }
       extend_reserve_auction: { Args: { _auction: string }; Returns: string }
       featured_auction_ids: { Args: never; Returns: string[] }
       finish_reserve_auction: { Args: { _auction: string }; Returns: undefined }
