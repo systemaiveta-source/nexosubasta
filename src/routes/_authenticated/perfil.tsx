@@ -12,6 +12,7 @@ import { money, errMsg } from "@/lib/format";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { getMyMembership, listMyPublications } from "@/lib/profiles.functions";
+import { MembershipSupport } from "@/components/MembershipSupport";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   staticData: { sitemap: false },
@@ -352,6 +353,7 @@ function Profile() {
           )}
         </section>
       </div>
+      <MembershipSupport />
     </PageShell>
   );
 }
