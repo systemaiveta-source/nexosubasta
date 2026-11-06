@@ -29,9 +29,9 @@ export const saveExtendedDraft = createServerFn({ method: "POST" })
     const timing = auctionTimingSchema.parse(data.auction);
     if (
       timing.closing_mode === "reserve" &&
-      (data.auction["auction_type"] !== "item" || !(Number(data.private["reserve_price"]) > 0))
+      data.auction["auction_type"] !== "item"
     )
-      throw new Error("La modalidad por objetivos exige reserva privada de producto");
+      throw new Error("El cierre por inactividad solo corresponde a productos");
     if (data.auction["auction_type"] === "item" && !data.delivery)
       throw new Error("Elige modalidad de entrega");
     if (data.auction["auction_type"] === "service" && !data.request)

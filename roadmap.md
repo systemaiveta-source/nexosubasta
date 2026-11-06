@@ -1,5 +1,5 @@
 # NEXO roadmap
-- [ ] 4 nov · Prioridad actual: motor v2 (inicio primera oferta, espera 7/15/30, fijo sin extensión, inactividad minutos y decisión 7+7), republicación sin ganador; conservar historial/reglas legacy en publicaciones ya existentes.
+- [ ] 6 nov · Documento de Esther: Cloud disponible; 0020/0021 verificadas por columnas y funciones reales. Prioridad: corregir minutos, primera puja sin extensión, decisión 7+7 y republicación; conservar publicaciones legacy. Continuar después con pagos privados, avisos y catálogo del documento adjunto, sin publicar.
 - [ ] 4 nov · Operaciones: datos de pago privados y comprobante con aprobación/rechazo; consentimiento push simplificado, entrega/reintentos verificables; promoción por plan, reputación, catálogo admin y fotos privadas. No publicar ni usar actividad ficticia.
 - [x] 2 nov · Seguridad: 5 hallazgos graves corregidos (teléfonos de perfiles, documentos de membresía ajenos, imágenes de borradores, ajustes de plataforma, extensiones de borradores); verificado como visitante anónimo y por permisos de rol; escaneo sin hallazgos activos.
 - [x] 2 nov · Referidos: comisión = importe pagado por el referido × % del plan vigente del patrocinador, una sola vez por suscripción; regalos de admin excluidos; función no invocable por clientes.
