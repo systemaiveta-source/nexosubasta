@@ -698,31 +698,37 @@ export type Database = {
       }
       notification_push_outbox: {
         Row: {
+          attempts: number
           claimed_at: string | null
           created_at: string
           device_id: string
           id: string
           last_error: string | null
+          next_attempt_at: string
           notification_id: string
           status: string
           user_id: string
         }
         Insert: {
+          attempts?: number
           claimed_at?: string | null
           created_at?: string
           device_id: string
           id?: string
           last_error?: string | null
+          next_attempt_at?: string
           notification_id: string
           status?: string
           user_id: string
         }
         Update: {
+          attempts?: number
           claimed_at?: string | null
           created_at?: string
           device_id?: string
           id?: string
           last_error?: string | null
+          next_attempt_at?: string
           notification_id?: string
           status?: string
           user_id?: string
@@ -859,12 +865,15 @@ export type Database = {
           benefits: string[]
           created_at: string
           currency: string
+          featured_interval: string
           id: string
           max_active_auctions: number | null
           months: number
           name: string
           period: string
           price: number | null
+          priority_support: boolean
+          profile_badge: string | null
           referral_pct: number
         }
         Insert: {
@@ -873,12 +882,15 @@ export type Database = {
           benefits?: string[]
           created_at?: string
           currency?: string
+          featured_interval?: string
           id?: string
           max_active_auctions?: number | null
           months?: number
           name: string
           period?: string
           price?: number | null
+          priority_support?: boolean
+          profile_badge?: string | null
           referral_pct?: number
         }
         Update: {
@@ -887,12 +899,15 @@ export type Database = {
           benefits?: string[]
           created_at?: string
           currency?: string
+          featured_interval?: string
           id?: string
           max_active_auctions?: number | null
           months?: number
           name?: string
           period?: string
           price?: number | null
+          priority_support?: boolean
+          profile_badge?: string | null
           referral_pct?: number
         }
         Relationships: []
@@ -1755,6 +1770,7 @@ export type Database = {
       confirm_transaction: { Args: { _tx: string }; Returns: undefined }
       delete_read_notifications: { Args: { _id?: string }; Returns: number }
       extend_reserve_auction: { Args: { _auction: string }; Returns: string }
+      featured_auction_ids: { Args: never; Returns: string[] }
       finish_reserve_auction: { Args: { _auction: string }; Returns: undefined }
       fixed_product_clock: {
         Args: { _end: string; _first: boolean; _hours: number; _now: string }
@@ -1779,6 +1795,7 @@ export type Database = {
         Args: { _comment: string; _rating: number; _tx: string }
         Returns: undefined
       }
+      membership_benefits: { Args: { _user: string }; Returns: Json }
       my_auction_draft: { Args: { _id: string }; Returns: Json }
       my_profile: {
         Args: never
@@ -1836,6 +1853,7 @@ export type Database = {
         Returns: Json
       }
       process_auctions: { Args: never; Returns: number }
+      public_user_profile: { Args: { _user: string }; Returns: Json }
       publish_auction: {
         Args: { _auction_id: string }
         Returns: {
