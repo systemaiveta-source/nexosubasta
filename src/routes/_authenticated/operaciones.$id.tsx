@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,6 +188,9 @@ function Operation() {
               {d.resolution && <p>{d.resolution}</p>}
             </div>
           ))}
+          {isParty && t.status === "completed" && (
+            <ReviewSection txId={id} userId={data.userId} />
+          )}
           <h2 className="font-semibold">Historial de estados</h2>
           <ul className="space-y-2 text-sm">
             {data.events.map((e) => (
