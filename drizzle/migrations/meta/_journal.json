@@ -232,6 +232,13 @@
       "when": 1793944924373,
       "tag": "0032_owner_publication_projection",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793945021747,
+      "tag": "0033_membership_calendar_windows_and_public_badges",
+      "breakpoints": true
     }
   ]
 }
