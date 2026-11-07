@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { CATALOG_BATCH_SIZE, uniqueAuctions, nextCatalogOffset } from "@/lib/catalog-feed";
 import { z } from "zod";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,15 +66,18 @@ function Catalog() {
       ).data ?? [],
   });
 
-  const list = useQuery({
-    queryKey: ["catalog", s],
-    queryFn: async () => {
+  const { page: _page, ...filters } = s;
+  const list = useInfiniteQuery({
+    queryKey: ["catalog-feed", filters],
+    initialPageParam: 0,
+    getNextPageParam: nextCatalogOffset,
+    queryFn: async ({ pageParam, signal }) => {
       const featured = await supabase.rpc("featured_auction_ids");
       if (featured.error) throw featured.error;
       const featuredIds = new Set(featured.data ?? []);
       let q = supabase
         .from("auctions_safe")
-        .select(AUCTION_LIST_COLUMNS, { count: "exact" })
+        .select(AUCTION_LIST_COLUMNS)
         .neq("status", "draft")
         .neq("status", "cancelled");
       if (s.tipo) q = q.eq("auction_type", s.tipo);
@@ -91,13 +95,24 @@ function Catalog() {
         q = q.order("current_price", { ascending: true, nullsFirst: true });
       if (orden === "price_desc")
         q = q.order("current_price", { ascending: false, nullsFirst: false });
-      const { data, error, count } = await q.range((s.page ?? 0) * 24, (s.page ?? 0) * 24 + 23);
+      const { data, error } = await q.order("id").range(pageParam, pageParam + CATALOG_BATCH_SIZE - 1).abortSignal(signal);
       if (error) throw error;
       const items = (data as unknown as AuctionListItem[]).map(a => ({...a, featured: featuredIds.has(a.id)}));
-      return { items: items.sort((a,b) => Number(b.featured) - Number(a.featured)), total: count ?? 0 };
+      return { items, offset: pageParam };
     },
   });
-  const imgs = useImageUrls(list.data?.items.map((a) => a.images[0]).filter((x): x is string => !!x));
+  const items = uniqueAuctions(list.data?.pages.map(p => p.items) ?? []);
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = endRef.current;
+    if (!element || !list.hasNextPage || list.isFetchNextPageError) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting) && !list.isFetching) void list.fetchNextPage();
+    }, {rootMargin: "600px"});
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [list.hasNextPage, list.isFetching, list.isFetchNextPageError, list.fetchNextPage, items.length]);
+  const imgs = useImageUrls(items.map((a) => a.images[0]).filter((x): x is string => !!x));
   const promoted = useQuery({queryKey:["featured-auctions"],refetchInterval:60000,queryFn:async()=>{
     const ids=await supabase.rpc("featured_auction_ids");
     if(ids.error) throw ids.error;
@@ -209,11 +224,11 @@ function Catalog() {
             <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
-      ) : list.error ? (
+      ) : list.error && !items.length ? (
         <Empty>No se pudo cargar el catálogo. Revisa tu conexión e inténtalo de nuevo.</Empty>
-      ) : list.data?.items.length ? (
+      ) : items.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {list.data.items.map((a) => (
+          {items.map((a) => (
             <AuctionCard
               key={a.id}
               a={a}
@@ -225,31 +240,8 @@ function Catalog() {
       ) : (
         <Empty>No hay subastas que coincidan con tu búsqueda.</Empty>
       )}
-      <div className="mt-6 flex items-center justify-between">
-        <Button
-          variant="outline"
-          disabled={!s.page}
-          onClick={() => {
-            set({ page: (s.page ?? 0) - 1 });
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          ← Anterior
-        </Button>
-        <span className="text-sm">
-          Página {(s.page ?? 0) + 1} de {Math.max(1, Math.ceil((list.data?.total ?? 0) / 24))} ·{" "}
-          {list.data?.total ?? 0} resultados
-        </span>
-        <Button
-          variant="outline"
-          disabled={((s.page ?? 0) + 1) * 24 >= (list.data?.total ?? 0)}
-          onClick={() => {
-            set({ page: (s.page ?? 0) + 1 });
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        >
-          Siguiente →
-        </Button>
+      <div ref={endRef} className="mt-6 min-h-12 text-center text-sm text-muted-foreground" aria-live="polite">
+        {list.isFetchingNextPage ? "Cargando más subastas…" : list.error ? <Button variant="outline" onClick={() => list.isFetchNextPageError ? list.fetchNextPage() : list.refetch()}>Reintentar</Button> : items.length > 0 && !list.hasNextPage ? "Has llegado al final" : null}
       </div>
     </PageShell>
   );

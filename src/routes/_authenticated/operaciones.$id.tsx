@@ -18,6 +18,7 @@ import {
 } from "@/lib/operations.functions";
 import { canComplete, chatWritable, nextOperationStage, operationStages } from "@/lib/operations";
 import { errMsg, money, txStatusLabel } from "@/lib/format";
+import { useImageUrls } from "@/lib/images";
 const options = (id: string) =>
   queryOptions({
     queryKey: ["operation", id],
@@ -62,6 +63,8 @@ function Operation() {
   const [busy, setBusy] = useState(false);
   const key = useRef(crypto.randomUUID());
   const t = data.tx;
+  const imagePath = data.auction?.images?.[0];
+  const images = useImageUrls(imagePath ? [imagePath] : []);
   const isBuyer = t.buyer_id === data.userId;
   const isParty = isBuyer || t.seller_id === data.userId;
   const refresh = () => {
@@ -86,8 +89,12 @@ function Operation() {
       <Link to="/operaciones" className="text-sm underline">
         ← Operaciones
       </Link>
+      <header className="mt-3 flex items-center gap-3 border-b border-border pb-3">
+        {imagePath && images.data?.[imagePath] && <img src={images.data[imagePath]} alt={data.auction?.title ?? "Artículo"} className="h-16 w-16 shrink-0 rounded-md object-cover" />}
+        <div className="min-w-0"><p className="break-words font-semibold">{data.auction?.title}</p><p className="text-sm">{money(t.amount,t.currency)} · {isBuyer ? "Comprador / Cliente" : "Subastador / Proveedor"}</p><p className="text-sm text-muted-foreground">{data.contact?.find(c => c.user_id !== data.userId)?.display_name ?? "Contraparte autorizada"} · Ref. {id.slice(0,8)}</p></div>
+      </header>
       <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
-        <section className="space-y-4">
+        <section className="order-2 space-y-4 lg:order-1">
           <p className="text-2xl font-bold">{money(t.amount, t.currency)}</p>
           <p>
             {txStatusLabel[t.status]} · {operationStages[t.payment_stage]}
@@ -203,14 +210,14 @@ function Operation() {
             ))}
           </ul>
         </section>
-        <section>
+        <section className="order-1 lg:order-2">
           <h2 className="mb-3 text-xl font-semibold">Chat privado</h2>
           {!chatWritable(t.status) && (
             <p role="status" className="mb-3 border-l-2 border-primary pl-3 font-medium">
               Operación y conversación cerradas. Historial y adjuntos en solo lectura.
             </p>
           )}
-          <ul className="max-h-[600px] space-y-3 overflow-y-auto border-y border-border py-4">
+          <ul className="max-h-[35dvh] space-y-3 overflow-y-auto border-y border-border py-4 lg:max-h-[600px]">
             {data.messages.length ? (
               data.messages.map((m) => (
                 <li
