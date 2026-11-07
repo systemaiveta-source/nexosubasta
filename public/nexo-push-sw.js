@@ -1,4 +1,6 @@
 /* Messaging only. No caching, offline bidding or Firebase dependency. */
+self.addEventListener("install", event => event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
 function destination(value) {
   return /^\/(subastas|operaciones)\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
     value || "",
@@ -43,8 +45,10 @@ self.addEventListener("notificationclick", (event) => {
         (client) => new URL(client.url).origin === self.location.origin,
       );
       if (existing) {
-        await existing.navigate(target);
-        await existing.focus();
+        try {
+          const navigated = await existing.navigate(target);
+          await (navigated || existing).focus();
+        } catch { await self.clients.openWindow(target); }
       } else await self.clients.openWindow(target);
     })(),
   );

@@ -13,7 +13,9 @@ export const listOperations = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(100);
     if (result.error) throw new Error("No se pudieron cargar las operaciones");
-    return result.data;
+    const ids = [...new Set(result.data.map(t => t.auction_id))];
+    const auctions = ids.length ? await context.supabase.from("auctions_safe").select("id,title,images").in("id", ids) : {data: []};
+    return result.data.map(t => ({...t, role: t.buyer_id === context.userId ? "buyer" : "seller", auction: auctions.data?.find(a => a.id === t.auction_id) ?? null}));
   });
 export const getOperation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -25,6 +27,8 @@ export const getOperation = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (tx.error || !tx.data) throw new Error("Operación no disponible para esta cuenta");
+    if (tx.data.buyer_id !== context.userId && tx.data.seller_id !== context.userId)
+      throw new Error("Operación no disponible para esta cuenta");
     const [messages, events, disputes, contact, auction] = await Promise.all([
       context.supabase
         .from("messages")
@@ -45,7 +49,7 @@ export const getOperation = createServerFn({ method: "POST" })
       context.supabase.rpc("tx_contact", { _tx: data.id }),
       context.supabase
         .from("auctions_safe")
-        .select("title,auction_type")
+        .select("title,auction_type,images")
         .eq("id", tx.data.auction_id)
         .maybeSingle(),
     ]);
