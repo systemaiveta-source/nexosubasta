@@ -336,6 +336,7 @@ export type Database = {
           quiet_period_seconds: number
           republished_from: string | null
           reserve_met: boolean
+          retired_at: string | null
           rules_version: number
           scope: string
           selection_pending: boolean
@@ -383,6 +384,7 @@ export type Database = {
           quiet_period_seconds?: number
           republished_from?: string | null
           reserve_met?: boolean
+          retired_at?: string | null
           rules_version?: number
           scope?: string
           selection_pending?: boolean
@@ -430,6 +432,7 @@ export type Database = {
           quiet_period_seconds?: number
           republished_from?: string | null
           reserve_met?: boolean
+          retired_at?: string | null
           rules_version?: number
           scope?: string
           selection_pending?: boolean
@@ -1940,6 +1943,7 @@ export type Database = {
           quiet_period_seconds: number
           republished_from: string | null
           reserve_met: boolean
+          retired_at: string | null
           rules_version: number
           scope: string
           selection_pending: boolean
