@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/perfil")({
 function Profile() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [sections, setSections] = useState<Record<string, boolean>>({});
+  const [sections, setSections] = useState({data: false, membership: false, wallet: false, ledger: false});
   const operations = useQuery({queryKey: ["operations"], enabled: !!user, queryFn: () => listOperations()});
   const profile = useQuery({
     queryKey: ["myprofile", user?.id],
@@ -186,10 +186,9 @@ function Profile() {
       </Tabs>
       {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
       <div>
-        <details className={box} onToggle={e => setSections(previous => ({...previous, data: e.currentTarget.open}))}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, data: open})); }}>
           <summary className="cursor-pointer font-display text-lg font-bold">Datos personales</summary>
           <div className="space-y-3 pt-4">
-          <h2 className="font-display text-lg font-bold">Datos</h2>
           <div className="space-y-1.5">
             <Label>Nombre visible</Label>
             <Input
@@ -236,7 +235,7 @@ function Profile() {
           <Button onClick={save} disabled={!profile.data || profile.isPending}>Guardar</Button>
         </div></details>
 
-        <details className={box} onToggle={e => setSections(previous => ({...previous, membership: e.currentTarget.open}))}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, membership: open})); }}>
           <summary className="cursor-pointer font-display text-lg font-bold">Membresía y referidos</summary>
           <div className="space-y-3 pt-4">
           <h2 className="font-display text-lg font-bold">Membresía</h2>
@@ -314,7 +313,7 @@ function Profile() {
           </p>
         </div></details>
 
-        <details className={box} onToggle={e => setSections(previous => ({...previous, wallet: e.currentTarget.open}))}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, wallet: open})); }}>
           <summary className="cursor-pointer font-display text-lg font-bold">Saldo y transferencias</summary>
           <div className="space-y-3 pt-4">
           <h2 className="font-display text-lg font-bold">Saldo: {money(balance.data ?? 0)}</h2>
@@ -359,10 +358,9 @@ function Profile() {
           </div>
         </div></details>
 
-        <details className={box} onToggle={e => setSections(previous => ({...previous, ledger: e.currentTarget.open}))}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, ledger: open})); }}>
           <summary className="cursor-pointer font-display text-lg font-bold">Movimientos</summary>
           <div className="space-y-3 pt-4">
-          <h2 className="font-display text-lg font-bold">Movimientos</h2>
           {ledger.data?.length ? (
             <ul className="space-y-1 text-sm">
               {ledger.data.map((t) => (
