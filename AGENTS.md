@@ -34,3 +34,5 @@
 - Membership advertising and badges derive from the effective subscription and structured plan entitlements in the database; advertising windows are anchored to subscription start, never client claims.
 - Support requests are private owner/staff records; priority is derived server-side from the effective membership and responses require a staff-checked transactional RPC.
 - Notification delivery retries only transient failures with bounded attempts and recovers stale claims; worker thumbnails accept only known origins and public auction image paths.
+- Owner retirement of unsold zero-bid publications marks the historical auction instead of deleting it; this preserves auction evidence while excluding it from own publication lists.
+- Profile activity shares the operations query across purchase/sale tabs, while secondary account queries load only when their disclosure opens to avoid redundant reads.

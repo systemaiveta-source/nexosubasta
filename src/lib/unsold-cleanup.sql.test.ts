@@ -13,7 +13,8 @@ beforeAll(async () => {
     CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.uid',true),'')::uuid $$;
     CREATE FUNCTION public.is_staff(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
-    CREATE TABLE public.auctions(id uuid PRIMARY KEY, seller_id uuid, status text DEFAULT 'active', bid_count int DEFAULT 0, winner_id uuid, selection_pending boolean DEFAULT false);
+    CREATE TABLE public.auctions(id uuid PRIMARY KEY, seller_id uuid, status text DEFAULT 'active', bid_count int DEFAULT 0, winner_id uuid, selection_pending boolean DEFAULT false, retired_at timestamptz, created_at timestamptz DEFAULT now(), title text, current_price numeric, currency text, ends_at timestamptz, auction_type text, closing_mode text, extension_pending boolean, extension_used boolean, republished_from uuid);
+    CREATE VIEW public.auctions_safe AS SELECT * FROM public.auctions;
     CREATE TABLE public.auction_events(auction_id uuid, kind text, details jsonb);
     CREATE TABLE public.admin_audit_log(actor_id uuid, action text, target text, details jsonb);
     CREATE TABLE public.notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid, title text, body text, link text, read boolean DEFAULT false);
@@ -21,6 +22,7 @@ beforeAll(async () => {
     CREATE TABLE public.transactions(id uuid, auction_id uuid);
   `);
   await db.exec(readFileSync("drizzle/migrations/0036_unsold_cleanup_and_silent_cancel.sql", "utf8"));
+  await db.exec(readFileSync("drizzle/migrations/0037_retire_unsold_preserve_history.sql", "utf8"));
 }, 30000);
 
 afterAll(() => db.close());
@@ -44,14 +46,16 @@ it("cancelar una subasta no deja ni crea avisos", async () => {
   expect(st.rows).toEqual([{ status: "cancelled" }]);
 });
 
-it("eliminar vencida sin ofertas borra la subasta y sus avisos", async () => {
+it("retirar vencida sin ofertas conserva historial y limpia avisos", async () => {
   await db.exec(
     `INSERT INTO public.auctions(id,seller_id,status,bid_count) VALUES('${auction}','${seller}','ended_unsold',0);
      INSERT INTO public.notifications(id,user_id,title,link) VALUES('44444444-4444-4444-8444-444444444444','${other}','Nueva subasta en NEXO','/subastas/${auction}');
      INSERT INTO public.notification_push_outbox(notification_id,device_id,user_id) VALUES('44444444-4444-4444-8444-444444444444','${other}','${other}');`,
   );
   await db.query(`SELECT public.delete_unsold_auction('${auction}')`);
-  expect((await db.query("SELECT count(*)::int AS n FROM public.auctions")).rows).toEqual([{ n: 0 }]);
+  expect((await db.query("SELECT count(*)::int AS n FROM public.auctions")).rows).toEqual([{ n: 1 }]);
+  expect((await db.query("SELECT retired_at IS NOT NULL AS retired FROM public.auctions")).rows).toEqual([{retired:true}]);
+  expect((await db.query("SELECT public.my_publications() AS publications")).rows).toEqual([{publications:[]}]);
   expect((await db.query("SELECT count(*)::int AS n FROM public.notifications")).rows).toEqual([{ n: 0 }]);
   expect((await db.query("SELECT count(*)::int AS n FROM public.notification_push_outbox")).rows).toEqual([{ n: 0 }]);
 });

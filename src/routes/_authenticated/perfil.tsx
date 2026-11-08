@@ -13,6 +13,8 @@ import { useNow } from "@/components/AuctionCard";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { getMyMembership, listMyPublications } from "@/lib/profiles.functions";
+import { listOperations } from "@/lib/operations.functions";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MembershipSupport } from "@/components/MembershipSupport";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
@@ -36,6 +38,8 @@ export const Route = createFileRoute("/_authenticated/perfil")({
 function Profile() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [sections, setSections] = useState({data: false, membership: false, wallet: false, ledger: false});
+  const operations = useQuery({queryKey: ["operations"], enabled: !!user, queryFn: () => listOperations()});
   const profile = useQuery({
     queryKey: ["myprofile", user?.id],
     enabled: !!user,
@@ -46,14 +50,16 @@ function Profile() {
     },
   });
   const publications = useQuery({queryKey: ["mine", user?.id], enabled: !!user, queryFn: () => listMyPublications()});
-  const membership = useQuery({queryKey: ["membership-benefits", user?.id], enabled: !!user, queryFn: () => getMyMembership()});
+  const membership = useQuery({queryKey: ["membership-benefits", user?.id], enabled: !!user && !!sections.membership, queryFn: () => getMyMembership()});
   const balance = useQuery({
     queryKey: ["wallet", user?.id],
+    enabled: !!user && !!sections.wallet,
     queryFn: async () =>
       Number((await supabase.rpc("wallet_balance", { _user: user?.id ?? "" })).data ?? 0),
   });
   const ledger = useQuery({
     queryKey: ["ledger", user?.id],
+    enabled: !!user && !!sections.ledger,
     queryFn: async () =>
       (
         await supabase
@@ -66,6 +72,7 @@ function Profile() {
   });
   const subs = useQuery({
     queryKey: ["mysubs", user?.id],
+    enabled: !!user && !!sections.membership,
     queryFn: async () =>
       (
         await supabase
@@ -77,11 +84,13 @@ function Profile() {
   });
   const referrals = useQuery({
     queryKey: ["refs", user?.id],
+    enabled: !!user && !!sections.membership,
     queryFn: async () =>
       (await supabase.rpc("my_referral_community")).data ?? [],
   });
   const plans = useQuery({
     queryKey: ["plans"],
+    enabled: !!sections.wallet,
     queryFn: async () =>
       (await supabase.from("plans").select("*").eq("active", true).order("months")).data ?? [],
   });
@@ -155,15 +164,31 @@ function Profile() {
   }
 
   const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
-  const box = "space-y-3 rounded-2xl border border-border bg-card p-6";
+  const box = "space-y-3 border-b border-border py-5";
 
   return (
     <PageShell title="Mi perfil" actions={user && <Link to="/usuarios/$id" params={{id: user.id}} className="text-sm underline">Ver perfil público</Link>}>
-      <MyPublications publications={publications} />
+      <Tabs defaultValue="publications" className="mb-6">
+        <TabsList className="grid h-auto w-full grid-cols-3">
+          <TabsTrigger value="publications" className="whitespace-normal">Mis publicaciones</TabsTrigger>
+          <TabsTrigger value="purchases" className="whitespace-normal">Mis compras</TabsTrigger>
+          <TabsTrigger value="sales" className="whitespace-normal">Mis ventas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="publications"><MyPublications publications={publications} operations={operations.data ?? []} /></TabsContent>
+        {(["purchases", "sales"] as const).map(tab => <TabsContent key={tab} value={tab}>
+          {operations.isPending ? <p>Cargando…</p> : operations.error ? <p role="alert">No se pudieron cargar tus operaciones. <Button variant="outline" onClick={() => operations.refetch()}>Reintentar</Button></p> : <ul className="divide-y divide-border">
+            {(operations.data ?? []).filter(t => t.role === (tab === "purchases" ? "buyer" : "seller")).map(t => <li key={t.id}>
+              <Link to="/operaciones/$id" params={{id:t.id}} className="flex flex-wrap items-center justify-between gap-3 py-4"><span className="min-w-0 break-words font-semibold">{t.auction?.title ?? `Operación ${t.id.slice(0,8)}`}</span><span>{money(t.amount,t.currency)} · Abrir chat →</span></Link>
+            </li>)}
+            {!operations.data?.some(t => t.role === (tab === "purchases" ? "buyer" : "seller")) && <li className="py-4 text-muted-foreground">Aún no tienes {tab === "purchases" ? "compras" : "ventas"} adjudicadas.</li>}
+          </ul>}
+        </TabsContent>)}
+      </Tabs>
       {profile.error && <p role="alert" className="mb-4 text-destructive">No se pudo cargar tu perfil. <Button variant="outline" onClick={() => profile.refetch()}>Reintentar</Button></p>}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className={box}>
-          <h2 className="font-display text-lg font-bold">Datos</h2>
+      <div>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, data: open})); }}>
+          <summary className="cursor-pointer font-display text-lg font-bold">Datos personales</summary>
+          <div className="space-y-3 pt-4">
           <div className="space-y-1.5">
             <Label>Nombre visible</Label>
             <Input
@@ -208,9 +233,11 @@ function Profile() {
           <Label>Biografía pública</Label>
           <Textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} maxLength={1000}/>
           <Button onClick={save} disabled={!profile.data || profile.isPending}>Guardar</Button>
-        </section>
+        </div></details>
 
-        <section className={box}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, membership: open})); }}>
+          <summary className="cursor-pointer font-display text-lg font-bold">Membresía y referidos</summary>
+          <div className="space-y-3 pt-4">
           <h2 className="font-display text-lg font-bold">Membresía</h2>
           {membership.data?.name && <div className="space-y-2 text-sm">
             <p className="font-semibold">{membership.data.name}{membership.data.badge ? ` · Insignia ${membership.data.badge}` : ""}</p>
@@ -284,9 +311,11 @@ function Profile() {
               {(referrals.data ?? []).reduce((a, r) => a + Number(r.earned), 0).toFixed(2)}
             </b>
           </p>
-        </section>
+        </div></details>
 
-        <section className={box}>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, wallet: open})); }}>
+          <summary className="cursor-pointer font-display text-lg font-bold">Saldo y transferencias</summary>
+          <div className="space-y-3 pt-4">
           <h2 className="font-display text-lg font-bold">Saldo: {money(balance.data ?? 0)}</h2>
           <Label>Transferir saldo a otro usuario</Label>
           <div className="flex gap-2">
@@ -327,10 +356,11 @@ function Profile() {
               Pagar
             </Button>
           </div>
-        </section>
+        </div></details>
 
-        <section className={box}>
-          <h2 className="font-display text-lg font-bold">Movimientos</h2>
+        <details className={box} onToggle={e => { const open = e.currentTarget.open; setSections(previous => ({...previous, ledger: open})); }}>
+          <summary className="cursor-pointer font-display text-lg font-bold">Movimientos</summary>
+          <div className="space-y-3 pt-4">
           {ledger.data?.length ? (
             <ul className="space-y-1 text-sm">
               {ledger.data.map((t) => (
@@ -347,7 +377,7 @@ function Profile() {
           ) : (
             <p className="text-sm text-muted-foreground">Sin movimientos todavía.</p>
           )}
-        </section>
+        </div></details>
       </div>
       <MembershipSupport />
     </PageShell>
@@ -364,7 +394,9 @@ type Publication = {
 
 function MyPublications({
   publications,
+  operations,
 }: {
+  operations: Awaited<ReturnType<typeof listOperations>>;
   publications: {
     isPending: boolean;
     error: unknown;
@@ -376,17 +408,26 @@ function MyPublications({
   const now = useNow();
   const [busy, setBusy] = useState<string | null>(null);
   const all = publications.data ?? [];
+  const drafts = all.filter(a => a.status === "draft");
+  const sold = all.filter(a => a.status === "ended_sold");
   const active = all.filter((a) => a.status === "active" || a.status === "scheduled");
   const expiredNoBids = all.filter(
     (a) => a.status === "ended_unsold" && a.bid_count === 0,
   );
 
-  async function renew(a: Publication) {
+  async function renew(a: Publication, publish = false) {
+    if (publish && !confirm(`¿Preparar una nueva publicación de "${a.title}" y publicarla ahora? Se aplicarán las validaciones y límites actuales.`)) return;
     setBusy(a.id);
     try {
-      const { error } = await supabase.rpc("republish_auction", { _auction: a.id });
+      const { data: id, error } = await supabase.rpc("republish_auction", { _auction: a.id });
       if (error) throw error;
-      toast.success("Se creó un borrador para renovarla. Publícala desde Subastar.");
+      if (!id) throw new Error("No se pudo preparar la nueva publicación");
+      await qc.invalidateQueries({queryKey:["mine"]});
+      if (publish) {
+        const result = await supabase.rpc("publish_auction", {_auction_id: id});
+        if (result.error) throw new Error(`Se conservó el nuevo borrador. ${errMsg(result.error)}`);
+      }
+      toast.success(publish ? "Nueva subasta publicada" : "Se creó un borrador para renovarla. Revísalo desde Subastar.");
       qc.invalidateQueries({ queryKey: ["mine"] });
     } catch (e) {
       toast.error(errMsg(e));
@@ -396,13 +437,13 @@ function MyPublications({
   }
 
   async function remove(a: Publication) {
-    if (!confirm(`¿Eliminar "${a.title}" del sistema? Esta acción no se puede deshacer.`))
+    if (!confirm(`¿Retirar "${a.title}" de tus publicaciones? Se conservará el registro histórico.`))
       return;
     setBusy(a.id);
     try {
       const { error } = await supabase.rpc("delete_unsold_auction", { _auction_id: a.id });
       if (error) throw error;
-      toast.success("Publicación eliminada");
+      toast.success("Publicación retirada; historial conservado");
       qc.invalidateQueries({ queryKey: ["mine"] });
     } catch (e) {
       toast.error(errMsg(e));
@@ -450,11 +491,13 @@ function MyPublications({
           ) : (
             <p className="text-muted-foreground">No tienes subastas activas.</p>
           )}
+          {drafts.length > 0 && <div className="pt-3"><h3 className="font-semibold">Borradores</h3><ul className="divide-y divide-border">{drafts.map(a => <li key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><span>{a.title}</span><Link to="/vendedor" className="text-sm underline">Editar borrador</Link></li>)}</ul></div>}
+          {sold.length > 0 && <details className="pt-3"><summary className="cursor-pointer font-semibold">Adjudicadas · {sold.length}</summary><ul className="divide-y divide-border">{sold.map(a => { const operation = operations.find(t => t.auction_id === a.id); return <li key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><span>{a.title}</span>{operation ? <Link to="/operaciones/$id" params={{id:operation.id}} className="text-sm underline">Abrir chat</Link> : <Link to="/subastas/$id" params={{id:a.id}} className="text-sm underline">Ver adjudicación</Link>}</li>; })}</ul></details>}
           {expiredNoBids.length > 0 && (
             <div className="space-y-2 pt-3">
-              <h3 className="font-semibold">Vencidas sin ofertas</h3>
+              <h3 className="font-semibold">Finalizadas sin ofertas / Pendientes de renovar</h3>
               <p className="text-sm text-muted-foreground">
-                Puedes renovarlas como borrador o eliminarlas del sistema.
+                Renovar conserva la publicación anterior. Eliminar la retira sin borrar su historial.
               </p>
               <ul className="divide-y divide-border">
                 {expiredNoBids.map((a) => (
@@ -463,7 +506,7 @@ function MyPublications({
                     className="flex flex-wrap items-center justify-between gap-2 py-3"
                   >
                     <span className="min-w-0 break-words font-medium">{a.title}</span>
-                    <span className="flex gap-2">
+                    <span className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -472,6 +515,7 @@ function MyPublications({
                       >
                         Renovar
                       </Button>
+                      <Button variant="outline" size="sm" disabled={busy === a.id} onClick={() => renew(a, true)}>Publicar de nuevo</Button>
                       <Button
                         variant="destructive"
                         size="sm"
