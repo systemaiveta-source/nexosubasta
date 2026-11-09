@@ -21,7 +21,7 @@
 - Auction timing changes are versioned for new drafts; retain legacy published clocks, store inactivity in minutes, and return the trigger-computed deadline from the atomic bid RPC.
 - Product rules_version >= 4 dispatches separate fixed/reserve/flash clock functions with per-auction phase state; earlier published versions retain their engine so simultaneous modes and legacy deadlines remain independent.
 - Service close only opens client selection; a row-locked selection RPC creates one operation with client as buyer and provider as seller.
-- Operations use authenticated server functions and transactional RPCs for messages, payment stages, disputes and independent confirmations; private attachments use storage RLS and expiring signed links.
+- Operations use authenticated server functions and row-locked RPCs for separate payment-coordination acceptances and independent completion; both acceptances and confirmations are required without legacy stage gates, while disputes block completion and attachments remain under storage RLS.
 - Auction payment declarations are separate from membership methods; each bid freezes accepted terms, and a deferred database constraint prevents bypassing acceptance.
 - Operations list is an index route and detail is its sibling leaf; avoid a non-Outlet parent masking the private chat.
 - Installation state lives in one root provider so prompt events survive navigation without touching authentication.
