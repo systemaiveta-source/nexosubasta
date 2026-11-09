@@ -12,9 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useRoles } from "@/lib/auth";
 import { money, errMsg, statusLabel } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
-import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
-import { parseAuctionMethods } from "@/lib/auction-payments";
-import type { AuctionMethod } from "@/lib/auction-payments";
+import type { Json } from "@/integrations/supabase/types";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { DeliveryForm } from "@/components/DeliveryForm";
 import { verifyServiceLocations } from "@/lib/service-locations.functions";
@@ -83,7 +81,7 @@ function Seller() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
-  const [methods, setMethods] = useState<AuctionMethod[]>([]);
+  const [methods, setMethods] = useState<Json>([]);
   const [delivery, setDelivery] = useState<Delivery>({
     mode: "pickup",
     cost: null,
@@ -294,7 +292,7 @@ function Seller() {
           ? a["images"].filter((v): v is string => typeof v === "string")
           : [],
       );
-      setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
+      setMethods((a["accepted_payment_methods"] ?? []) as Json);
       setDelivery(
         parseDelivery(a["delivery_snapshot"]) ?? {
           mode: "other",
@@ -635,7 +633,6 @@ function Seller() {
               onChange={(e) => setStartsAt(e.target.value)}
             />
           </label>
-          <AuctionPaymentMethods value={methods} onChange={setMethods} />
           <div className="flex gap-2">
             <Button disabled={busy} onClick={() => create(true)}>
               Publicar ahora
