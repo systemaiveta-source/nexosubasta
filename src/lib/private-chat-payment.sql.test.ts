@@ -20,9 +20,9 @@ beforeAll(async () => {
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$SELECT nullif(current_setting('test.uid',true),'')::uuid$$;
     GRANT USAGE ON SCHEMA auth,storage TO authenticated;
     CREATE FUNCTION notify(uuid,text,text,text) RETURNS void LANGUAGE sql AS 'SELECT';
-    CREATE FUNCTION is_tx_party(_tx uuid,_user uuid) RETURNS boolean LANGUAGE sql SECURITY DEFINER AS $$SELECT EXISTS(SELECT 1 FROM transactions WHERE id=_tx AND (_user=buyer_id OR _user=seller_id))$$;
     CREATE FUNCTION has_role(uuid,text) RETURNS boolean LANGUAGE sql AS 'SELECT false';
     CREATE TABLE transactions(id uuid PRIMARY KEY, buyer_id uuid,seller_id uuid,status text DEFAULT 'pending',buyer_confirmed boolean DEFAULT false,seller_confirmed boolean DEFAULT false,buyer_confirmed_at timestamptz,seller_confirmed_at timestamptz,completed_at timestamptz,payment_stage text DEFAULT 'coordination',agreed_method text);
+    CREATE FUNCTION is_tx_party(_tx uuid,_user uuid) RETURNS boolean LANGUAGE sql SECURITY DEFINER AS $$SELECT EXISTS(SELECT 1 FROM transactions WHERE id=_tx AND (_user=buyer_id OR _user=seller_id))$$;
     CREATE TABLE operation_events(id uuid DEFAULT gen_random_uuid(),transaction_id uuid,actor_id uuid,kind text,details jsonb);
     CREATE TABLE disputes(transaction_id uuid,status text);
     CREATE TABLE auctions(id uuid PRIMARY KEY,status text DEFAULT 'draft',accepted_payment_methods jsonb DEFAULT '[]');
