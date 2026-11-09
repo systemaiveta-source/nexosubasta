@@ -70,16 +70,14 @@ export const changeOperation = createServerFn({ method: "POST" })
   .inputValidator(
     (data: {
       id: string;
-      action: "complete" | "dispute" | "stage";
+      action: "complete" | "dispute" | "accept";
       value?: string;
-      method?: string;
     }) =>
       z
         .object({
           id: z.string().uuid(),
-          action: z.enum(["complete", "dispute", "stage"]),
+          action: z.enum(["complete", "dispute", "accept"]),
           value: z.string().max(2000).optional(),
-          method: z.string().max(200).optional(),
         })
         .parse(data),
   )
@@ -89,11 +87,7 @@ export const changeOperation = createServerFn({ method: "POST" })
         ? await context.supabase.rpc("confirm_transaction", { _tx: data.id })
         : data.action === "dispute"
           ? await context.supabase.rpc("open_dispute", { _tx: data.id, _reason: data.value ?? "" })
-          : await context.supabase.rpc("advance_operation", {
-              _tx: data.id,
-              _stage: data.value ?? "",
-              ...(data.method ? { _method: data.method } : {}),
-            });
+          : await context.supabase.rpc("accept_operation_payment", { _tx: data.id });
     if (result.error) throw new Error(result.error.message);
     return { ok: true };
   });

@@ -7,6 +7,7 @@ import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,7 +17,7 @@ import {
   uploadOperationDocument,
   openOperationDocument,
 } from "@/lib/operations.functions";
-import { canComplete, chatWritable, nextOperationStage, operationStages } from "@/lib/operations";
+import { canComplete, chatWritable } from "@/lib/operations";
 import { errMsg, money, txStatusLabel } from "@/lib/format";
 import { useImageUrls } from "@/lib/images";
 const options = (id: string) =>
@@ -58,7 +59,6 @@ function Operation() {
   const open = useServerFn(openOperationDocument);
   const [body, setBody] = useState("");
   const [path, setPath] = useState<string>();
-  const [method, setMethod] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const key = useRef(crypto.randomUUID());
@@ -71,10 +71,10 @@ function Operation() {
     qc.invalidateQueries({ queryKey: ["operation", id] });
     qc.invalidateQueries({ queryKey: ["operations"] });
   };
-  async function action(action: "complete" | "dispute" | "stage", value?: string) {
+  async function action(action: "complete" | "dispute" | "accept", value?: string) {
     setBusy(true);
     try {
-      await change({ data: { id, action, ...(value ? { value } : {}), method } });
+      await change({ data: { id, action, ...(value ? { value } : {}) } });
       refresh();
       toast.success("Operación actualizada");
     } catch (e) {
@@ -83,7 +83,9 @@ function Operation() {
       setBusy(false);
     }
   }
-  const next = nextOperationStage(t.payment_stage, isBuyer);
+  const bothAccepted = !!t.buyer_payment_accepted_at && !!t.seller_payment_accepted_at;
+  const mineCompleted = isBuyer ? t.buyer_confirmed : t.seller_confirmed;
+  const openDispute = data.disputes.some(d => d.status === "open");
   return (
     <PageShell title={data.auction?.title ?? "Operación privada"}>
       <Link to="/operaciones" className="text-sm underline">
@@ -97,95 +99,50 @@ function Operation() {
         <section className="order-2 space-y-4 lg:order-1">
           <p className="text-2xl font-bold">{money(t.amount, t.currency)}</p>
           <p>
-            {txStatusLabel[t.status]} · {operationStages[t.payment_stage]}
+            {txStatusLabel[t.status]}
           </p>
-          <p className="text-sm">
-            {isBuyer ? "Comprador / Cliente" : "Subastador / Proveedor"} ·{" "}
-            {data.contact?.[0]?.display_name ?? "Contraparte autorizada"}
-          </p>
-          {t.agreed_method && <p className="break-words">Método acordado: {t.agreed_method}</p>}
           <p className="text-sm text-muted-foreground">
-            NEXO no procesa ni verifica este pago. Un comprobante no confirma recepción de fondos.
+            NEXO no procesa, custodia ni verifica este pago. Un mensaje o comprobante no confirma recepción de fondos.
           </p>
-          {isParty && t.status === "pending" && (
+          {isParty && (t.status === "pending" || t.status === "disputed") && (
             <>
-              <div className="space-y-2">
-                {t.payment_stage === "coordination" ? (
-                  <>
-                    <Input
-                      aria-label="Método acordado"
-                      placeholder="Método acordado por ambas partes"
-                      value={method}
-                      onChange={(e) => setMethod(e.target.value)}
-                      maxLength={200}
+              <fieldset className="space-y-3 border-y border-border py-4">
+                <legend className="font-semibold">Acuerdo de coordinación del pago</legend>
+                {(["buyer", "seller"] as const).map(role => {
+                  const own = (role === "buyer") === isBuyer;
+                  const accepted = role === "buyer" ? t.buyer_payment_accepted_at : t.seller_payment_accepted_at;
+                  return <label key={role} className="flex items-start gap-3 text-sm">
+                    <Checkbox
+                      aria-label={`Aceptación de ${role === "buyer" ? "comprador" : "vendedor"}`}
+                      checked={!!accepted}
+                      disabled={!own || !!accepted || busy}
+                      onCheckedChange={checked => { if (own && checked === true) action("accept"); }}
+                      className="mt-1"
                     />
-                    <Button
-                      disabled={busy || method.trim().length < 2}
-                      onClick={() => action("stage", "payment_pending")}
-                    >
-                      Registrar acuerdo de pago
-                    </Button>
-                  </>
-                ) : (
-                  next && (
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => {
-                        if (
-                          next !== "payment_confirmed" ||
-                          confirm("¿Confirmas que recibiste los fondos?")
-                        )
-                          action("stage", next);
-                      }}
-                    >
-                      {next === "payment_confirmed"
-                        ? "Confirmar recepción de fondos"
-                        : operationStages[next]}
-                    </Button>
-                  )
-                )}
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="mb-2 text-sm">
-                  Tu confirmación:{" "}
-                  {(isBuyer ? t.buyer_confirmed : t.seller_confirmed) ? "Registrada" : "Pendiente"}{" "}
-                  · Contraparte:{" "}
-                  {(isBuyer ? t.seller_confirmed : t.buyer_confirmed) ? "Registrada" : "Pendiente"}
-                </p>
-                <Button
-                  disabled={
-                    busy ||
-                    !canComplete(
-                      t.status,
-                      t.buyer_confirmed,
-                      t.seller_confirmed,
-                      isBuyer,
-                      t.payment_stage,
-                    )
-                  }
-                  onClick={() => {
-                    if (confirm("¿Confirmas que tu parte del acuerdo se completó?"))
-                      action("complete");
-                  }}
-                >
-                  Marcar como completado
-                </Button>
-              </div>
-              <Textarea
-                aria-label="Motivo de disputa"
-                placeholder="Motivo de disputa"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                maxLength={2000}
-              />
+                    <span><span className="block font-semibold">{role === "buyer" ? "Comprador / Cliente" : "Vendedor / Proveedor"}{own ? " (tú)" : ""}</span>
+                      Confirmo que conozco y acepto coordinar el pago con la contraparte mediante el método acordado en este chat
+                    </span>
+                  </label>;
+                })}
+              </fieldset>
+              <p className="text-sm" role="status">
+                {mineCompleted ? "Tu confirmación registrada; falta la contraparte" :
+                  !bothAccepted ? "Falta la aceptación de ambas partes para marcar como completado." :
+                    "Ambas partes aceptaron coordinar el pago en este chat."}
+              </p>
               <Button
-                variant="destructive"
-                disabled={busy || reason.trim().length < 5}
-                onClick={() => action("dispute", reason)}
-              >
-                Abrir disputa
-              </Button>
+                disabled={busy || !canComplete(t.status, t.buyer_confirmed, t.seller_confirmed, isBuyer, bothAccepted, openDispute)}
+                onClick={() => {
+                  if (confirm("¿Confirmas que la operación se completó según tu acuerdo con la contraparte?")) action("complete");
+                }}
+              >Marcar como completado</Button>
+              {t.status === "pending" && <details className="border-t border-border pt-3">
+                <summary className="cursor-pointer text-sm text-muted-foreground">Tengo un problema · Abrir disputa</summary>
+                <div className="mt-3 space-y-3">
+                  <Textarea aria-label="Motivo de disputa" placeholder="Motivo de disputa" value={reason} onChange={e => setReason(e.target.value)} maxLength={2000} />
+                  <Button variant="destructive" disabled={busy || reason.trim().length < 5} onClick={() => action("dispute", reason)}>Abrir disputa</Button>
+                </div>
+              </details>}
             </>
           )}
           {data.disputes.map((d) => (
@@ -204,7 +161,7 @@ function Operation() {
               <li key={e.id}>
                 {e.kind === "completion_confirmed"
                   ? "Confirmación de finalización"
-                  : "Cambio de estado"}{" "}
+                  : e.kind === "payment_coordination_accepted" ? "Aceptación de coordinación del pago" : "Cambio de estado"}{" "}
                 · {new Date(e.created_at).toLocaleString("es")}
               </li>
             ))}
