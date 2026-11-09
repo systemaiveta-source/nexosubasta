@@ -267,6 +267,13 @@
       "when": 1794096193061,
       "tag": "0037_retire_unsold_preserve_history",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794186258004,
+      "tag": "0038_private_chat_payment_agreement",
+      "breakpoints": true
     }
   ]
 }

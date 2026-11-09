@@ -1368,6 +1368,7 @@ export type Database = {
           buyer_confirmed: boolean
           buyer_confirmed_at: string | null
           buyer_id: string
+          buyer_payment_accepted_at: string | null
           completed_at: string | null
           created_at: string
           currency: string
@@ -1376,6 +1377,7 @@ export type Database = {
           seller_confirmed: boolean
           seller_confirmed_at: string | null
           seller_id: string
+          seller_payment_accepted_at: string | null
           status: string
         }
         Insert: {
@@ -1385,6 +1387,7 @@ export type Database = {
           buyer_confirmed?: boolean
           buyer_confirmed_at?: string | null
           buyer_id: string
+          buyer_payment_accepted_at?: string | null
           completed_at?: string | null
           created_at?: string
           currency?: string
@@ -1393,6 +1396,7 @@ export type Database = {
           seller_confirmed?: boolean
           seller_confirmed_at?: string | null
           seller_id: string
+          seller_payment_accepted_at?: string | null
           status?: string
         }
         Update: {
@@ -1402,6 +1406,7 @@ export type Database = {
           buyer_confirmed?: boolean
           buyer_confirmed_at?: string | null
           buyer_id?: string
+          buyer_payment_accepted_at?: string | null
           completed_at?: string | null
           created_at?: string
           currency?: string
@@ -1410,6 +1415,7 @@ export type Database = {
           seller_confirmed?: boolean
           seller_confirmed_at?: string | null
           seller_id?: string
+          seller_payment_accepted_at?: string | null
           status?: string
         }
         Relationships: [
@@ -1667,6 +1673,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_operation_payment: { Args: { _tx: string }; Returns: undefined }
       admin_cancel_subscription: { Args: { _sub: string }; Returns: undefined }
       admin_grant_subscription: {
         Args: { _months: number; _plan: string; _user: string }
