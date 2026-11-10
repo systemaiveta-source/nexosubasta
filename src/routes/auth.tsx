@@ -13,7 +13,7 @@ import { errMsg } from "@/lib/format";
 import { authDestination } from "@/lib/destinations";
 import { claimStoredRef, rememberRef, storedRef } from "@/lib/referral";
 
-const search = z.object({ redirect: z.string().optional(), ref: z.string().optional() });
+const search = z.object({ redirect: z.string().optional(), ref: z.string().optional(), registro: z.boolean().optional() });
 
 export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
@@ -35,10 +35,10 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { redirect, ref } = Route.useSearch();
+  const { redirect, ref, registro } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
+  const [mode, setMode] = useState<"in" | "up" | "forgot">(registro ? "up" : "in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

@@ -122,12 +122,15 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             {ready && !user && (
+              <>
               <Link
                 to="/auth"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="rounded-md px-2 py-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 Entrar
               </Link>
+              <Link to="/auth" search={{ registro: true }} className="rounded-md px-2 py-2 text-sm text-muted-foreground hover:text-foreground">Registrarse</Link>
+              </>
             )}
             {user && (
               <Button
