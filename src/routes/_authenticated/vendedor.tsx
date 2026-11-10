@@ -218,7 +218,15 @@ function Seller() {
         },
       });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
-      if (type === "service" && request.category === "transport") await checkLocations(draftId);
+      if (
+        publish &&
+        type === "service" &&
+        request.category === "transport" &&
+        !(await checkLocations(draftId))
+      ) {
+        toast.info("La publicación permanece como borrador hasta validar origen y destino.");
+        return;
+      }
       if (publish) {
         const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
         if (e3) {
@@ -314,20 +322,24 @@ function Seller() {
     }
   }
 
-  async function checkLocations(id: string) {
+  async function checkLocations(id: string): Promise<boolean> {
     try {
-      const r = await verifyServiceLocations({ data: { id } });
-      if (r.status === "not_found")
+      const result = await verifyServiceLocations({ data: { id } });
+      if (result.status === "not_found") {
         toast.error(
           "Google Maps no encontró el origen o el destino. Escribe direcciones más completas.",
         );
+        return false;
+      }
+      return true;
     } catch (e) {
       toast.error(errMsg(e));
+      return false;
     }
   }
 
   async function publish(id: string) {
-    await checkLocations(id);
+    if (!(await checkLocations(id))) return;
     const { error } = await supabase.rpc("publish_auction", { _auction_id: id });
     if (error) toast.error(errMsg(error));
     else {
