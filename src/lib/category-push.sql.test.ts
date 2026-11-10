@@ -97,7 +97,7 @@ describe("categorías jerárquicas y preferencias Web Push", () => {
     expect(notifications.rows).toEqual([{ user_id: userA }, { user_id: userAll }]);
     const queued = await db.query("SELECT user_id FROM public.notification_push_outbox ORDER BY user_id");
     expect(queued.rows).toEqual([{ user_id: userA }, { user_id: userAll }]);
-    const claimed = await db.query("SELECT user_id FROM public.claim_notification_push_batch(20)");
-    expect(claimed.rows.map((row) => row.user_id).sort()).toEqual([userA,userAll].sort());
+    const claimed = await db.query("SELECT d.user_id FROM public.claim_notification_push_batch(20) batch JOIN public.push_devices d ON d.id=batch.device_id ORDER BY d.user_id");
+    expect(claimed.rows).toEqual([{ user_id: userA }, { user_id: userAll }]);
   });
 });
