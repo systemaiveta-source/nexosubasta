@@ -159,6 +159,25 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             onClick={() => setOpen(false)}
           >
             {links}
+            {ready && !user && (
+              <div className="flex flex-col gap-1 border-t border-border pt-2">
+                <Link
+                  to="/auth"
+                  className={linkCls}
+                  onClick={() => setOpen(false)}
+                >
+                  Entrar
+                </Link>
+                <Link
+                  to="/auth"
+                  search={{ registro: true }}
+                  className={linkCls}
+                  onClick={() => setOpen(false)}
+                >
+                  Registrarse
+                </Link>
+              </div>
+            )}
             {installation.available && (
               <Button variant="ghost" onClick={installation.install}>
                 Instalar app
