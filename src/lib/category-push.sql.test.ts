@@ -17,7 +17,7 @@ beforeAll(async () => {
     CREATE ROLE authenticated;
     CREATE ROLE service_role;
     CREATE TABLE public.categories (
-      id uuid PRIMARY KEY, slug text UNIQUE NOT NULL, name text NOT NULL, sort integer NOT NULL DEFAULT 0
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), slug text UNIQUE NOT NULL, name text NOT NULL, sort integer NOT NULL DEFAULT 0
     );
     INSERT INTO public.categories(id,slug,name,sort) VALUES
       ('${rootA}','vehiculos','Vehículos',1),
