@@ -84,7 +84,8 @@ CREATE OR REPLACE FUNCTION public.new_auction_notifications()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE event_id uuid; category_label text;
 BEGIN
- IF NEW.status='active' AND (TG_OP='INSERT' OR OLD.status IN ('draft','scheduled')) THEN
+ IF NEW.status='active' THEN
+  IF TG_OP='UPDATE' AND OLD.status NOT IN ('draft','scheduled') THEN RETURN NEW; END IF;
   INSERT INTO public.auction_push_events(auction_id) VALUES(NEW.id)
   ON CONFLICT DO NOTHING RETURNING auction_id INTO event_id;
   IF event_id IS NULL THEN RETURN NEW; END IF;
