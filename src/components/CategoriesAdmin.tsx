@@ -109,7 +109,7 @@ export function CategoriesAdmin() {
             }} />
           </label>
           <label className="text-sm">Slug
-            <input className={field} maxLength={70} value={slug} onChange={(e) => setSlug(slugify(e.target.value))} />
+            <input className={field} maxLength={70} value={slug} disabled={!!editing} onChange={(e) => setSlug(slugify(e.target.value))} />
           </label>
           <label className="text-sm">Categoría principal
             <select className={field} value={parentId} onChange={(e) => setParentId(e.target.value)}>
