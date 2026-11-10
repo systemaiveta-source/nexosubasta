@@ -116,7 +116,8 @@ LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$
   JOIN public.notifications n ON n.id=q.notification_id
   JOIN public.push_devices d ON d.id=q.device_id AND d.user_id=q.user_id AND d.active AND d.transport='webpush'
   JOIN public.notification_preferences p ON p.user_id=q.user_id
-  WHERE q.status='pending'
+  WHERE ((q.status='pending' AND q.next_attempt_at<=now()) OR (q.status='sending' AND q.claimed_at<now()-interval '5 minutes'))
+    AND q.attempts<3
     AND (d.subscription->>'expirationTime' IS NULL OR (d.subscription->>'expirationTime')::numeric>extract(epoch FROM clock_timestamp())*1000)
     AND CASE WHEN n.event_kind='new_auction' OR n.body LIKE '%Nueva subasta en NEXO%'
       THEN p.new_auctions AND EXISTS(
@@ -126,7 +127,7 @@ LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$
       ELSE p.activity END
   ORDER BY q.created_at LIMIT least(greatest(_limit,1),20) FOR UPDATE OF q SKIP LOCKED
  ), claimed AS (
-  UPDATE public.notification_push_outbox q SET status='sending',claimed_at=now()
+  UPDATE public.notification_push_outbox q SET status='sending',claimed_at=now(),attempts=q.attempts+1
   FROM candidates c WHERE q.id=c.id RETURNING q.*
  )
  SELECT c.id,d.id,d.subscription,n.id,n.title,n.body,n.link,a.id,cat.name,
