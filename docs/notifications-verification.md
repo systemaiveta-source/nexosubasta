@@ -31,7 +31,7 @@ La cuenta disponible no tiene avisos. No se inventaron ni insertaron notificacio
 
 Pagos administrativos siguen pendientes de sesión administradora autorizada. Servicios con decisión del cliente, operaciones/chat y demás prioridades del roadmap no se completaron en este incremento.
 
-Sin publicación, cambios a métodos reales, nuevas migraciones ni servicios externos activados.
+Sin despliegue ni aplicación de la migración 0039 en la base alojada; no se alteraron claves, cron, métodos de pago ni servicios externos.
 
 ## Ampliación de categorías y filtros por subasta
 - Migración 0039 incorpora jerarquía padre/subcategoría, descripciones, icono, orden y estado activo; conserva los IDs existentes para no alterar publicaciones previas.
