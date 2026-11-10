@@ -79,13 +79,17 @@ SELECT seed.slug,seed.name,seed.sort,parent.id
 FROM seed JOIN public.categories parent ON parent.slug=seed.parent_slug
 ON CONFLICT(slug) DO UPDATE SET parent_id=excluded.parent_id,name=excluded.name,sort=excluded.sort,updated_at=now();
 
+COMMENT ON COLUMN public.notification_preferences.categories IS 'IDs de categorías para avisos de nuevas subastas; arreglo vacío significa todas las categorías.';
+
 -- Mantener la selección de categorías como filtro opcional: vacío = todas.
 CREATE OR REPLACE FUNCTION public.new_auction_notifications()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE event_id uuid; category_label text;
 BEGIN
  IF NEW.status='active' THEN
-  IF TG_OP='UPDATE' AND OLD.status NOT IN ('draft','scheduled') THEN RETURN NEW; END IF;
+  IF TG_OP='UPDATE' THEN
+   IF OLD.status NOT IN ('draft','scheduled') THEN RETURN NEW; END IF;
+  END IF;
   INSERT INTO public.auction_push_events(auction_id) VALUES(NEW.id)
   ON CONFLICT DO NOTHING RETURNING auction_id INTO event_id;
   IF event_id IS NULL THEN RETURN NEW; END IF;
