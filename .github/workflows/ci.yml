@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: ESLint (sin bloquear por formato histórico)
-        run: bun run lint --rule 'prettier/prettier: off'
+        run: "bun run lint --rule 'prettier/prettier: off'"
       - name: Unit and database-isolated tests
         run: bun run test
       - name: Production build
