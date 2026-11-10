@@ -32,3 +32,12 @@ La cuenta disponible no tiene avisos. No se inventaron ni insertaron notificacio
 Pagos administrativos siguen pendientes de sesión administradora autorizada. Servicios con decisión del cliente, operaciones/chat y demás prioridades del roadmap no se completaron en este incremento.
 
 Sin publicación, cambios a métodos reales, nuevas migraciones ni servicios externos activados.
+
+## Ampliación de categorías y filtros por subasta
+- Migración 0039 incorpora jerarquía padre/subcategoría, descripciones, icono, orden y estado activo; conserva los IDs existentes para no alterar publicaciones previas.
+- Amplía la clasificación inicial a vehículos/transporte/maquinaria, inmuebles/construcción, hogar, tecnología, moda, agricultura, industria, arte, deportes, salud, educación, negocios, activos digitales y servicios profesionales/personales.
+- Administración dispone de una pestaña Categorías para crear, editar, ordenar y activar/desactivar. No borra categorías utilizadas ni cambia sus identificadores; el slug queda fijo al editar.
+- Los usuarios pueden elegir categorías y subcategorías para nuevas subastas; una selección vacía representa todas las categorías, incluidas las que se añadan después.
+- El disparador de nuevas subastas y la cola de entrega vuelven a comprobar las preferencias por categoría, además del consentimiento general.
+- El permiso nativo del navegador sigue siendo opcional y se solicita solo desde la acción contextual del usuario. La sincronización pasiva no abre el diálogo ni repite solicitudes.
+- No se activaron claves, cron, envíos de prueba ni entregas reales. La recepción en dispositivo cerrado requiere una prueba manual autorizada con un dispositivo compatible y permiso nativo concedido.
