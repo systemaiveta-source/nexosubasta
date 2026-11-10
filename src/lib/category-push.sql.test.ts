@@ -22,6 +22,11 @@ beforeAll(async () => {
     INSERT INTO public.categories(id,slug,name,sort) VALUES
       ('${rootA}','vehiculos','Vehículos',1),
       ('${rootB}','hogar','Hogar',2);
+    INSERT INTO public.categories(slug,name,sort) VALUES
+      ('electronica','Electrónica',3),('moda','Moda',4),
+      ('coleccionables','Coleccionables',5),('deportes','Deportes',6),
+      ('herramientas','Herramientas',7),('inmuebles','Inmuebles',8),
+      ('servicios','Servicios',9),('otros','Otros',10);
     CREATE TABLE public.auction_push_events(auction_id uuid PRIMARY KEY);
     CREATE TABLE public.notifications(
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
