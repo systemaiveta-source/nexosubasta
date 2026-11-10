@@ -101,7 +101,8 @@ function Seller() {
       (
         await supabase
           .from("categories")
-          .select("id,name,slug")
+          .select("id,name,slug,parent_id")
+          .eq("active", true)
           .neq("slug", "nft-cripto")
           .order("sort")
       ).data ?? [],
@@ -455,11 +456,16 @@ function Seller() {
                 onChange={set("category_id")}
               >
                 <option value="">Elegir…</option>
-                {cats.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                {cats.data?.map((c) => {
+                  const parent = c.parent_id
+                    ? cats.data?.find((candidate) => candidate.id === c.parent_id)
+                    : null;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {parent ? parent.name + " · " + c.name : c.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className="space-y-1.5">
