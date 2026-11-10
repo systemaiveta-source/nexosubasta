@@ -48,6 +48,7 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
   const { page: _page, ...filters } = s;
   const list = useInfiniteQuery({
     queryKey: ["catalog-feed", filters],
+    enabled: !s.cat || !!cats.data,
     initialPageParam: 0,
     getNextPageParam: nextCatalogOffset,
     queryFn: async ({ pageParam, signal }) => {
