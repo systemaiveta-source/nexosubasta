@@ -224,6 +224,7 @@ function Seller() {
         request.category === "transport" &&
         !(await checkLocations(draftId))
       ) {
+        await qc.invalidateQueries({ queryKey: ["mine"] });
         toast.info("La publicación permanece como borrador hasta validar origen y destino.");
         return;
       }
