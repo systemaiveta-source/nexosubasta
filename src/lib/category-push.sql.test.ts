@@ -39,7 +39,8 @@ beforeAll(async () => {
     CREATE TABLE public.notification_push_outbox(
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(), notification_id uuid NOT NULL,
       device_id uuid NOT NULL, user_id uuid NOT NULL, status text NOT NULL DEFAULT 'pending',
-      created_at timestamptz NOT NULL DEFAULT now(), claimed_at timestamptz
+      created_at timestamptz NOT NULL DEFAULT now(), claimed_at timestamptz,
+      attempts integer NOT NULL DEFAULT 0, next_attempt_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE TABLE public.auctions(
       id uuid PRIMARY KEY, seller_id uuid NOT NULL, title text NOT NULL,
