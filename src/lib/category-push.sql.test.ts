@@ -100,5 +100,10 @@ describe("categorías jerárquicas y preferencias Web Push", () => {
     expect(queued.rows).toEqual([{ user_id: userA }, { user_id: userAll }]);
     const claimed = await db.query("SELECT d.user_id FROM public.claim_notification_push_batch(20) batch JOIN public.push_devices d ON d.id=batch.device_id ORDER BY d.user_id");
     expect(claimed.rows).toEqual([{ user_id: userA }, { user_id: userAll }]);
+    await db.exec("UPDATE public.notification_push_outbox SET claimed_at=now()-interval '6 minutes' WHERE status='sending'");
+    const recovered = await db.query("SELECT count(*)::int AS n FROM public.claim_notification_push_batch(20)");
+    expect(recovered.rows).toEqual([{ n: 2 }]);
+    const attempts = await db.query("SELECT min(attempts)::int AS min_attempts FROM public.notification_push_outbox");
+    expect(attempts.rows).toEqual([{ min_attempts: 2 }]);
   });
 });
