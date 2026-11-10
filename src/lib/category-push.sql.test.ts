@@ -83,7 +83,9 @@ describe("categorías jerárquicas y preferencias Web Push", () => {
     const child = await db.query("SELECT name,parent_id FROM public.categories WHERE slug='autos'");
     expect(child.rows).toEqual([{ name: "Autos y camionetas", parent_id: rootA }]);
     const extra = await db.query("SELECT count(*)::int AS n FROM public.categories WHERE parent_id IS NOT NULL");
-    expect(extra.rows[0].n).toBeGreaterThanOrEqual(30);
+    expect(extra.rows).toEqual([{ n: 39 }]);
+    const rootCount = await db.query("SELECT count(*)::int AS n FROM public.categories WHERE parent_id IS NULL");
+    expect(rootCount.rows).toEqual([{ n: 15 }]);
   });
 
   it("crea avisos y elementos de cola solo para categorías elegidas o todas", async () => {
