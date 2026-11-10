@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPushSettings, savePushPreferences } from "@/lib/push.functions";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { toggleCategoryGroup, toggleCategorySelection } from "@/lib/category-filter";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
@@ -63,10 +64,12 @@ export function PushPreferences() {
   function toggleCategory(id: string, checked: boolean) {
     if (!query.data || !categoryQuery.data || busy) return;
     const allIds = categoryQuery.data.map((item) => item.id);
-    const current = pending?.categories ?? query.data.preferences.categories;
-    const selected = current.length ? [...current] : [...allIds];
-    const next = checked ? [...new Set([...selected, id])] : selected.filter((value) => value !== id);
-    const normalized = next.length === allIds.length ? [] : next;
+    const normalized = toggleCategorySelection(
+      pending?.categories ?? query.data.preferences.categories,
+      id,
+      checked,
+      allIds,
+    );
     void change(
       pending?.enabled ?? query.data.preferences.new_auctions,
       pending?.activity ?? query.data.preferences.activity,
@@ -116,9 +119,17 @@ export function PushPreferences() {
                       <label className="flex items-center gap-2 text-sm font-medium">
                         <input type="checkbox" disabled={busy} checked={allCategories || categoryIds.has(root.id) || childIds.length > 0 && childIds.every((id) => categoryIds.has(id))}
                           onChange={(e) => {
-                            const current = allCategories ? categoryQuery.data!.map((item) => item.id) : [...selectedCategories];
-                            const next = e.target.checked ? [...new Set([...current, ...ids])] : current.filter((id) => !ids.includes(id));
-                            void change(pending?.enabled ?? query.data!.preferences.new_auctions, pending?.activity ?? query.data!.preferences.activity, next.length === categoryQuery.data!.length ? [] : next);
+                            const next = toggleCategoryGroup(
+                              selectedCategories,
+                              ids,
+                              e.target.checked,
+                              categoryQuery.data!.map((item) => item.id),
+                            );
+                            void change(
+                              pending?.enabled ?? query.data!.preferences.new_auctions,
+                              pending?.activity ?? query.data!.preferences.activity,
+                              next,
+                            );
                           }} />
                         {root.name}
                       </label>
