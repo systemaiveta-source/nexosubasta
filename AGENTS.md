@@ -15,6 +15,7 @@
 - PL/pgSQL validation routines must use distinct variable names and explicitly qualified set-returning-function column aliases to prevent variable/column ambiguity without weakening validation.
 - Authentication returns and notification links share a known-route destination validator; notification reads and read-state writes use authenticated server functions scoped to the caller, with polling as a reliable update fallback.
 - Public auction screens read auctions_safe, never legacy starting_price directly; the projection suppresses service budgets and explicitly scopes draft visibility.
+- Root and catalog routes render one shared CatalogGallery with route-owned search state so filters and incremental queries cannot diverge.
 - Keep auctions_safe as a security-barrier, owner-read projection with explicit draft filtering: invoker mode cannot read the deliberately revoked legacy starting_price; never repair that by granting raw price access.
 - Auction social metadata is loaded anonymously from auctions_safe; share-image endpoints resolve only public item images and generate bounded JPEG renditions, never expose drafts, service attachments or signed storage URLs in head tags.
 - Draft saves and publication limits use transactional RPCs; publication locks per owner to enforce membership limits under concurrency.
