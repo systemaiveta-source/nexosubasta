@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useRoles } from "@/lib/auth";
-import { money, errMsg, statusLabel } from "@/lib/format";
+import { errMsg } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { DeliveryForm } from "@/components/DeliveryForm";
@@ -20,9 +20,7 @@ import { deliverySchema, parseDelivery, type Delivery } from "@/lib/delivery";
 import { emptyServiceRequest, type ServiceRequest } from "@/lib/service-catalog";
 import { saveExtendedDraft } from "@/lib/auction-details.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
-import { listMyPublications } from "@/lib/profiles.functions";
-import { groupPublications } from "@/lib/publication-groups";
+import { QUIET_MINUTES } from "@/lib/auction-timing";
 import { ItemCategoryForm, validateItemAttributes } from "@/components/ItemCategoryForm";
 import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
 import { parseAuctionMethods, type AuctionMethod } from "@/lib/auction-payments";
@@ -82,7 +80,6 @@ function Seller() {
     closing_mode: "",
     quiet_period_minutes: "5",
   });
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
   const [methods, setMethods] = useState<AuctionMethod[]>([]);
   const [delivery, setDelivery] = useState<Delivery>({
@@ -123,11 +120,6 @@ function Seller() {
     queryKey: ["sub", user?.id],
     queryFn: async () =>
       (await supabase.rpc("has_active_seller_sub", { _user_id: user?.id ?? "" })).data ?? false,
-  });
-  const mine = useQuery({
-    queryKey: ["mine", user?.id],
-    enabled: !!user,
-    queryFn: () => listMyPublications(),
   });
   const previews = useImageUrls(images);
 
@@ -222,7 +214,7 @@ function Seller() {
       };
       const { id: draftId } = await saveDraft({
         data: {
-          id: editingId,
+          id: null,
           auction: draftArgs._data,
           private: draftArgs._private,
           delivery: type === "item" ? deliverySchema.parse(delivery) : null,
@@ -258,7 +250,6 @@ function Seller() {
           toast.error(errMsg(e3) + " (guardada como borrador)");
         } else toast.success("¡Subasta publicada!");
       } else toast.success("Borrador guardado");
-      setEditingId(null);
       setStartsAt("");
       setMethods([]);
       setRequest(emptyServiceRequest());
@@ -275,74 +266,6 @@ function Seller() {
         closing_mode: "",
       }));
       qc.invalidateQueries({ queryKey: ["mine"] });
-    } catch (e) {
-      toast.error(errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function editDraft(id: string) {
-    setBusy(true);
-    try {
-      const result = await supabase.rpc("my_auction_draft", { _id: id });
-      if (result.error) throw result.error;
-      const parsed = result.data as {
-        auction?: Record<string, unknown>;
-        private?: Record<string, unknown>;
-      };
-      const a = parsed.auction;
-      const p = parsed.private;
-      if (!a) throw new Error("Borrador no disponible");
-      setEditingId(id);
-      setType(a["auction_type"] === "service" ? "service" : "item");
-      setF({
-        title: String(a["title"] ?? ""),
-        description: String(a["description"] ?? ""),
-        category_id: String(a["category_id"] ?? ""),
-        country: String(a["country"] ?? ""),
-        city: String(a["city"] ?? ""),
-        scope: String(a["scope"] ?? "national"),
-        delivery_terms: String(a["delivery_terms"] ?? ""),
-        starting_price: String(
-          a["auction_type"] === "service"
-            ? (p?.["service_budget"] ?? "")
-            : (a["starting_price"] ?? ""),
-        ),
-        min_increment: String(a["min_increment"] ?? 1),
-        currency: String(a["currency"] ?? "USD"),
-        duration_hours: String(a["duration_hours"] ?? 24),
-        duration_minutes: String(a["duration_minutes"] ?? 60),
-        service_from: String(a["service_from"] ?? ""),
-        service_to: String(a["service_to"] ?? ""),
-        reserve: String(p?.["reserve_price"] ?? ""),
-        expected: String(p?.["expected_price"] ?? ""),
-        closing_mode: String(a["closing_mode"] ?? "fixed"),
-        quiet_period_minutes: String(
-          a["quiet_period_minutes"] ?? Math.ceil(Number(a["quiet_period_seconds"] ?? 300) / 60),
-        ),
-      });
-      setImages(
-        Array.isArray(a["images"])
-          ? a["images"].filter((v): v is string => typeof v === "string")
-          : [],
-      );
-      setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
-      setDelivery(
-        parseDelivery(a["delivery_snapshot"]) ?? {
-          mode: "other",
-          cost: null,
-          conditions: String(a["delivery_terms"] ?? ""),
-        },
-      );
-      const itemDetails = await supabase.from("auction_item_details").select("attributes").eq("auction_id", id).maybeSingle();
-      setItemAttributes((itemDetails.data?.attributes && typeof itemDetails.data.attributes === "object") ? itemDetails.data.attributes as unknown as Record<string, string> : {});
-      const details = await supabase.rpc("get_service_request", { _auction: id });
-      setRequest(
-        details.data ? (details.data as unknown as ServiceRequest) : emptyServiceRequest(),
-      );
-      setStartsAt(typeof a["starts_at"] === "string" ? a["starts_at"].slice(0, 16) : "");
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       toast.error(errMsg(e));
     } finally {
@@ -376,61 +299,6 @@ function Seller() {
     }
   }
 
-  async function reserveDecision(id: string, extend: boolean) {
-    if (!extend && !confirm("¿Finalizar esta subasta sin adjudicarla a un ganador?")) return;
-    setBusy(true);
-    try {
-      const result = extend
-        ? await supabase.rpc("extend_reserve_auction", { _auction: id })
-        : await supabase.rpc("finish_reserve_auction", { _auction: id });
-      if (result.error) throw result.error;
-      toast.success(extend ? "Extensión única de 7 días aplicada" : "Finalizada sin ganador");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["mine"] }),
-        qc.invalidateQueries({ queryKey: ["auction", id] }),
-        qc.invalidateQueries({ queryKey: ["bids", id] }),
-      ]);
-    } catch (e) {
-      toast.error(errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function repeat(id: string) {
-    setBusy(true);
-    try {
-      const result = await supabase.rpc("republish_auction", { _auction: id });
-      if (result.error) throw result.error;
-      if (!result.data) throw new Error("No se pudo crear la republicación");
-      await editDraft(result.data);
-      await qc.invalidateQueries({ queryKey: ["mine"] });
-      toast.success("Nueva subasta en borrador; revisa los datos y publica cuando quieras");
-    } catch (e) {
-      toast.error(errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
-  const publicationGroups = groupPublications(mine.data ?? []);
-
-  async function retireUnsold(id: string) {
-    if (!window.confirm("¿Retirar esta publicación? No volverá a mostrarse en tu panel ni en el catálogo. El registro y sus evidencias se conservarán en el historial.")) return;
-    setBusy(true);
-    try {
-      const result = await supabase.rpc("delete_unsold_auction", { _auction_id: id });
-      if (result.error) throw result.error;
-      toast.success("Publicación retirada; el historial se conserva");
-      await qc.invalidateQueries({ queryKey: ["mine"] });
-    } catch (e) {
-      toast.error(errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <PageShell title="Panel del subastador">
       {sub.data === false && (
@@ -441,7 +309,7 @@ function Seller() {
           </Link>
         </div>
       )}
-      <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-8">
         <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
           <div className="flex gap-2">
             <Button
@@ -712,89 +580,7 @@ function Seller() {
             </Button>
           </div>
         </section>
-        <section className="space-y-5">
-          <h2 className="font-display text-lg font-bold">Mis publicaciones</h2>
-          {mine.isPending ? <p>Cargando publicaciones…</p> : mine.error ? <Empty>No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => mine.refetch()}>Reintentar</Button></Empty> : !mine.data?.length ? <Empty>Aún no has publicado nada.</Empty> : (
-            <>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Activas y próximas ({publicationGroups.current.length})</h3>
-                {publicationGroups.current.length ? (
-                  <ul className="space-y-2">
-                    {publicationGroups.current.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
-                          <b className="block truncate">{a.title}</b>
-                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {statusLabel[a.status] ?? a.status} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
-                        </Link>
-                        {a.extension_pending && !a.extension_used && (
-                          <div className="flex flex-wrap gap-2">
-                            <Button size="sm" disabled={busy} onClick={() => reserveDecision(a.id, true)}>Extender 7 días</Button>
-                            <Button size="sm" variant="outline" disabled={busy} onClick={() => reserveDecision(a.id, false)}>Finalizar sin ganador</Button>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-sm text-muted-foreground">No tienes subastas activas ni programadas.</p>}
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Borradores ({publicationGroups.drafts.length})</h3>
-                {publicationGroups.drafts.length ? (
-                  <ul className="space-y-2">
-                    {publicationGroups.drafts.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
-                          <b className="block truncate">{a.title}</b>
-                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · Borrador</span>
-                        </Link>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => editDraft(a.id)}>Editar</Button>
-                          <Button size="sm" disabled={busy} onClick={() => publish(a.id)}>Publicar</Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-sm text-muted-foreground">No tienes borradores.</p>}
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Finalizadas sin venta · pendientes de renovar ({publicationGroups.renewal.length})</h3>
-                {publicationGroups.renewal.length ? (
-                  <ul className="space-y-2">
-                    {publicationGroups.renewal.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
-                          <b className="block truncate">{a.title}</b>
-                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
-                        </Link>
-                        <div className="flex flex-wrap gap-2">
-                          <Button size="sm" disabled={busy} onClick={() => repeat(a.id)}>Renovar / preparar nueva</Button>
-                          {a.bid_count === 0 && (
-                            <Button size="sm" variant="outline" disabled={busy} onClick={() => retireUnsold(a.id)}>Retirar</Button>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-sm text-muted-foreground">No hay publicaciones pendientes de renovar.</p>}
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Historial ({publicationGroups.history.length})</h3>
-                {publicationGroups.history.length ? (
-                  <ul className="space-y-2">
-                    {publicationGroups.history.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
-                          <b className="block truncate">{a.title}</b>
-                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {statusLabel[a.status] ?? a.status} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="text-sm text-muted-foreground">Aún no hay publicaciones en el historial.</p>}
-              </div>
-            </>
-          )}
-        </section>
+
       </div>
     </PageShell>
   );

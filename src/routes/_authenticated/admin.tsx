@@ -36,6 +36,7 @@ const TABS = [
   ["redes", "Redes sociales"],
   ["usuarios", "Usuarios"],
   ["subastas", "Subastas"],
+  ["disputas", "Disputas"],
   ["ajustes", "Ajustes"],
   ["registro", "Registro"],
   ["soporte", "Soporte"],
@@ -92,6 +93,7 @@ function AdminPage() {
           {tab === "redes" && <SocialLinksAdmin />}
           {tab === "usuarios" && <Usuarios />}
           {tab === "subastas" && <Subastas />}
+          {tab === "disputas" && <Disputas />}
           {tab === "ajustes" && <Ajustes />}
           {tab === "registro" && <Registro />}
           {tab === "soporte" && <MembershipSupport admin />}
@@ -148,8 +150,149 @@ function Resumen({ go }: { go: (t: Tab) => void }) {
       <Stat label="Subastas activas" value={d?.active ?? "…"} onClick={() => go("subastas")} />
       <Stat label="Pagos por aprobar" value={d?.pending ?? "…"} onClick={() => go("pagos")} />
       <Stat label="Membresías activas" value={d?.subs ?? "…"} onClick={() => go("usuarios")} />
-      <Stat label="Disputas abiertas" value={d?.disputes ?? "…"} />
+      <Stat label="Disputas abiertas" value={d?.disputes ?? "…"} onClick={() => go("disputas")} />
     </div>
+  );
+}
+
+
+type AdminDispute = {
+  id: string;
+  transaction_id: string;
+  reason: string;
+  status: "open" | "resolved" | "rejected";
+  resolution: string | null;
+  created_at: string;
+  resolved_at: string | null;
+};
+
+function Disputas() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["admin-disputes"],
+    queryFn: async (): Promise<AdminDispute[]> => {
+      const { data, error } = await supabase
+        .from("disputes")
+        .select("id,transaction_id,reason,status,resolution,created_at,resolved_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as AdminDispute[];
+    },
+  });
+  const resolve = useMutation({
+    mutationFn: async (args: {
+      id: string;
+      status: "resolved" | "rejected";
+      resolution: string;
+      txStatus: "pending" | "completed" | "cancelled";
+    }) => {
+      const { error } = await supabase.rpc("resolve_dispute", {
+        _dispute: args.id,
+        _status: args.status,
+        _resolution: args.resolution,
+        _tx_status: args.txStatus,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Disputa actualizada y participantes notificados");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-disputes"] }),
+        qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+      ]);
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
+  if (q.isLoading) return <Empty>Cargando disputas…</Empty>;
+  if (q.error) return <Empty>No se pudieron cargar las disputas. {errMsg(q.error)}</Empty>;
+  if (!q.data?.length) return <Empty>No hay disputas registradas.</Empty>;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Casos visibles para administración. Abre la operación para revisar el chat y sus antecedentes antes de decidir.
+      </p>
+      {q.data.map((d) => (
+        <DisputaCard
+          key={d.id}
+          dispute={d}
+          busy={resolve.isPending}
+          onResolve={(status, resolution, txStatus) =>
+            resolve.mutate({ id: d.id, status, resolution, txStatus })
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function DisputaCard({
+  dispute,
+  busy,
+  onResolve,
+}: {
+  dispute: AdminDispute;
+  busy: boolean;
+  onResolve: (
+    status: "resolved" | "rejected",
+    resolution: string,
+    txStatus: "pending" | "completed" | "cancelled",
+  ) => void;
+}) {
+  const [resolution, setResolution] = useState("");
+  const [txStatus, setTxStatus] = useState<"pending" | "completed" | "cancelled">("pending");
+  const isOpen = dispute.status === "open";
+  return (
+    <article className={`${card} space-y-3`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-semibold">Disputa · {dispute.status === "open" ? "Abierta" : dispute.status === "resolved" ? "Resuelta" : "Rechazada"}</p>
+          <p className="text-xs text-muted-foreground">Caso {dispute.id.slice(0, 8)} · {fmtDate(dispute.created_at)}</p>
+        </div>
+        <Link to="/operaciones/$id" params={{ id: dispute.transaction_id }} className="text-sm font-semibold underline">
+          Revisar operación y chat
+        </Link>
+      </div>
+      <div className="rounded-lg bg-secondary/50 p-3 text-sm whitespace-pre-wrap break-words">{dispute.reason}</div>
+      {!isOpen ? (
+        <div className="text-sm">
+          <p className="font-medium">Resolución registrada</p>
+          <p className="whitespace-pre-wrap">{dispute.resolution || "Sin detalle adicional."}</p>
+        </div>
+      ) : (
+        <div className="space-y-3 border-t border-border pt-3">
+          <label className="block space-y-1 text-sm">
+            Resolución / explicación para ambas partes
+            <textarea
+              className={input}
+              rows={3}
+              maxLength={2000}
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              placeholder="Describe la decisión y los motivos (mínimo 5 caracteres)."
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            Estado final de la operación
+            <select className={input} value={txStatus} onChange={(e) => setTxStatus(e.target.value as typeof txStatus)}>
+              <option value="pending">Reanudar operación</option>
+              <option value="completed">Marcar como completada</option>
+              <option value="cancelled">Cancelar operación</option>
+            </select>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button className={btn} disabled={busy || resolution.trim().length < 5} onClick={() => onResolve("resolved", resolution.trim(), txStatus)}>
+              Resolver disputa
+            </button>
+            <button className={btn2} disabled={busy || resolution.trim().length < 5} onClick={() => onResolve("rejected", resolution.trim(), txStatus)}>
+              Rechazar disputa
+            </button>
+          </div>
+        </div>
+      )}
+    </article>
   );
 }
 
