@@ -16,7 +16,7 @@ BEGIN
 
   SELECT * INTO operation_row
   FROM public.transactions
-  WHERE id = substring(NEW.link FROM 13)::uuid;
+  WHERE id = substring(NEW.link FROM 14)::uuid;
 
   IF operation_row.id IS NULL THEN
     RETURN NEW;
