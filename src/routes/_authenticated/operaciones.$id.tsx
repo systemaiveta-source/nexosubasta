@@ -20,6 +20,7 @@ import {
 import { canComplete, chatWritable, operationPhase, operationPhaseLabels } from "@/lib/operations";
 import { errMsg, money } from "@/lib/format";
 import { useImageUrls } from "@/lib/images";
+import { parseAuctionMethods } from "@/lib/auction-payments";
 const options = (id: string) =>
   queryOptions({
     queryKey: ["operation", id],
@@ -64,6 +65,7 @@ function Operation() {
   const key = useRef(crypto.randomUUID());
   const t = data.tx;
   const imagePath = data.auction?.images?.[0];
+  const paymentMethods = parseAuctionMethods(data.auction?.accepted_payment_methods);
   const images = useImageUrls(imagePath ? [imagePath] : []);
   const isBuyer = t.buyer_id === data.userId;
   const isParty = isBuyer || t.seller_id === data.userId;
@@ -171,6 +173,44 @@ function Operation() {
         </section>
         <section className="order-1 lg:order-2">
           <h2 className="mb-3 text-xl font-semibold">Chat privado</h2>
+          {isParty && (
+            <div className="mb-3 space-y-2 rounded-lg border border-border bg-card p-3">
+              <h3 className="font-semibold">Métodos de pago indicados para esta operación</h3>
+              {paymentMethods.length > 0 ? (
+                <ul className="grid gap-1 text-sm sm:grid-cols-2">
+                  {paymentMethods.map((method, index) => (
+                    <li key={index}>
+                      {method.name}
+                      {method.asset ? ` · ${method.asset}` : ""}
+                      {method.network ? ` · ${method.network}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No se declararon métodos de pago. Coordinen el medio de pago directamente en este chat.
+                </p>
+              )}
+              {isBuyer && paymentMethods.length > 0 && chatWritable(t.status) && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    setBody(
+                      `Hola. Para coordinar el pago, confirmo que los métodos indicados son: ${paymentMethods.map((method) => [method.name, method.asset, method.network].filter(Boolean).join(" · ")).join(", ")}. Por favor envíame por este chat los datos correspondientes al método que acordemos (número de cuenta, nombre del titular, correo o usuario, enlace de pago o dirección de billetera y red, según corresponda). No compartas esos datos fuera de esta conversación privada.`,
+                    )
+                  }
+                >
+                  Solicitar datos de pago por chat
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Los datos de cuenta y usuarios no se publican en el artículo; se comparten aquí entre las partes.
+              </p>
+            </div>
+          )}
           {!chatWritable(t.status) && (
             <p role="status" className="mb-3 border-l-2 border-primary pl-3 font-medium">
               Operación y conversación cerradas. Historial y adjuntos en solo lectura.
