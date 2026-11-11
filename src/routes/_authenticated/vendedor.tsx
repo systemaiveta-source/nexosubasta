@@ -232,7 +232,7 @@ function Seller() {
       if (type === "item") {
         const selectedCategory = cats.data?.find((category) => category.id === f.category_id);
         if (!selectedCategory) throw new Error("La categoría seleccionada ya no está disponible.");
-        const { error: detailsError } = await (supabase as any).from("auction_item_details").upsert({
+        const { error: detailsError } = await supabase.from("auction_item_details").upsert({
           auction_id: draftId,
           category_id: selectedCategory.id,
           category_slug: selectedCategory.slug,
@@ -335,7 +335,7 @@ function Seller() {
         },
       );
       const itemDetails = await (supabase as any).from("auction_item_details").select("attributes").eq("auction_id", id).maybeSingle();
-      setItemAttributes((itemDetails.data?.attributes && typeof itemDetails.data.attributes === "object") ? itemDetails.data.attributes as Record<string, string> : {});
+      setItemAttributes((itemDetails.data?.attributes && typeof itemDetails.data.attributes === "object") ? itemDetails.data.attributes as unknown as Record<string, string> : {});
       const details = await supabase.rpc("get_service_request", { _auction: id });
       setRequest(
         details.data ? (details.data as unknown as ServiceRequest) : emptyServiceRequest(),
