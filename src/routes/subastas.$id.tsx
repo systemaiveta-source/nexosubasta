@@ -82,13 +82,13 @@ function AuctionPage() {
     queryKey: ["item-details", id],
     enabled: a?.auction_type === "item",
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("auction_item_details")
         .select("category_slug,subcategory_name,attributes")
         .eq("auction_id", id)
         .maybeSingle();
       if (error) throw error;
-      return data as { category_slug: string; subcategory_name: string; attributes: Record<string, string> } | null;
+      return data ? { ...data, attributes: data.attributes as unknown as Record<string, string> } : null;
     },
   });
   const request = serviceDetails.data as unknown as
