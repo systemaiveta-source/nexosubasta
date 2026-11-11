@@ -281,6 +281,13 @@
       "when": 1794186259004,
       "tag": "0039_category_tree_and_push_filters",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794186259005,
+      "tag": "0040_private_chat_and_auction_result_push",
+      "breakpoints": true
     }
   ]
 }
