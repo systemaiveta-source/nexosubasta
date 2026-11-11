@@ -12,7 +12,7 @@ beforeAll(async () => {
  CREATE TABLE push_devices(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid,active boolean DEFAULT true,transport text DEFAULT 'webpush',subscription jsonb);
  CREATE TABLE notification_push_outbox(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),notification_id uuid REFERENCES notifications(id),device_id uuid,user_id uuid,status text DEFAULT 'pending',created_at timestamptz DEFAULT now(),claimed_at timestamptz,UNIQUE(notification_id,device_id));
  CREATE TABLE auction_push_events(auction_id uuid PRIMARY KEY); CREATE TABLE categories(id uuid,name text);
- CREATE TABLE auctions(id uuid PRIMARY KEY,seller_id uuid,status text DEFAULT 'draft',title text,category_id uuid,auction_type text DEFAULT 'item',starting_price numeric,currency text DEFAULT 'USD',images text[]);
+ CREATE TABLE auctions(id uuid PRIMARY KEY,seller_id uuid,status text DEFAULT 'draft',title text,description text DEFAULT '',category_id uuid,auction_type text DEFAULT 'item',starting_price numeric,currency text DEFAULT 'USD',images text[]);
  CREATE TABLE transactions(id uuid,auction_id uuid); CREATE TABLE plans(id uuid,name text,months integer,audience text,max_active_auctions integer,referral_pct numeric); CREATE TABLE subscriptions(user_id uuid,plan_id uuid,status text,starts_at timestamptz,ends_at timestamptz); CREATE TABLE profiles(id uuid,display_name text,country text,city text,bio text,created_at timestamptz,account_status text,referred_by uuid); CREATE TABLE reviews(reviewee_id uuid,rating integer,comment text,created_at timestamptz); CREATE TABLE wallet_transactions(user_id uuid,kind text,ref_user_id uuid,amount numeric,currency text);
  ALTER TABLE notifications ENABLE ROW LEVEL SECURITY; GRANT SELECT,UPDATE,DELETE ON notifications TO authenticated; CREATE POLICY own ON notifications TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid());`);
   await db.exec(
@@ -25,6 +25,7 @@ beforeAll(async () => {
     "CREATE TRIGGER enqueue AFTER INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION enqueue_notification_push()",
   );
   await db.exec(readFileSync("drizzle/migrations/0031_profile_membership_benefits_and_push_recovery.sql", "utf8"));
+  await db.exec(readFileSync("drizzle/migrations/0042_descriptive_auction_push_notifications.sql", "utf8"));
 }, 30000);
 afterAll(() => db.close());
 beforeEach(async () => {
@@ -113,4 +114,27 @@ it("chat notifications inherit only the auction's public item thumbnail", async 
   await db.exec(`INSERT INTO auctions(id,title,status,images) VALUES('${auction}','Item','active',ARRAY['public.jpg']); INSERT INTO transactions VALUES('${b}','${auction}'); INSERT INTO notifications(user_id,title,link) VALUES('${a}','Chat','/operaciones/${b}');`);
   const result = await db.query<{image_path:string|null}>("SELECT * FROM claim_notification_push_batch(20)");
   expect(result.rows.filter(r=>r.image_path==='public.jpg')).toHaveLength(5);
+});
+
+it("new auction push includes an explicit article description and keeps the public thumbnail", async () => {
+  await db.exec(`
+    INSERT INTO categories(id,name) VALUES ('${auction}','Tecnología');
+    INSERT INTO auctions(id,seller_id,title,description,category_id,status,images)
+    VALUES ('${auction}','${a}','Cámara digital',
+      'Cámara digital profesional en excelente estado y con accesorios.',
+      '${auction}','active',ARRAY['public-camera.jpg']);
+  `);
+  const notifications = await db.query<{user_id:string;title:string;body:string}>(
+    "SELECT user_id,title,body FROM notifications ORDER BY user_id",
+  );
+  expect(notifications.rows).toHaveLength(2);
+  expect(notifications.rows[0]).toMatchObject({
+    title: "Cámara digital",
+    body: "Tecnología · Nuevo artículo en subasta: Cámara digital profesional en excelente estado y con accesorios.",
+  });
+  const queued = await db.query<{image_path:string|null}>(
+    "SELECT * FROM claim_notification_push_batch(20)",
+  );
+  expect(queued.rows).toHaveLength(2);
+  expect(queued.rows.every((row) => row.image_path === "public-camera.jpg")).toBe(true);
 });

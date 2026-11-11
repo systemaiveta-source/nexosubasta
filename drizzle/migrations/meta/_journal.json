@@ -295,6 +295,13 @@
       "when": 1794186259006,
       "tag": "0041_category_specific_auction_item_details",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794350000000,
+      "tag": "0042_descriptive_auction_push_notifications",
+      "breakpoints": true
     }
   ]
 }
