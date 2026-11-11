@@ -21,6 +21,7 @@ import { AuctionShare } from "@/components/AuctionShare";
 import { getAuctionShare } from "@/lib/auction-share.functions";
 import { auctionShareHead } from "@/lib/auction-share";
 import { modeLabel } from "@/lib/auction-timing";
+import { getItemAttributeFields } from "@/components/ItemCategoryForm";
 
 export const Route = createFileRoute("/subastas/$id")({
   staticData: { sitemap: true },
@@ -76,6 +77,19 @@ function AuctionPage() {
     enabled: !!user && a?.auction_type === "service",
     retry: false,
     queryFn: () => getServiceRequest({ data: { id } }),
+  });
+  const itemDetails = useQuery({
+    queryKey: ["item-details", id],
+    enabled: a?.auction_type === "item",
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("auction_item_details")
+        .select("category_slug,subcategory_name,attributes")
+        .eq("auction_id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { category_slug: string; subcategory_name: string; attributes: Record<string, string> } | null;
+    },
   });
   const request = serviceDetails.data as unknown as
     (ServiceRequest & { locations_verified: boolean }) | null;
@@ -335,6 +349,24 @@ function AuctionPage() {
               </p>
             </div>
           </div>
+          {a.auction_type === "item" && itemDetails.data && (
+            <section className="mt-6 space-y-3 border-y border-border py-4">
+              <div>
+                <h2 className="font-semibold">Características del artículo</h2>
+                <p className="text-sm text-muted-foreground">{itemDetails.data.subcategory_name}</p>
+              </div>
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                {getItemAttributeFields(itemDetails.data.category_slug)
+                  .filter((field) => itemDetails.data?.attributes?.[field.key])
+                  .map((field) => (
+                    <div key={field.key}>
+                      <dt className="font-medium">{field.label}</dt>
+                      <dd className="whitespace-pre-wrap break-words text-muted-foreground">{itemDetails.data?.attributes[field.key]}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </section>
+          )}
           {a.auction_type === "service" && (
             <section className="mt-6 space-y-3 border-y border-border py-4">
               <h2 className="font-semibold">Detalles para cotizar</h2>
