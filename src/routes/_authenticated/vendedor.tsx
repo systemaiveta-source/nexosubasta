@@ -24,6 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
 import { listMyPublications } from "@/lib/profiles.functions";
 import { groupPublications } from "@/lib/publication-groups";
+import { ItemCategoryForm, validateItemAttributes } from "@/components/ItemCategoryForm";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   staticData: { sitemap: false },
@@ -89,6 +90,7 @@ function Seller() {
     conditions: "",
   });
   const [request, setRequest] = useState<ServiceRequest>(emptyServiceRequest);
+  const [itemAttributes, setItemAttributes] = useState<Record<string, string>>({});
   const saveDraft = useServerFn(saveExtendedDraft);
   const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -172,6 +174,14 @@ function Seller() {
     try {
       if (type === "item" && (!f.closing_mode || f.starting_price.trim() === ""))
         throw new Error("Elige una modalidad e indica el precio inicial; puede ser cero");
+      if (type === "item") {
+        const selectedCategory = cats.data?.find((category) => category.id === f.category_id);
+        if (!selectedCategory) throw new Error("Elige una categoría y subcategoría para el artículo.");
+        if (!selectedCategory.parent_id && cats.data?.some((category) => category.parent_id === selectedCategory.id))
+          throw new Error("Elige una subcategoría para continuar.");
+        const attributeError = validateItemAttributes(selectedCategory.slug, itemAttributes);
+        if (attributeError) throw new Error(attributeError);
+      }
       const cur = f.currency || profile.data?.currency || "USD";
       const draftArgs = {
         _data: {
@@ -219,6 +229,18 @@ function Seller() {
         },
       });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
+      if (type === "item") {
+        const selectedCategory = cats.data?.find((category) => category.id === f.category_id);
+        if (!selectedCategory) throw new Error("La categoría seleccionada ya no está disponible.");
+        const { error: detailsError } = await (supabase as any).from("auction_item_details").upsert({
+          auction_id: draftId,
+          category_id: selectedCategory.id,
+          category_slug: selectedCategory.slug,
+          subcategory_name: selectedCategory.name,
+          attributes: itemAttributes,
+        }, { onConflict: "auction_id" });
+        if (detailsError) throw detailsError;
+      }
       if (
         publish &&
         type === "service" &&
@@ -239,6 +261,7 @@ function Seller() {
       setStartsAt("");
       setMethods([]);
       setRequest(emptyServiceRequest());
+      setItemAttributes({});
       setDelivery({ mode: "pickup", cost: null, conditions: "" });
       setImages([]);
       setF((p) => ({
@@ -311,6 +334,8 @@ function Seller() {
           conditions: String(a["delivery_terms"] ?? ""),
         },
       );
+      const itemDetails = await (supabase as any).from("auction_item_details").select("attributes").eq("auction_id", id).maybeSingle();
+      setItemAttributes((itemDetails.data?.attributes && typeof itemDetails.data.attributes === "object") ? itemDetails.data.attributes as Record<string, string> : {});
       const details = await supabase.rpc("get_service_request", { _auction: id });
       setRequest(
         details.data ? (details.data as unknown as ServiceRequest) : emptyServiceRequest(),
@@ -446,28 +471,30 @@ function Seller() {
             />
           </div>
           {type === "service" && <ServiceRequestForm value={request} onChange={setRequest} />}
-          <div className="grid gap-3 sm:grid-cols-2">
+          {type === "item" ? (
+            <ItemCategoryForm
+              categories={cats.data ?? []}
+              categoryId={f.category_id}
+              onCategoryChange={(category_id) => {
+                setF((previous) => ({ ...previous, category_id }));
+                setItemAttributes({});
+              }}
+              values={itemAttributes}
+              onValuesChange={setItemAttributes}
+            />
+          ) : (
             <div className="space-y-1.5">
-              <Label>{type === "service" ? "Sección del catálogo" : "Categoría"}</Label>
-              <select
-                aria-label={type === "service" ? "Sección del catálogo" : "Categoría"}
-                className={sel}
-                value={f.category_id}
-                onChange={set("category_id")}
-              >
+              <Label>Sección del catálogo</Label>
+              <select className={sel} value={f.category_id} onChange={set("category_id")}>
                 <option value="">Elegir…</option>
                 {cats.data?.map((c) => {
-                  const parent = c.parent_id
-                    ? cats.data?.find((candidate) => candidate.id === c.parent_id)
-                    : null;
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {parent ? parent.name + " · " + c.name : c.name}
-                    </option>
-                  );
+                  const parent = c.parent_id ? cats.data?.find((candidate) => candidate.id === c.parent_id) : null;
+                  return <option key={c.id} value={c.id}>{parent ? parent.name + " · " + c.name : c.name}</option>;
                 })}
               </select>
             </div>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Alcance</Label>
               <select className={sel} value={f.scope} onChange={set("scope")}>
