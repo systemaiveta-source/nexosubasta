@@ -377,6 +377,7 @@ function Seller() {
   }
 
   async function reserveDecision(id: string, extend: boolean) {
+    if (!extend && !confirm("¿Finalizar esta subasta sin adjudicarla a un ganador?")) return;
     setBusy(true);
     try {
       const result = extend
@@ -384,7 +385,11 @@ function Seller() {
         : await supabase.rpc("finish_reserve_auction", { _auction: id });
       if (result.error) throw result.error;
       toast.success(extend ? "Extensión única de 7 días aplicada" : "Finalizada sin ganador");
-      await qc.invalidateQueries({ queryKey: ["mine"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["mine"] }),
+        qc.invalidateQueries({ queryKey: ["auction", id] }),
+        qc.invalidateQueries({ queryKey: ["bids", id] }),
+      ]);
     } catch (e) {
       toast.error(errMsg(e));
     } finally {
