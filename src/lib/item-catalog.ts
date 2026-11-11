@@ -1,0 +1,74 @@
+import { z } from "zod";
+
+export type ItemField = {
+  key: string;
+  label: string;
+  type?: "text" | "textarea" | "number" | "select";
+  options?: string[];
+  required?: boolean;
+};
+
+const text = (key: string, label: string, required = true): ItemField => ({ key, label, required });
+const number = (key: string, label: string, required = true): ItemField => ({ key, label, type: "number", required });
+const select = (key: string, label: string, options: string[], required = true): ItemField => ({ key, label, type: "select", options, required });
+const area = (key: string, label: string, required = true): ItemField => ({ key, label, type: "textarea", required });
+
+const common = [
+  select("condition", "Estado del artículo", ["Nuevo", "Como nuevo", "Usado - excelente", "Usado - bueno", "Usado - requiere reparación", "Para repuestos"]),
+  text("brand", "Marca", false),
+  text("model", "Modelo o referencia", false),
+  text("color", "Color", false),
+  text("dimensions", "Medidas o dimensiones", false),
+  area("features", "Características y especificaciones", true),
+  text("included", "Accesorios o elementos incluidos", false),
+  text("defects", "Detalles, desgaste o defectos conocidos", false),
+];
+
+export const ITEM_CATALOG: Record<string, { title: string; fields: ItemField[] }> = {
+  autos: { title: "Datos del vehículo", fields: [text("brand","Marca"),text("model","Modelo"),number("year","Año"),number("mileage","Kilometraje"),select("transmission","Transmisión",["Manual","Automática","CVT","Otra"]),select("fuel","Combustible",["Gasolina","Diésel","Híbrido","Eléctrico","Gas","Otro"]),text("engine","Motor o cilindrada",false),select("vehicle_condition","Estado",["Nuevo","Usado","Para reparar","Para repuestos"]),text("plates","Placa o matrícula",false),area("vehicle_features","Características, versión y equipamiento")] },
+  motocicletas: { title: "Datos de la motocicleta", fields: [text("brand","Marca"),text("model","Modelo"),number("year","Año"),number("mileage","Kilometraje"),text("engine","Cilindrada"),select("motorcycle_condition","Estado",["Nueva","Usada - excelente","Usada - buena","Para reparar","Para repuestos"]),area("vehicle_features","Características y accesorios")] },
+  camiones: { title: "Datos del camión o transporte pesado", fields: [text("brand","Marca"),text("model","Modelo"),number("year","Año"),number("mileage","Kilometraje"),text("capacity","Capacidad de carga"),text("axles","Ejes",false),select("fuel","Combustible",["Diésel","Gasolina","Gas","Eléctrico","Otro"]),area("vehicle_features","Carrocería, dimensiones y características")] },
+  "maquinaria-transporte": { title: "Datos de maquinaria", fields: [text("brand","Fabricante"),text("model","Modelo"),number("year","Año"),number("hours","Horas de uso",false),text("capacity","Capacidad",false),select("condition","Estado",["Nueva","Operativa","Usada","Requiere mantenimiento","Para repuestos"]),area("features","Especificaciones y accesorios")] },
+  "maquinaria-agricola": { title: "Datos de maquinaria agrícola", fields: [text("machine_type","Tipo de maquinaria"),text("brand","Marca"),text("model","Modelo"),number("year","Año"),number("hours","Horas de trabajo",false),text("capacity","Capacidad o potencia",false),area("features","Implementos, estado y características")] },
+  "herramientas-industriales": { title: "Datos de la herramienta", fields: [select("tool_type","Tipo de herramienta",["Manual","Eléctrica","Inalámbrica","Neumática","Hidráulica","Medición","Soldadura","Corte","Otra"]),text("brand","Marca"),text("model","Modelo o referencia"),select("power_source","Alimentación",["Manual","110 V","220 V","Batería","Aire comprimido","Hidráulica","Otra"],false),text("power","Potencia o capacidad",false),select("condition","Estado",["Nueva","Como nueva","Usada - funcionando","Requiere reparación","Para repuestos"]),area("features","Características, medidas y especificaciones"),text("included","Accesorios incluidos",false)] },
+  "maquinaria-industrial": { title: "Datos de maquinaria industrial", fields: [text("machine_type","Tipo de máquina"),text("brand","Fabricante"),text("model","Modelo"),number("year","Año",false),text("capacity","Capacidad de producción",false),text("voltage","Voltaje",false),select("condition","Estado",["Nueva","Operativa","Usada","Requiere mantenimiento","Para repuestos"]),area("features","Especificaciones técnicas e instalaciones requeridas")] },
+  ropa: { title: "Datos de la prenda", fields: [select("garment_type","Tipo de prenda",["Camisa","Pantalón","Vestido","Chaqueta","Abrigo","Ropa deportiva","Ropa infantil","Otra"]),text("brand","Marca",false),select("size","Talla",["XS","S","M","L","XL","XXL","XXXL","Única","Otra"]),text("material","Material o composición",false),select("condition","Estado",["Nueva con etiqueta","Nueva sin etiqueta","Como nueva","Usada"]),text("color","Color"),area("features","Corte, estilo y detalles")] },
+  calzado: { title: "Datos del calzado", fields: [text("brand","Marca",false),text("model","Modelo",false),text("size","Talla"),select("footwear_type","Tipo",["Deportivo","Casual","Formal","Botas","Sandalias","Infantil","Otro"]),text("material","Material",false),select("condition","Estado",["Nuevo","Como nuevo","Usado"]),text("color","Color",false)] },
+  muebles: { title: "Datos del mueble", fields: [select("furniture_type","Tipo de mueble",["Sofá","Silla","Mesa","Cama","Armario","Escritorio","Estante","Comedor","Otro"]),text("material","Material",false),text("dimensions","Largo × ancho × alto"),text("seats","Cantidad de puestos",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - excelente","Usado - bueno","Requiere reparación"]),text("color","Color o acabado",false),area("features","Características, piezas y detalles")] },
+  jardin: { title: "Datos del artículo de jardín", fields: [select("garden_type","Tipo",["Planta","Maceta","Mueble exterior","Herramienta de jardín","Cortadora de césped","Riego","Decoración","Otro"]),text("species","Especie o variedad",false),text("material","Material",false),text("dimensions","Medidas",false),select("condition","Estado",["Nuevo","Vivo y saludable","Usado - funcional","Requiere reparación"]),area("features","Características y cuidados")] },
+  electrodomesticos: { title: "Datos del electrodoméstico", fields: [select("appliance_type","Tipo",["Refrigeradora","Lavadora","Secadora","Cocina","Microondas","Aire acondicionado","Licuadora","Otro"]),text("brand","Marca"),text("model","Modelo"),number("year","Año aproximado",false),text("capacity","Capacidad",false),text("voltage","Voltaje",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - funcionando","Requiere reparación","Para repuestos"]),area("features","Funciones, dimensiones y detalles")] },
+  telefonos: { title: "Datos del teléfono o tablet", fields: [select("device_type","Dispositivo",["Teléfono","Tablet","Reloj inteligente","Otro"]),text("brand","Marca"),text("model","Modelo"),text("storage","Almacenamiento"),text("ram","Memoria RAM",false),text("color","Color",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - excelente","Usado - bueno","Para repuestos"]),text("accessories","Accesorios incluidos",false)] },
+  computadoras: { title: "Datos de la computadora", fields: [select("computer_type","Tipo",["Laptop","Escritorio","Monitor","Servidor","Componente","Otro"]),text("brand","Marca"),text("model","Modelo"),text("processor","Procesador",false),text("ram","Memoria RAM",false),text("storage","Almacenamiento",false),text("graphics","Tarjeta gráfica",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - excelente","Usado - bueno","Para repuestos"]),area("features","Especificaciones y accesorios")] },
+  "materiales-construccion": { title: "Datos del material de construcción", fields: [text("material_type","Tipo de material"),text("brand","Marca o fabricante",false),text("quantity","Cantidad y unidad"),text("dimensions","Medidas o presentación",false),select("condition","Estado",["Nuevo","Sobrante nuevo","Usado recuperable"]),area("features","Especificaciones y detalles")] },
+  "arte-original": { title: "Datos de la obra", fields: [text("artist","Artista o autor",false),text("title","Título de la obra",false),text("technique","Técnica o medio"),text("dimensions","Dimensiones"),number("year","Año de creación",false),text("authenticity","Certificado o procedencia",false),area("features","Descripción y estado de conservación")] },
+  antiguedades: { title: "Datos de la antigüedad o coleccionable", fields: [text("object_type","Tipo de objeto"),text("origin","Origen o procedencia",false),number("year","Época o año aproximado",false),text("material","Material",false),text("authenticity","Autenticidad o certificado",false),select("condition","Estado de conservación",["Excelente","Bueno","Regular","Restaurado","Para restaurar"]),area("features","Historia, detalles y características")] },
+  "equipamiento-comercial": { title: "Datos del equipo comercial", fields: [text("equipment_type","Tipo de equipo"),text("brand","Marca",false),text("model","Modelo",false),number("year","Año",false),text("capacity","Capacidad",false),select("condition","Estado",["Nuevo","Operativo","Usado","Requiere reparación"]),area("features","Especificaciones y accesorios")] },
+  "inventario-comercial": { title: "Datos del lote o inventario", fields: [text("product_type","Tipo de productos"),text("brand","Marca o marcas",false),number("quantity","Cantidad de unidades"),text("unit","Unidad o presentación"),select("condition","Estado",["Nuevo","Usado","Mixto"]),text("expiration","Vencimiento si aplica",false),area("features","Descripción del lote y contenido")] },
+  agricultura: { title: "Datos del producto agrícola", fields: [text("product_type","Tipo de producto"),text("variety","Variedad",false),text("quantity","Cantidad y unidad"),text("origin","Origen",false),select("condition","Estado",["Fresco","Seco","Procesado","Nuevo","Usado"]),area("features","Calidad, presentación y características")] },
+  deportes: { title: "Datos del artículo deportivo", fields: [text("sport","Deporte o actividad"),text("brand","Marca",false),text("model","Modelo",false),text("size","Talla o medida",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - bueno","Requiere reparación"]),area("features","Características y accesorios")] },
+  salud: { title: "Datos del equipo o artículo de salud", fields: [text("equipment_type","Tipo de equipo o artículo"),text("brand","Marca",false),text("model","Modelo",false),text("reference","Referencia",false),select("condition","Estado",["Nuevo","Usado - funcional","Requiere mantenimiento"]),text("expiry","Vencimiento si aplica",false),area("features","Especificaciones y accesorios")] },
+  educacion: { title: "Datos del material educativo", fields: [select("material_type","Tipo",["Libro","Colección","Material didáctico","Instrumento","Equipo","Otro"]),text("title","Título o nombre"),text("author","Autor o fabricante",false),text("edition","Edición",false),text("language","Idioma",false),select("condition","Estado",["Nuevo","Como nuevo","Usado"]),area("features","Contenido y características")] },
+  "activos-digitales": { title: "Datos del activo digital", fields: [select("asset_type","Tipo",["Dominio","Sitio web","Software","Licencia transferible","Otro"]),text("name","Nombre o identificador"),text("platform","Plataforma o proveedor",false),text("expiry","Vencimiento de licencia o dominio",false),text("transfer","Condiciones de transferencia"),area("features","Características, alcance y elementos incluidos")] },
+  otros: { title: "Datos del artículo", fields: common },
+  "herramientas": { title: "Datos de la herramienta", fields: [select("tool_type","Tipo de herramienta",["Manual","Eléctrica","Inalámbrica","Neumática","Hidráulica","Medición","Soldadura","Corte","Otra"]),text("brand","Marca",false),text("model","Modelo o referencia",false),text("power","Potencia o capacidad",false),select("condition","Estado",["Nueva","Como nueva","Usada - funcionando","Requiere reparación","Para repuestos"]),area("features","Características y especificaciones")] },
+  "electronica": { title: "Datos del equipo electrónico", fields: [text("device_type","Tipo de equipo"),text("brand","Marca",false),text("model","Modelo",false),text("reference","Referencia",false),select("condition","Estado",["Nuevo","Como nuevo","Usado - funcionando","Requiere reparación","Para repuestos"]),area("features","Especificaciones y accesorios")] },
+  "vehiculos": { title: "Datos del vehículo", fields: [text("brand","Marca"),text("model","Modelo"),number("year","Año"),number("mileage","Kilometraje",false),select("transmission","Transmisión",["Manual","Automática","CVT","Otra"],false),select("fuel","Combustible",["Gasolina","Diésel","Híbrido","Eléctrico","Gas","Otro"],false),area("vehicle_features","Características y estado")] },
+  "hogar": { title: "Datos del artículo para el hogar", fields: common },
+  "moda": { title: "Datos de ropa y accesorios", fields: [select("product_type","Tipo de artículo",["Ropa","Calzado","Bolso","Accesorio","Otro"]),text("brand","Marca",false),text("size","Talla o medida",false),text("material","Material",false),select("condition","Estado",["Nuevo","Como nuevo","Usado"]),area("features","Estilo y características")] },
+  "inmuebles": { title: "Datos del inmueble o lote", fields: [select("property_type","Tipo",["Casa","Apartamento","Terreno","Local","Oficina","Bodega","Otro"]),text("location","Ubicación o zona"),number("area","Área del terreno (m²)",false),number("built_area","Área construida (m²)",false),number("bedrooms","Habitaciones",false),number("bathrooms","Baños",false),text("title_status","Situación legal o título",false),area("features","Servicios, accesos y características")] },
+};
+
+export const itemDetailsSchema = z.object({
+  categorySlug: z.string().min(1).max(100),
+  values: z.record(z.string().max(2000)),
+}).superRefine((data, ctx) => {
+  const category = ITEM_CATALOG[data.categorySlug] ?? ITEM_CATALOG.otros;
+  for (const field of category.fields) {
+    const value = data.values[field.key]?.trim() ?? "";
+    if (field.required && !value) ctx.addIssue({ code: "custom", path: ["values", field.key], message: `Completa ${field.label}` });
+    if (value && field.options && !field.options.includes(value)) ctx.addIssue({ code: "custom", path: ["values", field.key], message: "Selección no válida" });
+    if (value && field.type === "number" && (!Number.isFinite(Number(value)) || Number(value) < 0 || (field.key === "year" && (Number(value) < 1886 || Number(value) > 2100)))) ctx.addIssue({ code: "custom", path: ["values", field.key], message: "Número fuera de rango" });
+  }
+});
+export type ItemDetails = z.infer<typeof itemDetailsSchema>;
+export const emptyItemDetails = (): ItemDetails => ({ categorySlug: "", values: {} });
