@@ -302,6 +302,13 @@
       "when": 1794350000000,
       "tag": "0042_descriptive_auction_push_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794350000007,
+      "tag": "0043_admin_dispute_completion_override",
+      "breakpoints": true
     }
   ]
 }
