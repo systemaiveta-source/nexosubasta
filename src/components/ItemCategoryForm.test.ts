@@ -5,7 +5,7 @@ describe("formularios de artículos por subcategoría", () => {
   it("exige marca, modelo y año para automóviles", () => {
     expect(validateItemAttributes("autos", {})).toContain("Marca");
     expect(validateItemAttributes("autos", { make: "Toyota", model: "Corolla" })).toContain("Año");
-    expect(validateItemAttributes("autos", { make: "Toyota", model: "Corolla", year: "2022" })).toBeNull();
+    expect(validateItemAttributes("autos", { make: "Toyota", model: "Corolla", year: "2022", condition: "Usado - bueno" })).toBeNull();
   });
 
   it("rechaza años fuera de rango y números negativos", () => {
