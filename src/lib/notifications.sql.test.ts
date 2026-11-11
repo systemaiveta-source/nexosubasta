@@ -135,6 +135,6 @@ it("new auction push includes an explicit article description and keeps the publ
   const queued = await db.query<{image_path:string|null}>(
     "SELECT * FROM claim_notification_push_batch(20)",
   );
-  expect(queued.rows).toHaveLength(2);
+  expect(queued.rows).toHaveLength(3);
   expect(queued.rows.every((row) => row.image_path === "public-camera.jpg")).toBe(true);
 });
