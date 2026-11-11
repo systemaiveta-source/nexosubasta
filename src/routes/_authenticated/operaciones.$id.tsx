@@ -18,7 +18,7 @@ import {
   openOperationDocument,
 } from "@/lib/operations.functions";
 import { canComplete, chatWritable, operationPhase, operationPhaseLabels } from "@/lib/operations";
-import { errMsg, money, txStatusLabel } from "@/lib/format";
+import { errMsg, money } from "@/lib/format";
 import { useImageUrls } from "@/lib/images";
 const options = (id: string) =>
   queryOptions({
