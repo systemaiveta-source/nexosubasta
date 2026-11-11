@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.auction_item_details (
   auction_id uuid PRIMARY KEY REFERENCES public.auctions(id) ON DELETE CASCADE,
   category_id uuid NOT NULL REFERENCES public.categories(id) ON DELETE RESTRICT,
+  category_slug text NOT NULL CHECK (char_length(category_slug) BETWEEN 1 AND 70),
   subcategory_name text NOT NULL CHECK (char_length(subcategory_name) BETWEEN 1 AND 100),
   attributes jsonb NOT NULL DEFAULT '{}'::jsonb
     CHECK (jsonb_typeof(attributes) = 'object' AND octet_length(attributes::text) <= 12000),
@@ -62,7 +63,8 @@ DECLARE auction_row public.auctions;
 BEGIN
   SELECT * INTO auction_row FROM public.auctions WHERE id = NEW.auction_id;
   IF auction_row.id IS NULL OR auction_row.auction_type <> 'item'
-     OR auction_row.category_id IS DISTINCT FROM NEW.category_id THEN
+     OR auction_row.category_id IS DISTINCT FROM NEW.category_id
+     OR NOT EXISTS (SELECT 1 FROM public.categories c WHERE c.id = NEW.category_id AND c.slug = NEW.category_slug) THEN
     RAISE EXCEPTION 'Los detalles deben corresponder a la categoría del artículo';
   END IF;
   IF jsonb_typeof(NEW.attributes) <> 'object'
