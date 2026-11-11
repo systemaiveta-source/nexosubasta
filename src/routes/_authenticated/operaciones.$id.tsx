@@ -17,7 +17,7 @@ import {
   uploadOperationDocument,
   openOperationDocument,
 } from "@/lib/operations.functions";
-import { canComplete, chatWritable } from "@/lib/operations";
+import { canComplete, chatWritable, operationPhase, operationPhaseLabels } from "@/lib/operations";
 import { errMsg, money, txStatusLabel } from "@/lib/format";
 import { useImageUrls } from "@/lib/images";
 const options = (id: string) =>
@@ -98,9 +98,11 @@ function Operation() {
       <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
         <section className="order-2 space-y-4 lg:order-1">
           <p className="text-2xl font-bold">{money(t.amount, t.currency)}</p>
-          <p>
-            {txStatusLabel[t.status]}
-          </p>
+          <p className="font-semibold">{operationPhaseLabels[operationPhase(t, openDispute)]}</p>
+          <ul className="text-sm">
+            <li>Comprador: {t.buyer_confirmed ? "✓ marcó completado" : "pendiente"}</li>
+            <li>Vendedor: {t.seller_confirmed ? "✓ marcó completado" : "pendiente"}</li>
+          </ul>
           <p className="text-sm text-muted-foreground">
             NEXO no procesa, custodia ni verifica este pago. Un mensaje o comprobante no confirma recepción de fondos.
           </p>

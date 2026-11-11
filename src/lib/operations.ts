@@ -28,3 +28,37 @@ export function mutuallyComplete(
 ) {
   return status === "pending" && bothAccepted && buyer && seller && !openDispute;
 }
+
+export type OperationPhase =
+  | "pending_acceptance" | "awaiting_buyer_acceptance" | "awaiting_seller_acceptance"
+  | "coordinating" | "awaiting_one_confirmation" | "completed" | "disputed" | "cancelled";
+
+export const operationPhaseLabels: Record<OperationPhase, string> = {
+  pending_acceptance: "Pendiente de aceptación",
+  awaiting_buyer_acceptance: "Esperando aceptación del comprador",
+  awaiting_seller_acceptance: "Esperando aceptación del vendedor",
+  coordinating: "Coordinando pago y entrega",
+  awaiting_one_confirmation: "Esperando confirmación de una de las partes",
+  completed: "Completada por ambas partes",
+  disputed: "En disputa",
+  cancelled: "Cancelada",
+};
+
+/** Derives the visible phase only from server-stored transaction fields. */
+export function operationPhase(t: {
+  status: string;
+  buyer_payment_accepted_at?: string | null;
+  seller_payment_accepted_at?: string | null;
+  buyer_confirmed: boolean;
+  seller_confirmed: boolean;
+}, openDispute = false): OperationPhase {
+  if (t.status === "completed") return "completed";
+  if (t.status === "cancelled") return "cancelled";
+  if (t.status === "disputed" || openDispute) return "disputed";
+  const b = !!t.buyer_payment_accepted_at, s = !!t.seller_payment_accepted_at;
+  if (!b && !s) return "pending_acceptance";
+  if (!b) return "awaiting_buyer_acceptance";
+  if (!s) return "awaiting_seller_acceptance";
+  if (t.buyer_confirmed !== t.seller_confirmed) return "awaiting_one_confirmation";
+  return "coordinating";
+}
