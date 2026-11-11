@@ -1,21 +1,41 @@
-# NEXO: pendientes autorizados del 10 de noviembre
+# NEXO — Plan de actualización integral (sin publicar)
 
-## Cambios
-1. **Inicio con galería:** extraer el catálogo existente a una vista compartida para `/` y `/subastas`, sin duplicar consultas, filtros, destacadas ni scroll infinito. Conservar exploración anónima y acceso protegido para acciones privadas. Actualizar los datos de búsqueda y enlaces sociales de la raíz.
-2. **Ficha de artículos:** ampliar el catálogo de categorías y subcategorías solicitado, con definiciones de atributos configurables y valores estructurados. Mostrar únicamente campos pertinentes, sin rellenarlos ni afirmar verificación. Mantener independiente el formulario de servicios y conservar publicaciones antiguas.
-3. **Publicaciones propias:** separar activas, borradores y «Finalizadas sin ofertas / Pendientes de renovar». Confirmar renovación/republicación y retirada individual; reutilizar las operaciones seguras existentes, creando un registro nuevo y conservando toda evidencia histórica. Comprobar el historial público de adjudicadas.
-4. **Auditoría push:** probar el payload real y el worker con imagen, sin imagen y enlaces con ventanas abiertas/cerradas, usando simulaciones sin envíos. Comprobar miniaturas públicas y deduplicación del pipeline; corregir solo fallos concretos.
-5. **Regresiones:** conservar íntegramente el acuerdo privado y cierre mutuo de 0038, ejecutar pruebas dirigidas y suite relevante, y revisar escritorio/móvil y filtros entre lotes.
+## Estado actual encontrado (análisis)
+- **Módulo 1 (operaciones):** ya implementado en la migración 0038: publicar sin métodos de pago, aceptación independiente de comprador y vendedor, "Marcar como completado" por cada parte, cierre solo con ambas, disputa bloquea el cierre, chat y adjuntos privados por permisos de base de datos. Falta: estados con nombres claros (los 8 pedidos) derivados en servidor y avisos en cada aceptación/confirmación.
+- **Módulo 2 (push):** existe Web Push nativo propio (worker `nexo-push-sw.js`, cola con reintentos, deduplicación, miniatura vía `image`, icono NEXO). Firebase queda como legado sin uso. Unos 18 eventos ya generan avisos; faltan algunos (subasta próxima a finalizar, aceptaciones, recordatorios).
+- **Módulos 3–5 (categorías):** hoy hay una lista plana de categorías y solo los servicios tienen campos específicos. No existen subcategorías, atributos dinámicos ni panel administrativo.
+
+## Fase A — Operaciones (pequeña)
+- Función compartida que deriva el estado visible: Pendiente de aceptación / Esperando comprador / Esperando vendedor / Coordinando pago y entrega / Esperando confirmación de una parte / Completada / En disputa o cancelada. Se calcula desde datos del servidor, nunca desde el navegador.
+- Mostrar quién confirmó y quién falta en la operación y en el listado.
+- Pruebas unitarias para cada estado.
+
+## Fase B — Avisos push
+- Añadir avisos (en la base de datos, sin duplicar) para: aceptación del comprador, aceptación del vendedor, confirmación de una parte, operación completada, nueva conversación al adjudicar (si falta), recordatorio de operación pendiente (una vez cada 24 h como máximo, reutilizando el proceso periódico existente sin cambiar su horario) y "subasta próxima a finalizar" (una sola vez por subasta y participante, solo cuando ya corre la cuenta regresiva).
+- Worker: no marcar `silent`, usar `renotify` por conversación, vibración estándar; el sonido será el **predeterminado de Android/Chrome**. La Web no permite elegir un sonido propio; canales con sonido personalizado requerirían una app Android nativa (fuera de alcance).
+- Pruebas automáticas del contenido del aviso con y sin imagen y del enlace al tocar.
+- **Límite honesto:** puedo demostrar "guardado en base de datos" y "aceptado por el servicio de envío". "Entregado" y "visible en el teléfono" solo puede confirmarlo alguien con el Android en la mano; no haré envíos reales sin tu autorización.
+
+## Fase C — Categorías inteligentes (la parte grande)
+- Nuevas tablas aditivas: subcategorías y atributos (nombre, tipo: texto/número/fecha/lista/sí-no, unidad, obligatorio, orden, activo), asociados a categoría o subcategoría. Valores guardados por subasta en una columna nueva opcional; las publicaciones antiguas siguen funcionando sin atributos.
+- Datos iniciales: las 19 categorías con sus subcategorías y fichas (aeronáutica, náutica, vehículos, tecnología, hogar, agricultura, etc. según tu lista) y "Estado del artículo": nuevo/usado/reacondicionado/para reparación. Las categorías actuales se conservan y se enlazan, sin borrar ninguna.
+- Validación en el servidor al publicar (obligatorios y tipos), no solo en el formulario.
+- Formulario de publicación: subcategoría dependiente y campos que cambian según la selección (sin kilometraje para computadoras, etc.). Nada se completa automáticamente.
+
+## Fase D — Ficha para compradores
+- Sección "Características declaradas por el vendedor" con categoría, subcategoría, estado y atributos agrupados; los vacíos no se muestran. Sin etiquetas de "verificado/certificado". Adaptada a móvil y laptop.
+
+## Fase E — Panel administrativo de categorías
+- Nueva pestaña en el panel de administración: crear/editar categorías, subcategorías y atributos, cambiar orden, activar/desactivar. Un atributo con publicaciones asociadas solo se desactiva, nunca se borra. Solo administradores, comprobado en la base de datos.
+
+## Fuera de alcance (sin cambios)
+Motor de subastas, pujas, temporizadores, extensiones, membresías, comisiones, pagos de NEXO, dominio, secretos, proveedores de envío.
+
+## Créditos y orden recomendado
+El último saldo visto era muy bajo (0,40). Este paquete completo requiere varias sesiones. Propongo ejecutar en orden **A → B → C+D → E**, deteniéndome y reportando si se agotan los créditos. Cada fase deja pruebas, informe de archivos y migraciones.
 
 ## Detalles técnicos
-- Taxonomía y definiciones de atributos persistentes, extensibles y protegidas; migración aditiva mediante la herramienta de migraciones, con permisos explícitos y validación del lado servidor/DB.
-- Lectura pública de atributos sin reservas, presupuestos ni información de operaciones; conservar la barrera de seguridad de `auctions_safe`.
-- No ejecutar manualmente compilación ni comprobación de tipos: la plataforma las ejecuta automáticamente; reportar sus resultados disponibles y los comandos de pruebas ejecutados.
-- No modificar membresías, motor, dominio, secretos, proveedores, cron ni activación push. Sin publicación, despliegue, envíos reales o borrado de datos históricos.
-
-## Validación y límites
-- Probar reglas nuevas con datos aislados, no actividad ficticia en cuentas reales.
-- Revisar si hay una sesión propia disponible; no seleccionar otras cuentas sin autorización.
-- La recepción física de push requiere un Android real y no se afirmará a partir de simulaciones ni aceptación HTTP.
-- Si Lovable bloquea por saldo/créditos, detenerse y reportar el bloqueo, sin vías alternativas.
-- Entregar archivos y migraciones exactos, pruebas aprobadas/fallidas y verificaciones pendientes.
+- Migraciones nuevas 0039+ (solo aditivas): `category_subcategories`, `category_attributes`, `auctions.subcategory_id`, `auctions.attributes jsonb default '{}'`, `auctions.item_condition`; GRANT + RLS (lectura pública de activos, escritura vía RPC con `has_role admin`).
+- `auctions_safe` se amplía para exponer subcategoría/atributos/estado (sin datos privados).
+- Validación de atributos dentro de `save_auction_draft`/`publish_auction` mediante función auxiliar, sin tocar la lógica de reloj.
+- Avisos nuevos con `event_kind` propios y clave de deduplicación.
