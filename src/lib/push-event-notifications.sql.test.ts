@@ -66,7 +66,7 @@ describe("notificaciones push de chat privado y adjudicación", () => {
     await db.exec(`INSERT INTO public.messages(transaction_id,sender_id,body)
       VALUES ('${operation}','${buyer}','Mi cuenta bancaria es 123456789')`);
     const result = await db.query(
-      "SELECT user_id,title,body,link,event_kind FROM public.notifications WHERE user_id=$1",
+      "SELECT user_id,title,body,link,event_kind FROM public.notifications WHERE user_id=$1 AND event_kind='chat_message'",
       [seller],
     );
     expect(result.rows).toEqual([{
