@@ -8,7 +8,7 @@ export const listOperations = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const result = await context.supabase
       .from("transactions")
-      .select("id,auction_id,buyer_id,seller_id,amount,currency,status,payment_stage,created_at")
+      .select("id,auction_id,buyer_id,seller_id,amount,currency,status,payment_stage,buyer_confirmed,seller_confirmed,buyer_payment_accepted_at,seller_payment_accepted_at,created_at")
       .or(`buyer_id.eq.${context.userId},seller_id.eq.${context.userId}`)
       .order("created_at", { ascending: false })
       .limit(100);
