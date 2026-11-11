@@ -288,6 +288,13 @@
       "when": 1794186259005,
       "tag": "0040_private_chat_and_auction_result_push",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794186259006,
+      "tag": "0041_category_specific_auction_item_details",
+      "breakpoints": true
     }
   ]
 }
