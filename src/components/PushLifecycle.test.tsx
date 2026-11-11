@@ -55,7 +55,7 @@ it("context offers once; declining never prompts and remount does not repeat", a
   fireEvent.click(await screen.findByRole("button", { name: "Ahora no" }));
   view.unmount();
   render(<PushLifecycle />);
-  expect(screen.queryByRole("button", { name: "Permitir ahora" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Activar notificaciones" })).toBeNull();
   expect(mocks.subscribe).not.toHaveBeenCalled();
 });
 it("permission request only on explicit gesture and registers granted device", async () => {
