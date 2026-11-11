@@ -49,7 +49,7 @@ WITH CHECK (
     SELECT 1 FROM public.auctions a
     WHERE a.id = auction_id AND a.seller_id = auth.uid()
       AND a.status = 'draft' AND a.auction_type = 'item'
-      AND a.category_id = category_id
+      AND a.category_id = auction_item_details.category_id
   )
 );
 
