@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { safeDestination } from "@/lib/destinations";
 import { useAuth } from "@/lib/auth";
-import { PushPreferences } from "@/components/PushPreferences";
 
 const notificationOptions = (userId: string, page = 0, unreadOnly = false) =>
   queryOptions({
@@ -135,7 +134,6 @@ function NotificationsPage() {
         </div>
       }
     >
-      <PushPreferences />
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -154,17 +152,17 @@ function NotificationsPage() {
         </AlertDialogContent>
       </AlertDialog>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={unreadOnly}
-            onChange={(event) => {
-              setUnreadOnly(event.target.checked);
-              setPage(0);
-            }}
-          />
-          Solo no leídas
-        </label>
+        <Button
+          variant={unreadOnly ? "secondary" : "ghost"}
+          size="sm"
+          aria-pressed={unreadOnly}
+          onClick={() => {
+            setUnreadOnly((value) => !value);
+            setPage(0);
+          }}
+        >
+          {unreadOnly ? "Mostrando solo no leídas" : "Solo no leídas"}
+        </Button>
         <Button
           variant="ghost"
           size="icon"

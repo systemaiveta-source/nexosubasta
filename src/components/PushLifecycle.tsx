@@ -44,9 +44,9 @@ export function PushLifecycle() {
       return;
     const account = userId;
     const endpointKey = `nexo-push-endpoint:${account}`;
-    const promptKey = "nexo-push-context-seen";
+    const promptKey = `nexo-push-context-seen:${account}`;
     if (
-      ["/notificaciones", "/perfil", "/panel", "/vendedor"].includes(path) &&
+      path === "/notificaciones" &&
       Notification.permission === "default" &&
       !localStorage.getItem(promptKey)
     ) {
@@ -128,10 +128,10 @@ export function PushLifecycle() {
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3">
         <p className="flex-1 text-sm">
-          ¿Recibir avisos de nuevas subastas, ofertas y mensajes cuando NEXO esté cerrado?
+          Activa las notificaciones del dispositivo para recibir avisos de subastas, mensajes y adjudicaciones incluso cuando NEXO esté cerrado. Chrome te pedirá el permiso nativo.
         </p>
         <Button disabled={busy} onClick={allow}>
-          Permitir ahora
+          Activar notificaciones
         </Button>
         <Button variant="ghost" disabled={busy} onClick={() => setOffer(false)}>
           Ahora no
