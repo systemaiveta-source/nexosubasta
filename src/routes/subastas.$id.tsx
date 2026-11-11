@@ -407,6 +407,25 @@ function AuctionPage() {
               )}
             </section>
           )}
+          {methods.length > 0 && (
+            <section className="mt-6 space-y-2 border-b border-border pb-4">
+              <h2 className="font-semibold">
+                {a.auction_type === "service" ? "Métodos de pago para el servicio" : "Métodos de pago aceptados"}
+              </h2>
+              <ul className="grid gap-1 text-sm sm:grid-cols-2">
+                {methods.map((method, index) => (
+                  <li key={index}>
+                    {method.name}
+                    {method.asset ? ` · ${method.asset}` : ""}
+                    {method.network ? ` · ${method.network}` : ""}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                Los números de cuenta, usuarios, enlaces y direcciones de billetera se comparten únicamente en el chat privado.
+              </p>
+            </section>
+          )}
         </div>
 
         <div className="space-y-5">
@@ -563,22 +582,14 @@ function AuctionPage() {
                     )}
                     {(methods.length > 0 || delivery) && (
                       <div className="space-y-2 border-y border-border py-3">
-                        <p className="text-sm font-semibold">Métodos aceptados</p>
-                        <ul className="text-sm">
-                          {methods.map((m, i) => (
-                            <li key={i}>
-                              {m.name} {m.asset} {m.network}
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="text-sm font-semibold">Confirma las condiciones de pago</p>
                         <label className="flex items-start gap-2 text-sm">
                           <input
                             type="checkbox"
                             checked={accepted}
                             onChange={(e) => setAccepted(e.target.checked)}
                           />
-                          Acepto los métodos de pago y las condiciones de entrega indicadas. NEXO no
-                          procesa ni verifica el pago.
+                          Acepto las condiciones publicadas{delivery ? " y de entrega" : ""}. NEXO no procesa ni verifica el pago.
                         </label>
                       </div>
                     )}

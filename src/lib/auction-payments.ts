@@ -24,6 +24,14 @@ export const AUCTION_METHODS: AuctionMethod[] = [
   { name: "Google Pay", kind: "wallet" },
   { name: "Poket Nicaragua", kind: "wallet" },
   { name: "Paypalex Nicaragua", kind: "wallet" },
+  { name: "Efectivo", kind: "other" },
+  { name: "Zelle", kind: "wallet" },
+  { name: "Cash App", kind: "wallet" },
+  { name: "Venmo", kind: "wallet" },
+  { name: "Western Union", kind: "platform" },
+  { name: "MoneyGram", kind: "platform" },
+  { name: "Binance Pay", kind: "platform" },
+  { name: "Transferencia ACH", kind: "bank" },
 ];
 export function parseAuctionMethods(value: unknown): AuctionMethod[] {
   const parsed = z.array(auctionMethodSchema).safeParse(value);

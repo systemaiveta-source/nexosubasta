@@ -49,7 +49,7 @@ export const getOperation = createServerFn({ method: "POST" })
       context.supabase.rpc("tx_contact", { _tx: data.id }),
       context.supabase
         .from("auctions_safe")
-        .select("title,auction_type,images")
+        .select("title,auction_type,images,accepted_payment_methods")
         .eq("id", tx.data.auction_id)
         .maybeSingle(),
     ]);

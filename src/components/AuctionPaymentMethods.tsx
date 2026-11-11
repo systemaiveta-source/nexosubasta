@@ -17,7 +17,10 @@ export function AuctionPaymentMethods({
   const candidate = auctionMethodSchema.safeParse({ name, kind, asset, network });
   return (
     <div className="space-y-3">
-      <h3 className="font-semibold">Métodos de pago aceptados</h3>
+      <h3 className="font-semibold">Métodos de pago que aceptas</h3>
+      <p className="text-xs text-muted-foreground">
+        Es opcional para publicar. Si seleccionas métodos, quien oferte deberá aceptarlos antes de enviar su oferta.
+      </p>
       <Input
         aria-label="Buscar método"
         placeholder="Buscar método"
