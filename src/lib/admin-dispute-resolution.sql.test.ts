@@ -17,7 +17,7 @@ beforeAll(async () => {
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS
       $$ SELECT nullif(current_setting('test.uid',true),'')::uuid $$;
     CREATE FUNCTION public.is_staff(_user uuid) RETURNS boolean LANGUAGE sql AS
-      $$ SELECT _user IS NOT NULL AND _user::text=nullif(current_setting('test.staff',true),'') $$;
+      $ SELECT coalesce(_user IS NOT NULL AND _user::text=nullif(current_setting('test.staff',true),''),false) $;
     CREATE FUNCTION public.notify(uuid,text,text,text) RETURNS void LANGUAGE sql AS 'SELECT';
     CREATE TABLE public.transactions(
       id uuid PRIMARY KEY,
