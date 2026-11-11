@@ -41,3 +41,10 @@ Sin despliegue ni aplicación de la migración 0039 en la base alojada; no se al
 - El disparador de nuevas subastas y la cola de entrega vuelven a comprobar las preferencias por categoría, además del consentimiento general.
 - El permiso nativo del navegador sigue siendo opcional y se solicita solo desde la acción contextual del usuario. La sincronización pasiva no abre el diálogo ni repite solicitudes.
 - No se activaron claves, cron, envíos de prueba ni entregas reales. La recepción en dispositivo cerrado requiere una prueba manual autorizada con un dispositivo compatible y permiso nativo concedido.
+
+## Eventos de chat privado y adjudicación — 2026-11-10
+- Migración 0040 agrega avisos dirigidos a la contraparte por cada mensaje nuevo de una operación abierta; el contenido del mensaje nunca se incluye en la vista previa push para no filtrar cuentas, enlaces de pago ni direcciones.
+- Las notificaciones existentes generadas al crear la operación se personalizan para comprador y vendedor con el resultado y el importe final. El chat queda disponible al crearse la operación por el flujo de adjudicación existente; no se cambia `process_auctions()`, las reglas de puja, ni el cálculo del ganador.
+- El Service Worker solicita sonido predeterminado del sistema (`silent: false`) y vibración cuando el navegador/SO los admite. El sonido efectivo depende de los ajustes del dispositivo; Web Push en segundo plano no permite garantizar un archivo de audio personalizado.
+- Pruebas PGlite añadidas para ganador, vendedor y privacidad del mensaje; prueba del worker ampliada para vibración y sonido del sistema.
+- La migración 0040 solo está en la rama de trabajo. No se aplicó a Supabase alojado, no se activó ni modificó VAPID/cron y no se enviaron avisos reales. La validación CI queda pendiente.
