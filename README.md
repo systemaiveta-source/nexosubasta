@@ -1,26 +1,30 @@
-# Nexosubasta
+# NEXO — Subastas en línea
 
-Implement exactly the screenshot and nothing else
+NEXO es una plataforma para explorar y participar en subastas de productos y servicios.
 
-This project was built with [Lovable](https://lovable.dev).
+- **Sitio oficial:** https://nexosubastas.com
+- **Catálogo:** https://nexosubastas.com/subastas
+- **Idioma principal:** español
 
-**Live app**: https://nexosubasta.lovable.app
+## Desarrollo
 
-## Build with Lovable
+Este repositorio contiene el código fuente de NEXO. El proyecto está conectado a Lovable; los cambios enviados a la rama conectada pueden sincronizarse con el editor. Mantén los commits pequeños y evita reescribir el historial publicado.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/49b71078-d230-4331-9b40-dee98a450de5).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requisitos: Bun o Node.js compatible con la versión de Vite del proyecto.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+git clone https://github.com/systemaiveta-source/nexosubasta.git
+cd nexosubasta
+bun install
+bun run dev
 ```
+
+## Comprobaciones
+
+```sh
+bun run lint
+bun run test
+bun run build
+```
+
+No despliegues desde esta rama de trabajo. Integra los cambios mediante revisión antes de incorporarlos a `main`.

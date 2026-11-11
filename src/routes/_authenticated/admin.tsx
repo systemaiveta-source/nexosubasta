@@ -10,6 +10,7 @@ import { MembershipRequests } from "@/components/MembershipRequests";
 import { SocialLinksAdmin } from "@/components/SocialLinksAdmin";
 import { modeLabel } from "@/lib/auction-timing";
 import { MembershipSupport } from "@/components/MembershipSupport";
+import { CategoriesAdmin } from "@/components/CategoriesAdmin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   staticData: { sitemap: false },
@@ -31,6 +32,7 @@ const TABS = [
   ["pagos", "Pagos por aprobar"],
   ["planes", "Membresías"],
   ["metodos", "Métodos de pago"],
+  ["categorias", "Categorías"],
   ["redes", "Redes sociales"],
   ["usuarios", "Usuarios"],
   ["subastas", "Subastas"],
@@ -86,6 +88,7 @@ function AdminPage() {
           {tab === "pagos" && <MembershipRequests admin />}
           {tab === "planes" && <Planes />}
           {tab === "metodos" && <PaymentMethodsAdmin />}
+          {tab === "categorias" && <CategoriesAdmin />}
           {tab === "redes" && <SocialLinksAdmin />}
           {tab === "usuarios" && <Usuarios />}
           {tab === "subastas" && <Subastas />}

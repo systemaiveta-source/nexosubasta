@@ -31,6 +31,9 @@ self.addEventListener("push", (event) => {
       badge: "/icons/icon-64.png",
       tag: typeof data.tag === "string" ? data.tag : path,
       ...(image ? { image } : {}),
+      // Let the operating system play its default notification sound where supported.
+      silent: false,
+      vibrate: [250, 100, 250],
       data: { path },
     }),
   );

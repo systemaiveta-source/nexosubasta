@@ -51,6 +51,6 @@ export const listMyPublications = createServerFn({method: "POST"})
       id: z.string(), title: z.string(), status: z.string(), current_price: z.number().nullable(),
       currency: z.string(), bid_count: z.number(), ends_at: z.string().nullable(), auction_type: z.string(),
       closing_mode: z.string(), winner_id: z.string().nullable(), selection_pending: z.boolean(),
-      extension_pending: z.boolean(), extension_used: z.boolean(), republished_from: z.string().nullable(),
+      extension_pending: z.boolean(), extension_used: z.boolean(), republished_from: z.string().nullable(), created_at: z.string(),
     })).parse(result.data);
   });

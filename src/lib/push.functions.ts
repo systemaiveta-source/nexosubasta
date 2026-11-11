@@ -13,7 +13,7 @@ export const getPushSettings = createServerFn({ method: "POST" })
     const [preferences, devices] = await Promise.all([
       context.supabase
         .from("notification_preferences")
-        .select("new_auctions,activity")
+        .select("new_auctions,activity,categories")
         .eq("user_id", context.userId)
         .maybeSingle(),
       context.supabase
@@ -29,18 +29,19 @@ export const getPushSettings = createServerFn({ method: "POST" })
       configured,
       deliveryEnabled: configured && process.env["NEXO_PUSH_DELIVERY_ENABLED"] === "true",
       config,
-      preferences: preferences.data ?? { new_auctions: true, activity: true },
+      preferences: preferences.data ?? { new_auctions: true, activity: true, categories: [] },
       devices: devices.data?.length ?? 0,
       endpoints: devices.data?.map((device) => device.token) ?? [],
     };
   });
 export const savePushPreferences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { enabled: boolean; activity?: boolean }) =>
+  .inputValidator((data: { enabled: boolean; activity?: boolean; categories?: string[] }) =>
     z
       .object({
         enabled: z.boolean(),
         activity: z.boolean().optional(),
+        categories: z.array(z.string().uuid()).max(100).optional(),
       })
       .parse(data),
   )
@@ -50,6 +51,7 @@ export const savePushPreferences = createServerFn({ method: "POST" })
       new_auctions: data.enabled,
       push_consent_initialized: true,
       ...(data.activity !== undefined ? { activity: data.activity } : {}),
+      ...(data.categories !== undefined ? { categories: data.categories } : {}),
       updated_at: new Date().toISOString(),
     });
     if (result.error) throw new Error("No se pudieron guardar tus preferencias");

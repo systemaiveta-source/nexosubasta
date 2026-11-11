@@ -38,7 +38,8 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
       (
         await supabase
           .from("categories")
-          .select("id,name,slug")
+          .select("id,name,slug,parent_id")
+          .eq("active", true)
           .neq("slug", "nft-cripto")
           .order("sort")
       ).data ?? [],
@@ -47,6 +48,7 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
   const { page: _page, ...filters } = s;
   const list = useInfiniteQuery({
     queryKey: ["catalog-feed", filters],
+    enabled: !s.cat || !!cats.data,
     initialPageParam: 0,
     getNextPageParam: nextCatalogOffset,
     queryFn: async ({ pageParam, signal }) => {
@@ -63,7 +65,10 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
       if (estado === "ended") q = q.in("status", ["ended_sold", "ended_unsold"]);
       else q = q.eq("status", estado);
       if (s.q) q = q.ilike("title", `%${s.q.replace(/[%_]/g, "")}%`);
-      if (s.cat) q = q.eq("category_id", s.cat);
+      if (s.cat) {
+        const childIds = (cats.data ?? []).filter((item) => item.parent_id === s.cat).map((item) => item.id);
+        q = q.in("category_id", [s.cat, ...childIds]);
+      }
       if (s.scope) q = q.eq("scope", s.scope);
       if (s.pais) q = q.ilike("country", `%${s.pais.replace(/[%_]/g, "")}%`);
       const orden = s.orden ?? "ending";
@@ -140,11 +145,10 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
           aria-label="Categoría"
         >
           <option value="">Todas las categorías</option>
-          {cats.data?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
+          {cats.data?.map((c) => {
+            const parent = c.parent_id ? cats.data?.find((item) => item.id === c.parent_id) : null;
+            return <option key={c.id} value={c.id}>{parent ? parent.name + " · " + c.name : c.name}</option>;
+          })}
         </select>
         <select
           className={sel}

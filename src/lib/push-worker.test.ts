@@ -9,7 +9,7 @@ it("background worker shows notification and public thumbnail without an open cl
   let done: Promise<unknown> = Promise.resolve();
   handlers["push"]?.({data:{json:()=>({title:"NEXO",body:"Mensaje",path:"/operaciones/11111111-1111-4111-8111-111111111111",image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura"})},waitUntil:(p:Promise<unknown>)=>done=p});
   await done;
-  expect(show).toHaveBeenCalledWith("NEXO",expect.objectContaining({image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura",icon:"/icons/icon-192.png"}));
+  expect(show).toHaveBeenCalledWith("NEXO",expect.objectContaining({image:"https://www.nexosubastas.com/api/public/subastas/11111111-1111-4111-8111-111111111111/miniatura",icon:"/icons/icon-192.png",silent:false,vibrate:[250,100,250]}));
 });
 it("only transient provider failures retry",()=>{
   for(const status of [null,408,429,500,503]) expect(retryPush(status)).toBe(true);

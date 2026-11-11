@@ -23,6 +23,7 @@ import { saveExtendedDraft } from "@/lib/auction-details.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
 import { listMyPublications } from "@/lib/profiles.functions";
+import { groupPublications } from "@/lib/publication-groups";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   staticData: { sitemap: false },
@@ -100,7 +101,8 @@ function Seller() {
       (
         await supabase
           .from("categories")
-          .select("id,name,slug")
+          .select("id,name,slug,parent_id")
+          .eq("active", true)
           .neq("slug", "nft-cripto")
           .order("sort")
       ).data ?? [],
@@ -217,7 +219,16 @@ function Seller() {
         },
       });
       if (!draftId) throw new Error("No se pudo guardar el borrador");
-      if (type === "service" && request.category === "transport") await checkLocations(draftId);
+      if (
+        publish &&
+        type === "service" &&
+        request.category === "transport" &&
+        !(await checkLocations(draftId))
+      ) {
+        await qc.invalidateQueries({ queryKey: ["mine"] });
+        toast.info("La publicación permanece como borrador hasta validar origen y destino.");
+        return;
+      }
       if (publish) {
         const { error: e3 } = await supabase.rpc("publish_auction", { _auction_id: draftId });
         if (e3) {
@@ -313,20 +324,24 @@ function Seller() {
     }
   }
 
-  async function checkLocations(id: string) {
+  async function checkLocations(id: string): Promise<boolean> {
     try {
-      const r = await verifyServiceLocations({ data: { id } });
-      if (r.status === "not_found")
+      const result = await verifyServiceLocations({ data: { id } });
+      if (result.status === "not_found") {
         toast.error(
           "Google Maps no encontró el origen o el destino. Escribe direcciones más completas.",
         );
+        return false;
+      }
+      return true;
     } catch (e) {
       toast.error(errMsg(e));
+      return false;
     }
   }
 
   async function publish(id: string) {
-    await checkLocations(id);
+    if (!(await checkLocations(id))) return;
     const { error } = await supabase.rpc("publish_auction", { _auction_id: id });
     if (error) toast.error(errMsg(error));
     else {
@@ -368,6 +383,22 @@ function Seller() {
   }
 
   const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
+  const publicationGroups = groupPublications(mine.data ?? []);
+
+  async function retireUnsold(id: string) {
+    if (!window.confirm("¿Retirar esta publicación? No volverá a mostrarse en tu panel ni en el catálogo. El registro y sus evidencias se conservarán en el historial.")) return;
+    setBusy(true);
+    try {
+      const result = await supabase.rpc("delete_unsold_auction", { _auction_id: id });
+      if (result.error) throw result.error;
+      toast.success("Publicación retirada; el historial se conserva");
+      await qc.invalidateQueries({ queryKey: ["mine"] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <PageShell title="Panel del subastador">
@@ -425,11 +456,16 @@ function Seller() {
                 onChange={set("category_id")}
               >
                 <option value="">Elegir…</option>
-                {cats.data?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                {cats.data?.map((c) => {
+                  const parent = c.parent_id
+                    ? cats.data?.find((candidate) => candidate.id === c.parent_id)
+                    : null;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {parent ? parent.name + " · " + c.name : c.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className="space-y-1.5">
@@ -642,70 +678,87 @@ function Seller() {
             </Button>
           </div>
         </section>
-        <section>
-          <h2 className="mb-3 font-display text-lg font-bold">Mis publicaciones</h2>
-          {mine.isPending ? <p>Cargando publicaciones…</p> : mine.error ? <Empty>No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => mine.refetch()}>Reintentar</Button></Empty> : mine.data?.length ? (
-            <ul className="space-y-2">
-              {mine.data.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm"
-                >
-                  <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
-                    <b className="block truncate">{a.title}</b>
-                    <span className="text-muted-foreground">
-                      {a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} ·{" "}
-                      {a.status === "ended_unsold" && a.bid_count === 0
-                        ? "Sin ofertas"
-                        : statusLabel[a.status]}{" "}
-                      · {a.bid_count} ofertas · {money(a.current_price, a.currency)}
-                    </span>
-                  </Link>
-                  {a.extension_pending && !a.extension_used && (
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" disabled={busy} onClick={() => reserveDecision(a.id, true)}>
-                        Extender 7 días
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => reserveDecision(a.id, false)}
-                      >
-                        Finalizar sin ganador
-                      </Button>
-                    </div>
-                  )}
-                  {a.status === "ended_unsold" && !a.winner_id && !a.selection_pending && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => repeat(a.id)}
-                    >
-                      Repetir o editar
-                    </Button>
-                  )}
-                  {a.status === "draft" && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => editDraft(a.id)}
-                      >
-                        Editar
-                      </Button>
-                      <Button size="sm" onClick={() => publish(a.id)}>
-                        Publicar
-                      </Button>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Empty>Aún no has publicado nada.</Empty>
+        <section className="space-y-5">
+          <h2 className="font-display text-lg font-bold">Mis publicaciones</h2>
+          {mine.isPending ? <p>Cargando publicaciones…</p> : mine.error ? <Empty>No se pudieron cargar tus publicaciones. <Button variant="outline" onClick={() => mine.refetch()}>Reintentar</Button></Empty> : !mine.data?.length ? <Empty>Aún no has publicado nada.</Empty> : (
+            <>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Activas y próximas ({publicationGroups.current.length})</h3>
+                {publicationGroups.current.length ? (
+                  <ul className="space-y-2">
+                    {publicationGroups.current.map((a) => (
+                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
+                          <b className="block truncate">{a.title}</b>
+                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {statusLabel[a.status] ?? a.status} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
+                        </Link>
+                        {a.extension_pending && !a.extension_used && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" disabled={busy} onClick={() => reserveDecision(a.id, true)}>Extender 7 días</Button>
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => reserveDecision(a.id, false)}>Finalizar sin ganador</Button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-muted-foreground">No tienes subastas activas ni programadas.</p>}
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Borradores ({publicationGroups.drafts.length})</h3>
+                {publicationGroups.drafts.length ? (
+                  <ul className="space-y-2">
+                    {publicationGroups.drafts.map((a) => (
+                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
+                          <b className="block truncate">{a.title}</b>
+                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · Borrador</span>
+                        </Link>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => editDraft(a.id)}>Editar</Button>
+                          <Button size="sm" disabled={busy} onClick={() => publish(a.id)}>Publicar</Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-muted-foreground">No tienes borradores.</p>}
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Finalizadas sin venta · pendientes de renovar ({publicationGroups.renewal.length})</h3>
+                {publicationGroups.renewal.length ? (
+                  <ul className="space-y-2">
+                    {publicationGroups.renewal.map((a) => (
+                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
+                          <b className="block truncate">{a.title}</b>
+                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
+                        </Link>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" disabled={busy} onClick={() => repeat(a.id)}>Renovar / preparar nueva</Button>
+                          {a.bid_count === 0 && (
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => retireUnsold(a.id)}>Retirar</Button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-muted-foreground">No hay publicaciones pendientes de renovar.</p>}
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Historial ({publicationGroups.history.length})</h3>
+                {publicationGroups.history.length ? (
+                  <ul className="space-y-2">
+                    {publicationGroups.history.map((a) => (
+                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                        <Link to="/subastas/$id" params={{ id: a.id }} className="min-w-0">
+                          <b className="block truncate">{a.title}</b>
+                          <span className="text-muted-foreground">{a.auction_type === "service" ? "Servicio" : modeLabel(a.closing_mode)} · {statusLabel[a.status] ?? a.status} · {a.bid_count} ofertas · {money(a.current_price, a.currency)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-muted-foreground">Aún no hay publicaciones en el historial.</p>}
+              </div>
+            </>
           )}
         </section>
       </div>

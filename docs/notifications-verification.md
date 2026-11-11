@@ -31,4 +31,20 @@ La cuenta disponible no tiene avisos. No se inventaron ni insertaron notificacio
 
 Pagos administrativos siguen pendientes de sesión administradora autorizada. Servicios con decisión del cliente, operaciones/chat y demás prioridades del roadmap no se completaron en este incremento.
 
-Sin publicación, cambios a métodos reales, nuevas migraciones ni servicios externos activados.
+Sin despliegue ni aplicación de la migración 0039 en la base alojada; no se alteraron claves, cron, métodos de pago ni servicios externos.
+
+## Ampliación de categorías y filtros por subasta
+- Migración 0039 incorpora jerarquía padre/subcategoría, descripciones, icono, orden y estado activo; conserva los IDs existentes para no alterar publicaciones previas.
+- Amplía la clasificación inicial a vehículos/transporte/maquinaria, inmuebles/construcción, hogar, tecnología, moda, agricultura, industria, arte, deportes, salud, educación, negocios, activos digitales y servicios profesionales/personales.
+- Administración dispone de una pestaña Categorías para crear, editar, ordenar y activar/desactivar. No borra categorías utilizadas ni cambia sus identificadores; el slug queda fijo al editar.
+- Los usuarios pueden elegir categorías y subcategorías para nuevas subastas; una selección vacía representa todas las categorías, incluidas las que se añadan después.
+- El disparador de nuevas subastas y la cola de entrega vuelven a comprobar las preferencias por categoría, además del consentimiento general.
+- El permiso nativo del navegador sigue siendo opcional y se solicita solo desde la acción contextual del usuario. La sincronización pasiva no abre el diálogo ni repite solicitudes.
+- No se activaron claves, cron, envíos de prueba ni entregas reales. La recepción en dispositivo cerrado requiere una prueba manual autorizada con un dispositivo compatible y permiso nativo concedido.
+
+## Eventos de chat privado y adjudicación — 2026-11-10
+- Migración 0040 agrega avisos dirigidos a la contraparte por cada mensaje nuevo de una operación abierta; el contenido del mensaje nunca se incluye en la vista previa push para no filtrar cuentas, enlaces de pago ni direcciones.
+- Las notificaciones existentes generadas al crear la operación se personalizan para comprador y vendedor con el resultado y el importe final. El chat queda disponible al crearse la operación por el flujo de adjudicación existente; no se cambia `process_auctions()`, las reglas de puja, ni el cálculo del ganador.
+- El Service Worker solicita sonido predeterminado del sistema (`silent: false`) y vibración cuando el navegador/SO los admite. El sonido efectivo depende de los ajustes del dispositivo; Web Push en segundo plano no permite garantizar un archivo de audio personalizado.
+- Pruebas PGlite añadidas para ganador, vendedor y privacidad del mensaje; prueba del worker ampliada para vibración y sonido del sistema.
+- La migración 0040 solo está en la rama de trabajo. No se aplicó a Supabase alojado, no se activó ni modificó VAPID/cron y no se enviaron avisos reales. La validación CI queda pendiente.

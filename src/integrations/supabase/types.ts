@@ -525,24 +525,47 @@ export type Database = {
       }
       categories: {
         Row: {
+          active: boolean
+          description: string | null
+          icon: string | null
           id: string
           name: string
+          parent_id: string | null
           slug: string
           sort: number
+          updated_at: string
         }
         Insert: {
+          active?: boolean
+          description?: string | null
+          icon?: string | null
           id?: string
           name: string
+          parent_id?: string | null
           slug: string
           sort?: number
+          updated_at?: string
         }
         Update: {
+          active?: boolean
+          description?: string | null
+          icon?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
           slug?: string
           sort?: number
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       disputes: {
         Row: {
