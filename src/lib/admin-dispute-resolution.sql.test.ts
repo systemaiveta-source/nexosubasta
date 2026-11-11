@@ -119,7 +119,7 @@ it("no administrador no puede resolver ni completar una disputa", async () => {
   ).rejects.toThrow(/No autorizado/);
   await expect(
     db.query("UPDATE public.transactions SET status='completed' WHERE id=$1",[tx]),
-  ).rejects.toThrow(/Faltan aceptaciones, confirmaciones/);
+  ).rejects.toThrow(/disputa abierta/);
 });
 
 it("solo una disputa resuelta puede autorizar el cierre administrativo", async () => {
