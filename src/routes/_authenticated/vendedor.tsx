@@ -289,15 +289,7 @@ function Seller() {
     }
   }
 
-  async function publish(id: string) {
-    if (!(await checkLocations(id))) return;
-    const { error } = await supabase.rpc("publish_auction", { _auction_id: id });
-    if (error) toast.error(errMsg(error));
-    else {
-      toast.success("Publicada");
-      qc.invalidateQueries({ queryKey: ["mine"] });
-    }
-  }
+  const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
 
   return (
     <PageShell title="Panel del subastador">
