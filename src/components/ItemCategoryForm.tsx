@@ -138,7 +138,7 @@ export function ItemCategoryForm({
   const roots = categories.filter((category) => !category.parent_id);
   const children = categories.filter((category) => category.parent_id === rootId);
   const selectedSlug = selected?.slug ?? "";
-  const fields = selected && selected.parent_id ? getItemAttributeFields(selectedSlug) : [];
+  const fields = selected ? getItemAttributeFields(selectedSlug) : [];
   const inputClass = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm";
 
   return (
@@ -166,7 +166,7 @@ export function ItemCategoryForm({
       {selected && !selected.parent_id && children.length === 0 && (
         <p className="text-sm text-muted-foreground">Esta categoría no tiene subcategorías; se utilizará como categoría final.</p>
       )}
-      {selected?.parent_id && (
+      {selected && (
         <div className="space-y-3 border-t border-border pt-4">
           <div>
             <h3 className="font-semibold">Características de {selected.name}</h3>
