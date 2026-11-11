@@ -589,7 +589,7 @@ function AuctionPage() {
                             checked={accepted}
                             onChange={(e) => setAccepted(e.target.checked)}
                           />
-                          Acepto los métodos de pago indicados${delivery ? " y las condiciones de entrega${delivery ? "}. NEXO no procesa ni verifica el pago.
+                          Acepto las condiciones publicadas{delivery ? " y de entrega" : ""}. NEXO no procesa ni verifica el pago.
                         </label>
                       </div>
                     )}
