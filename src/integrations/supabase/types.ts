@@ -523,6 +523,48 @@ export type Database = {
           },
         ]
       }
+      auction_item_details: {
+        Row: {
+          auction_id: string
+          attributes: Json
+          category_id: string
+          category_slug: string
+          subcategory_name: string
+          updated_at: string
+        }
+        Insert: {
+          auction_id: string
+          attributes?: Json
+          category_id: string
+          category_slug: string
+          subcategory_name: string
+          updated_at?: string
+        }
+        Update: {
+          auction_id?: string
+          attributes?: Json
+          category_id?: string
+          category_slug?: string
+          subcategory_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_item_details_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: true
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auction_item_details_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           active: boolean
