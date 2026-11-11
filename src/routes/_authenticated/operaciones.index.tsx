@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { PageShell, Empty } from "@/components/SiteLayout";
 import { listOperations } from "@/lib/operations.functions";
-import { money, txStatusLabel } from "@/lib/format";
+import { money } from "@/lib/format";
+import { operationPhase, operationPhaseLabels } from "@/lib/operations";
 const options = queryOptions({ queryKey: ["operations"], queryFn: () => listOperations() });
 export const Route = createFileRoute("/_authenticated/operaciones/")({
   staticData: { sitemap: false },
@@ -35,7 +36,7 @@ function Operations() {
                 <div>
                   <p className="font-semibold">Operación {t.id.slice(0, 8)}</p>
                   <p className="text-sm text-muted-foreground">
-                    {txStatusLabel[t.status]}
+                    {operationPhaseLabels[operationPhase(t)]}
                   </p>
                 </div>
                 <span className="font-semibold">{money(t.amount, t.currency)} →</span>
