@@ -166,7 +166,7 @@ export function ItemCategoryForm({
       {selected && !selected.parent_id && children.length === 0 && (
         <p className="text-sm text-muted-foreground">Esta categoría no tiene subcategorías; se utilizará como categoría final.</p>
       )}
-      {selected && (
+      {selected && (selected.parent_id !== null || children.length === 0) && (
         <div className="space-y-3 border-t border-border pt-4">
           <div>
             <h3 className="font-semibold">Características de {selected.name}</h3>
