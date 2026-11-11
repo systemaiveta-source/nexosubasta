@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useRoles } from "@/lib/auth";
 import { money, errMsg, statusLabel } from "@/lib/format";
 import { uploadAuctionImage, useImageUrls } from "@/lib/images";
-import type { Json } from "@/integrations/supabase/types";
 import { CatalogSelect } from "@/components/CatalogSelect";
 import { DeliveryForm } from "@/components/DeliveryForm";
 import { verifyServiceLocations } from "@/lib/service-locations.functions";
@@ -25,6 +24,8 @@ import { modeLabel, QUIET_MINUTES } from "@/lib/auction-timing";
 import { listMyPublications } from "@/lib/profiles.functions";
 import { groupPublications } from "@/lib/publication-groups";
 import { ItemCategoryForm, validateItemAttributes } from "@/components/ItemCategoryForm";
+import { AuctionPaymentMethods } from "@/components/AuctionPaymentMethods";
+import { parseAuctionMethods, type AuctionMethod } from "@/lib/auction-payments";
 
 export const Route = createFileRoute("/_authenticated/vendedor")({
   staticData: { sitemap: false },
@@ -83,7 +84,7 @@ function Seller() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [startsAt, setStartsAt] = useState("");
-  const [methods, setMethods] = useState<Json>([]);
+  const [methods, setMethods] = useState<AuctionMethod[]>([]);
   const [delivery, setDelivery] = useState<Delivery>({
     mode: "pickup",
     cost: null,
@@ -326,7 +327,7 @@ function Seller() {
           ? a["images"].filter((v): v is string => typeof v === "string")
           : [],
       );
-      setMethods((a["accepted_payment_methods"] ?? []) as Json);
+      setMethods(parseAuctionMethods(a["accepted_payment_methods"]));
       setDelivery(
         parseDelivery(a["delivery_snapshot"]) ?? {
           mode: "other",
@@ -656,6 +657,7 @@ function Seller() {
               pública.
             </p>
           )}
+          <AuctionPaymentMethods value={methods} onChange={setMethods} />
           {type === "item" && (
             <div>
               <Label>Fotos desde tu dispositivo</Label>
