@@ -334,7 +334,7 @@ function Seller() {
           conditions: String(a["delivery_terms"] ?? ""),
         },
       );
-      const itemDetails = await (supabase as any).from("auction_item_details").select("attributes").eq("auction_id", id).maybeSingle();
+      const itemDetails = await supabase.from("auction_item_details").select("attributes").eq("auction_id", id).maybeSingle();
       setItemAttributes((itemDetails.data?.attributes && typeof itemDetails.data.attributes === "object") ? itemDetails.data.attributes as unknown as Record<string, string> : {});
       const details = await supabase.rpc("get_service_request", { _auction: id });
       setRequest(
