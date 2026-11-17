@@ -148,12 +148,44 @@
 }
 
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
     border-color: var(--color-border);
   }
 
+  html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  body > div {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
   }
 }
