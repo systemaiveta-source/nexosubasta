@@ -161,10 +161,15 @@
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-x: none;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: auto;
     -webkit-text-size-adjust: 100%;
   }
 
+  /*
+   * Keep the document viewport as the single vertical scroll container.
+   * Making both html and body independently scrollable can lock touch
+   * scrolling in Android/iOS webviews, especially after route transitions.
+   */
   body {
     width: 100%;
     min-width: 0;
@@ -172,24 +177,21 @@
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: none;
+    overflow: visible;
+    overscroll-behavior: auto;
     -webkit-overflow-scrolling: touch;
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
 
-  body > div {
-    max-width: 100%;
-    overflow-x: clip;
-  }
-
+  /* The React root must grow with every route instead of becoming a clipped
+     scroll container of its own. Horizontal clipping stays on the viewport. */
   body > div {
     width: 100%;
+    max-width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
+    overflow: visible;
   }
 
   img,
