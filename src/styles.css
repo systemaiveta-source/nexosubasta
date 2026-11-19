@@ -158,22 +158,32 @@
   html {
     width: 100%;
     min-height: 100%;
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: none;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  body > div {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body > div {
