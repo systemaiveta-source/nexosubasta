@@ -52,10 +52,7 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
     initialPageParam: 0,
     getNextPageParam: nextCatalogOffset,
     queryFn: async ({ pageParam, signal }) => {
-      // Featured placement is optional: a missing/temporarily failing RPC must
-      // never prevent the public auction catalogue from loading.
-      const featured = await supabase.rpc("featured_auction_ids");
-      const featuredIds = new Set(featured.error ? [] : (featured.data ?? []));
+      // The primary catalogue must never wait for the optional featured-auctions RPC.
       let q = supabase
         .from("auctions_safe")
         .select(AUCTION_LIST_COLUMNS)
@@ -81,7 +78,7 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
         q = q.order("current_price", { ascending: false, nullsFirst: false });
       const { data, error } = await q.order("id").range(pageParam, pageParam + CATALOG_BATCH_SIZE - 1).abortSignal(signal);
       if (error) throw error;
-      const items = (data as unknown as AuctionListItem[]).map(a => ({...a, featured: featuredIds.has(a.id)}));
+      const items = data as unknown as AuctionListItem[];
       return { items, offset: pageParam };
     },
   });
