@@ -52,9 +52,10 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
     initialPageParam: 0,
     getNextPageParam: nextCatalogOffset,
     queryFn: async ({ pageParam, signal }) => {
+      // Featured placement is optional: a missing/temporarily failing RPC must
+      // never prevent the public auction catalogue from loading.
       const featured = await supabase.rpc("featured_auction_ids");
-      if (featured.error) throw featured.error;
-      const featuredIds = new Set(featured.data ?? []);
+      const featuredIds = new Set(featured.error ? [] : (featured.data ?? []));
       let q = supabase
         .from("auctions_safe")
         .select(AUCTION_LIST_COLUMNS)
@@ -98,10 +99,11 @@ export function CatalogGallery({ s, set, title = "Subastas" }: { s: CatalogSearc
   const imgs = useImageUrls(items.map((a) => a.images[0]).filter((x): x is string => !!x));
   const promoted = useQuery({queryKey:["featured-auctions"],refetchInterval:60000,queryFn:async()=>{
     const ids=await supabase.rpc("featured_auction_ids");
-    if(ids.error) throw ids.error;
-    if(!ids.data?.length) return [];
+    // Featured auctions are a separate presentation enhancement, not a
+    // dependency of the main catalogue.
+    if(ids.error || !ids.data?.length) return [];
     const result=await supabase.from("auctions_safe").select(AUCTION_LIST_COLUMNS).in("id",ids.data).eq("status","active").order("created_at",{ascending:false});
-    if(result.error) throw result.error;
+    if(result.error) return [];
     return (result.data as unknown as AuctionListItem[]).map(a=>({...a,featured:true}));
   }});
   const promotedImages=useImageUrls(promoted.data?.flatMap(a=>a.images.slice(0,1)));
