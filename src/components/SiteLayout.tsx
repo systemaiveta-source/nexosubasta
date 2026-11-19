@@ -198,7 +198,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
         )}
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 w-full max-w-full flex-1 overflow-x-clip">{children}</main>
       <footer className="border-t border-border bg-secondary/50">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} NEXO</p>
